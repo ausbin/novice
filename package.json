@@ -6,9 +6,9 @@
   "scripts": {
     "build": "tsc -b",
     "build:watch": "tsc -b -w",
-    "start": "node novice/main.js",
     "test": "jest --coverage",
-    "lint": "tslint -p tsconfig.json -c tslint.json 'novice/**/*.ts'"
+    "lint": "tslint -p tsconfig.json -c tslint.json 'novice/**/*.ts'",
+    "novice": "node novice/main.js"
   },
   "repository": {
     "type": "git",
@@ -20,6 +20,9 @@
     "url": "https://github.com/zucchini/novice/issues"
   },
   "homepage": "https://github.com/zucchini/novice#readme",
+  "bin": {
+    "novice": "novice/main.js"
+  },
   "jest": {
     "transform": {
       "^.+\\.tsx?$": "ts-jest"

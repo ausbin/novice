@@ -8,7 +8,7 @@ Getting Started
 
     $ npm install --dev
     $ npm run build
-    $ npm start
+    $ npm run -- novice --help
 
 Useful stuff:
 

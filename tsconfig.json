@@ -1,6 +1,5 @@
 {
     "compilerOptions": {
-        "module": "novice",
         "strict": true
     }
 }

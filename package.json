@@ -1,0 +1,24 @@
+{
+  "name": "novice",
+  "version": "0.0.0",
+  "description": "machine code simulator",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc -b",
+    "start": "node novice/main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zucchini/novice.git"
+  },
+  "author": "austin adams <git@austinjadams.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zucchini/novice/issues"
+  },
+  "homepage": "https://github.com/zucchini/novice#readme",
+  "devDependencies": {
+    "typescript": "^3.0.1"
+  }
+}

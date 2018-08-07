@@ -2,8 +2,8 @@ import { Writable } from 'stream';
 import main from './cli';
 
 describe('cli', () => {
-    let stderr;
-    let stderrActual;
+    let stderr : Writable;
+    let stderrActual : string;
 
     beforeEach(() => {
         stderrActual = "";

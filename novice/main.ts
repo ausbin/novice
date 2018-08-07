@@ -1,1 +1,3 @@
-console.log('hello, world!');
+import main from './cli';
+
+process.exitCode = main(process.argv.slice(2), process.stderr);

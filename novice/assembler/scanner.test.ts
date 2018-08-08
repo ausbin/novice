@@ -160,4 +160,16 @@ describe('scanner', () => {
             ]);
         });
     });
+
+    it('handles weird chars', () => {
+        fp.push("add r1, r1, r2\n");
+        fp.push("    ^ banana");
+        fp.push(null);
+
+        expect.hasAssertions();
+        return new Scanner(fp).scan().catch(err => {
+            expect(err.message).toContain('line 2');
+            expect(err.message).toContain('column 5');
+        });
+    });
 });

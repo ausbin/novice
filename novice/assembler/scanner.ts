@@ -21,6 +21,7 @@ class Scanner {
     private lineNum: number;
     private col: number;
     private lastChar: string;
+    private rejectCallback!: (err: Error) => void;
 
     constructor(fp: Readable) {
         this.currentToken = '';
@@ -36,11 +37,14 @@ class Scanner {
     }
 
     public async scan(): Promise<Line[]> {
-        const endPromise = new Promise(resolve => this.fp.on('end', () => {
-            // send EOF to scanner
-            this.nextChar(Scanner.EOF);
-            resolve();
-        }));
+        const endPromise = new Promise((resolve, reject) => {
+            this.rejectCallback = reject;
+            this.fp.on('end', () => {
+                // send EOF to scanner
+                this.nextChar(Scanner.EOF);
+                resolve();
+            });
+        });
         this.fp.on('data', this.onData.bind(this));
         await endPromise;
         return this.lines;
@@ -102,8 +106,11 @@ class Scanner {
                     this.nextChar(Scanner.EOF);
                 }
             } else if (this.currentToken !== '') {
-                throw new Error(`scanner error: unexpected character \`${c}'` +
-                                ` at line ${this.lineNum} column ${this.col}`);
+                const err =  new Error(
+                    `scanner error: unexpected character \`${c}' at line ` +
+                    `${this.lineNum} column ${this.col}`);
+                this.rejectCallback(err);
+                return;
             }
         }
 

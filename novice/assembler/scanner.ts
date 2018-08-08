@@ -116,7 +116,7 @@ class Scanner {
 
         if (newline) {
             // Don't double count DOS newlines
-            if (!(this.lastChar == '\r' && c == '\n')) {
+            if (!(this.lastChar === '\r' && c === '\n')) {
                 this.lineNum++;
             }
 

@@ -32,7 +32,7 @@ async function asm(path: string, stdout: Writable, stderr: Writable):
             fp.on('readable', resolve);
             fp.on('error', reject);
         });
-        const assembly = await new Assembler().parse(fp);
+        const assembly = await new Assembler(fp).parse();
         stdout.write(JSON.stringify(assembly));
         return 0;
     } catch (err) {

@@ -1,9 +1,93 @@
 import { Readable } from 'stream';
+import { DFA, dfas } from './dfa';
 
 class Scanner {
-    public scan(fp: Readable): string[][] {
-        let lines: string[][] = [];
-        return lines;
+    private static readonly EOF = '';
+    private currentToken: string;
+    private lines: string[][];
+    private fp: Readable;
+    private dfas: DFA[];
+    private newline: boolean;
+
+    constructor(fp: Readable) {
+        this.currentToken = '';
+        this.lines = [];
+        this.fp = fp;
+        this.dfas = dfas.map(cls => new cls());
+        // Need to add a new line for the next token (at the beginning
+        // of the file or after a newline)
+        this.newline = true;
+    }
+
+    public async scan(): Promise<string[][]> {
+        const endPromise = new Promise(resolve => this.fp.on('end', () => {
+            // send EOF to scanner
+            this.nextChar(Scanner.EOF);
+            resolve();
+        }));
+        this.fp.on('data', this.onData.bind(this));
+        await endPromise;
+        return this.lines;
+    }
+
+    private onData(data: string | Buffer) {
+        let buf: string;
+        if (typeof data === 'string') {
+            buf = data;
+        } else {
+            buf = data.toString();
+        }
+
+        for (let i = 0; i < buf.length; i++) {
+            this.nextChar(buf.charAt(i));
+        }
+    }
+
+    private nextChar(c: string) {
+        const newline = c === '\r' || c === '\n';
+        const eof = newline || c === Scanner.EOF;
+
+        if (!eof) {
+            this.currentToken += c;
+            this.dfas.forEach(dfa => dfa.feed(c));
+        }
+
+        if (eof || this.dfas.every(dfa => !dfa.isAlive())) {
+            const best = this.dfas.reduce((bestDfa, dfa) =>
+                (dfa.getAcceptingLength() > bestDfa.getAcceptingLength())
+                ? dfa : bestDfa);
+
+            if (best.getAcceptingLength() > 0) {
+                const tokenLen = best.getAcceptingLength();
+
+                // Leave out stuff like whitespace
+                if (best.isToken()) {
+                    if (this.newline) {
+                        this.newline = false;
+                        this.lines.push([]);
+                    }
+                    const newToken = this.currentToken.substring(0, tokenLen);
+                    this.lines[this.lines.length - 1].push(newToken);
+                }
+
+                const leftovers = this.currentToken.substring(tokenLen);
+                this.currentToken = '';
+                this.dfas.forEach(dfa => dfa.reset());
+
+                // Re-ingest characters we used to find this token
+                for (let i = 0; i < leftovers.length; i++) {
+                    this.nextChar(leftovers.charAt(i));
+                }
+                // Also need to re-ingest EOF
+                if (eof && leftovers.length > 0) {
+                    this.nextChar(Scanner.EOF);
+                }
+            } else if (this.currentToken !== '') {
+                throw new Error("can't even parse this shit");
+            }
+        }
+
+        this.newline = this.newline || newline;
     }
 }
 

@@ -63,14 +63,16 @@ describe('cli', () => {
         let json = {kush: 'coma'};
         let mockParse = jest.fn(() => Promise.resolve(json));
         // @ts-ignore
-        assembler.Assembler.mockImplementation(() => {
+        assembler.Assembler.mockImplementation((fp: Readable) => {
             return { parse: mockParse };
         });
 
         return main(['asm', 'patrick.asm'], stdout, stderr).then(exitCode => {
             // @ts-ignore
             expect(fs.createReadStream.mock.calls).toEqual([['patrick.asm']]);
-            expect(mockParse.mock.calls).toEqual([[mockFp]]);
+            // @ts-ignore
+            expect(assembler.Assembler.mock.calls).toEqual([[mockFp]]);
+            expect(mockParse.mock.calls).toEqual([[]]);
 
             expect(exitCode).toEqual(0);
             expect(stdoutActual).toEqual(JSON.stringify(json));

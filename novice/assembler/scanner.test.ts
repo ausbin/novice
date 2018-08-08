@@ -23,7 +23,16 @@ describe('scanner', () => {
 
         expect.hasAssertions();
         return new Scanner(fp).scan().then(lines => {
-            expect(lines).toEqual([['add', 'r0', ',', 'r0', ',', 'r1']]);
+            expect(lines).toEqual([
+                {num: 1, tokens: [
+                    {col: 4,  val: 'add'},
+                    {col: 8,  val: 'r0'},
+                    {col: 10, val: ','},
+                    {col: 12, val: 'r0'},
+                    {col: 14, val: ','},
+                    {col: 16, val: 'r1'},
+                ]},
+            ]);
         });
     });
 
@@ -33,7 +42,12 @@ describe('scanner', () => {
 
         expect.hasAssertions();
         return new Scanner(fp).scan().then(lines => {
-            expect(lines).toEqual([['.fill', '420']]);
+            expect(lines).toEqual([
+                {num: 1, tokens: [
+                    {col: 1, val: '.fill'},
+                    {col: 7, val: '420'},
+                ]},
+            ]);
         });
     });
 
@@ -43,7 +57,12 @@ describe('scanner', () => {
 
         expect.hasAssertions();
         return new Scanner(fp).scan().then(lines => {
-            expect(lines).toEqual([['trap', 'x69']]);
+            expect(lines).toEqual([
+                {num: 1, tokens: [
+                    {col: 1, val: 'trap'},
+                    {col: 6, val: 'x69'},
+                ]},
+            ]);
         });
     });
 
@@ -54,12 +73,19 @@ describe('scanner', () => {
 
         expect.hasAssertions();
         return new Scanner(fp).scan().then(lines => {
-            expect(lines).toEqual([['not', 'r0', ',', 'r0']]);
+            expect(lines).toEqual([
+                {num: 2, tokens: [
+                    {col: 1, val: 'not'},
+                    {col: 5, val: 'r0'},
+                    {col: 7, val: ','},
+                    {col: 9, val: 'r0'},
+                ]},
+            ]);
         });
     });
 
     it('scans mini program', () => {
-        fp.push('.orig x3000\n');
+        fp.push('.orig x3000\r\n');
         fp.push('add r1, r1, r2\n');
         fp.push('.end');
         fp.push(null);
@@ -67,9 +93,21 @@ describe('scanner', () => {
         expect.hasAssertions();
         return new Scanner(fp).scan().then(lines => {
             expect(lines).toEqual([
-                ['.orig', 'x3000'],
-                ['add', 'r1', ',', 'r1', ',', 'r2'],
-                ['.end']
+                {num: 1, tokens: [
+                    {col: 1, val: '.orig'},
+                    {col: 7, val: 'x3000'},
+                ]},
+                {num: 2, tokens: [
+                    {col: 1,  val: 'add'},
+                    {col: 5,  val: 'r1'},
+                    {col: 7,  val: ','},
+                    {col: 9,  val: 'r1'},
+                    {col: 11, val: ','},
+                    {col: 13, val: 'r2'},
+                ]},
+                {num: 3, tokens: [
+                    {col: 1, val: '.end'},
+                ]},
             ]);
         });
     });
@@ -82,8 +120,13 @@ describe('scanner', () => {
         expect.hasAssertions();
         return new Scanner(fp).scan().then(lines => {
             expect(lines).toEqual([
-                ['bob:'],
-                ['goto', 'bob'],
+                {num: 1, tokens: [
+                    {col: 1, val: 'bob:'},
+                ]},
+                {num: 2, tokens: [
+                    {col: 1, val: 'goto'},
+                    {col: 6, val: 'bob'},
+                ]},
             ]);
         });
     });
@@ -94,7 +137,12 @@ describe('scanner', () => {
 
         expect.hasAssertions();
         return new Scanner(fp).scan().then(lines => {
-            expect(lines).toEqual([['.stringz', '"hi\\npatrick"']]);
+            expect(lines).toEqual([
+                {num: 1, tokens: [
+                    {col: 1,  val: '.stringz'},
+                    {col: 10, val: '"hi\\npatrick"'},
+                ]},
+            ]);
         });
     });
 
@@ -104,7 +152,12 @@ describe('scanner', () => {
 
         expect.hasAssertions();
         return new Scanner(fp).scan().then(lines => {
-            expect(lines).toEqual([['.fill', "'\\n'"]]);
+            expect(lines).toEqual([
+                {num: 1, tokens: [
+                    {col: 1, val: '.fill'},
+                    {col: 9, val: "'\\n'"},
+                ]},
+            ]);
         });
     });
 });

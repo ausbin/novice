@@ -1,13 +1,26 @@
 import { Readable } from 'stream';
 import { DFA, dfas } from './dfa';
 
+interface Token {
+    col: number;
+    val: string;
+}
+
+interface Line {
+    num: number;
+    tokens: Token[];
+}
+
 class Scanner {
     private static readonly EOF = '';
     private currentToken: string;
-    private lines: string[][];
+    private lines: Line[];
     private fp: Readable;
     private dfas: DFA[];
     private newline: boolean;
+    private lineNum: number;
+    private col: number;
+    private lastChar: string;
 
     constructor(fp: Readable) {
         this.currentToken = '';
@@ -17,9 +30,12 @@ class Scanner {
         // Need to add a new line for the next token (at the beginning
         // of the file or after a newline)
         this.newline = true;
+        this.lineNum = 1;
+        this.col = 1;
+        this.lastChar = '';
     }
 
-    public async scan(): Promise<string[][]> {
+    public async scan(): Promise<Line[]> {
         const endPromise = new Promise(resolve => this.fp.on('end', () => {
             // send EOF to scanner
             this.nextChar(Scanner.EOF);
@@ -64,11 +80,14 @@ class Scanner {
                 if (best.isToken()) {
                     if (this.newline) {
                         this.newline = false;
-                        this.lines.push([]);
+                        this.lines.push({num: this.lineNum, tokens: []});
                     }
-                    const newToken = this.currentToken.substring(0, tokenLen);
-                    this.lines[this.lines.length - 1].push(newToken);
+                    const newVal = this.currentToken.substring(0, tokenLen);
+                    const newToken = {col: this.col, val: newVal};
+                    this.lines[this.lines.length - 1].tokens.push(newToken);
                 }
+
+                this.col += tokenLen;
 
                 const leftovers = this.currentToken.substring(tokenLen);
                 this.currentToken = '';
@@ -83,12 +102,23 @@ class Scanner {
                     this.nextChar(Scanner.EOF);
                 }
             } else if (this.currentToken !== '') {
-                throw new Error("can't even parse this shit");
+                throw new Error(`scanner error: unexpected character \`${c}'` +
+                                ` at line ${this.lineNum} column ${this.col}`);
             }
         }
 
-        this.newline = this.newline || newline;
+        if (newline) {
+            // Don't double count DOS newlines
+            if (!(this.lastChar == '\r' && c == '\n')) {
+                this.lineNum++;
+            }
+
+            this.col = 1;
+            this.newline = true;
+        }
+
+        this.lastChar = c;
     }
 }
 
-export { Scanner };
+export { Line, Token, Scanner };

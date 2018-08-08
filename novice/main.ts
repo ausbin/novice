@@ -2,4 +2,5 @@
 
 import main from './cli';
 
-process.exitCode = main(process.argv.slice(2), process.stderr);
+main(process.argv.slice(2), process.stdout, process.stderr)
+    .then((exitCode) => process.exitCode = exitCode);

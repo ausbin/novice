@@ -5,7 +5,10 @@
     ],
     "jsRules": {},
     "rules": {
-        "quotemark": [true, "single", "avoid-escape"]
+        "quotemark": [true, "single", "avoid-escape"],
+        "array-type": [true, "array"],
+        "interface-name": [true, "never-prefix"],
+        "max-classes-per-file": false
     },
     "rulesDirectory": []
 }

@@ -28,8 +28,8 @@ export default class IntegerDFA extends DFA {
         const isDecimalDigit =
             charCode >= '0'.charCodeAt(0) && charCode <= '9'.charCodeAt(0);
         const isHexDigit = isDecimalDigit ||
-            charCode >= 'a'.charCodeAt(0) && charCode <= 'z'.charCodeAt(0) ||
-            charCode >= 'A'.charCodeAt(0) && charCode <= 'Z'.charCodeAt(0);
+            charCode >= 'a'.charCodeAt(0) && charCode <= 'f'.charCodeAt(0) ||
+            charCode >= 'A'.charCodeAt(0) && charCode <= 'F'.charCodeAt(0);
 
         switch (this.state) {
             case State.Start:

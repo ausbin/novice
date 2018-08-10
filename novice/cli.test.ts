@@ -5,7 +5,7 @@ import main from './cli';
 jest.mock('fs');
 import * as fs from 'fs';
 jest.mock('./assembler');
-import * as assembler from './assembler';
+import { Assembler, genTable } from './assembler';
 
 describe('cli', () => {
     let stdout: Writable, stderr: Writable;
@@ -30,7 +30,9 @@ describe('cli', () => {
         // @ts-ignore
         fs.createReadStream.mockReset();
         // @ts-ignore
-        assembler.Assembler.mockReset();
+        Assembler.mockReset();
+        // @ts-ignore
+        genTable.mockReset();
     });
 
     it('prints usage with no args', () => {
@@ -41,63 +43,105 @@ describe('cli', () => {
         });
     });
 
-    it('prints usage with missing asm args', () => {
-        return main(['asm'], stdout, stderr).then(exitCode => {
-            expect(exitCode).toEqual(1);
-            expect(stdoutActual).toEqual('');
-            expect(stderrActual).toContain('usage');
+    describe('asm subcommand', () => {
+        it('prints usage with missing asm args', () => {
+            return main(['asm'], stdout, stderr).then(exitCode => {
+                expect(exitCode).toEqual(1);
+                expect(stdoutActual).toEqual('');
+                expect(stderrActual).toContain('usage');
+            });
+        });
+
+        it('assembles asm file', () => {
+            let mockFp = {
+                on(event: string, handler: () => void) {
+                    if (event === 'readable') {
+                        handler();
+                    }
+                }
+            };
+            // @ts-ignore
+            fs.createReadStream.mockReturnValue(mockFp);
+
+            let json = {kush: 'coma'};
+            let mockParse = jest.fn(() => Promise.resolve(json));
+            // @ts-ignore
+            Assembler.mockImplementation((fp: Readable) => {
+                return { parse: mockParse };
+            });
+
+            return main(['asm', 'patrick.asm'], stdout, stderr).then(exitCode => {
+                // @ts-ignore
+                expect(fs.createReadStream.mock.calls).toEqual([['patrick.asm']]);
+                // @ts-ignore
+                expect(Assembler.mock.calls).toEqual([[mockFp]]);
+                expect(mockParse.mock.calls).toEqual([[]]);
+
+                expect(exitCode).toEqual(0);
+                expect(stdoutActual).toEqual(JSON.stringify(json));
+                expect(stderrActual).toEqual('');
+            });
+        });
+
+        it('handles nonexistent file', () => {
+            let mockFp = {
+                on(event: string, handler: (reason: any) => void) {
+                    if (event === 'error') {
+                        handler(new Error('wow bad'));
+                    }
+                }
+            };
+            // @ts-ignore
+            fs.createReadStream.mockReturnValue(mockFp);
+
+            return main(['asm', 'sanjay.asm'], stdout, stderr).then(exitCode => {
+                // @ts-ignore
+                expect(fs.createReadStream.mock.calls).toEqual([['sanjay.asm']]);
+
+                expect(exitCode).toEqual(1);
+                expect(stdoutActual).toEqual('');
+                expect(stderrActual).toContain('wow bad');
+            });
         });
     });
 
-    it('assembles asm file', () => {
-        let mockFp = {
-            on(event: string, handler: () => void) {
-                if (event === 'readable') {
-                    handler();
-                }
-            }
-        };
-        // @ts-ignore
-        fs.createReadStream.mockReturnValue(mockFp);
-
-        let json = {kush: 'coma'};
-        let mockParse = jest.fn(() => Promise.resolve(json));
-        // @ts-ignore
-        assembler.Assembler.mockImplementation((fp: Readable) => {
-            return { parse: mockParse };
+    describe('tablegen subcommand', () => {
+        it('prints usage with extra args', () => {
+            return main(['tablegen', 'bob'], stdout, stderr).then(exitCode => {
+                expect(exitCode).toEqual(1);
+                expect(stdoutActual).toEqual('');
+                expect(stderrActual).toContain('usage');
+            });
         });
 
-        return main(['asm', 'patrick.asm'], stdout, stderr).then(exitCode => {
-            // @ts-ignore
-            expect(fs.createReadStream.mock.calls).toEqual([['patrick.asm']]);
-            // @ts-ignore
-            expect(assembler.Assembler.mock.calls).toEqual([[mockFp]]);
-            expect(mockParse.mock.calls).toEqual([[]]);
+        it('generates table', () => {
+            const json = {big: 'banana'};
 
-            expect(exitCode).toEqual(0);
-            expect(stdoutActual).toEqual(JSON.stringify(json));
-            expect(stderrActual).toEqual('');
+            // @ts-ignore
+            genTable.mockReturnValue(json);
+
+            return main(['tablegen'], stdout, stderr).then(exitCode => {
+                // @ts-ignore
+                expect(genTable.mock.calls).toEqual([[]]);
+
+                expect(exitCode).toEqual(0);
+                expect(stdoutActual).toEqual(JSON.stringify(json));
+                expect(stderrActual).toEqual('');
+            });
         });
-    });
 
-    it('handles nonexistent file', () => {
-        let mockFp = {
-            on(event: string, handler: (reason: any) => void) {
-                if (event === 'error') {
-                    handler(new Error('wow bad'));
-                }
-            }
-        };
-        // @ts-ignore
-        fs.createReadStream.mockReturnValue(mockFp);
-
-        return main(['asm', 'sanjay.asm'], stdout, stderr).then(exitCode => {
+        it('handles conflicts', () => {
             // @ts-ignore
-            expect(fs.createReadStream.mock.calls).toEqual([['sanjay.asm']]);
+            genTable.mockImplementation(() => {throw new Error('big bad conflict!')});
 
-            expect(exitCode).toEqual(1);
-            expect(stdoutActual).toEqual('');
-            expect(stderrActual).toContain('wow bad');
+            return main(['tablegen'], stdout, stderr).then(exitCode => {
+                // @ts-ignore
+                expect(genTable.mock.calls).toEqual([[]]);
+
+                expect(exitCode).toEqual(1);
+                expect(stdoutActual).toEqual('');
+                expect(stderrActual).toContain('big bad conflict!');
+            });
         });
     });
 });

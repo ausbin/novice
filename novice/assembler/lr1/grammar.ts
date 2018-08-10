@@ -33,5 +33,6 @@ const grammar: Production<NT, T>[] = [
     new Production<NT, T>('pseudoop-operand', ['char']),
     new Production<NT, T>('pseudoop-operand', ['string']),
 ];
+const goal = 'line';
 
-export { Production, grammar, T, Ts, NT, NTs };
+export { Production, goal, grammar, T, Ts, NT, NTs };

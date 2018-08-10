@@ -122,20 +122,11 @@ class TableGenerator<NT, T> {
                     if (item.production.lhs === this.goal &&
                             item.lookahead === 'eof') {
                         const index = result.positions[item.lookahead.toString()];
-
-                        if (actionRow[index] !== null) {
-                            throw new Error('conflict in table!');
-                        }
-
-                        actionRow[index] = {action: 'accept'};
+                        this.insertIntoRow(actionRow, index, {action: 'accept'});
                     } else {
                         const index = result.positions[item.lookahead.toString()];
-
-                        if (actionRow[index] !== null) {
-                            throw new Error('conflict in table!');
-                        }
-
-                        actionRow[index] = {action: 'reduce', production: item.production};
+                        this.insertIntoRow(actionRow, index,
+                            {action: 'reduce', production: item.production});
                     }
                 }
             });
@@ -147,18 +138,14 @@ class TableGenerator<NT, T> {
                     const index = result.positions[transition.token.toString()];
 
                     if (gotoRow[index] !== null) {
-                        throw new Error('conflict in table!');
+                        throw new Error('conflict in goto table!');
                     }
 
                     gotoRow[index] = transition.newState;
                 } else {
                     const index = result.positions[transition.token.toString()];
-
-                    if (gotoRow[index] !== null) {
-                        throw new Error('conflict in table!');
-                    }
-
-                    actionRow[index] = {action: 'shift', newState: transition.newState};
+                    this.insertIntoRow(actionRow, index,
+                        {action: 'shift', newState: transition.newState});
                 }
             });
 
@@ -227,6 +214,16 @@ class TableGenerator<NT, T> {
 
         this.closure(items);
         return items;
+    }
+
+    private insertIntoRow(row: (ParseAction<NT, T>|null)[], index: number,
+                          entry: ParseAction<NT, T>) {
+        const spot = row[index];
+        if (spot === null) {
+            row[index] = entry;
+        } else {
+            throw new Error(`${spot.action}-${entry.action} conflict!`);
+        }
     }
 
     private calcNTProductions(): Map<NT, Production<NT, T>[]> {

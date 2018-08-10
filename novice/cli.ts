@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { Writable } from 'stream';
-import { Assembler } from './assembler';
+import { Assembler, genTable } from './assembler';
 
 async function main(args: string[], stdout: Writable, stderr: Writable):
         Promise<number> {
@@ -14,13 +14,20 @@ async function main(args: string[], stdout: Writable, stderr: Writable):
             } else {
                 return usage(stderr);
             }
+        case 'tablegen':
+            if (args.length === 1) {
+                return tablegen(stdout, stderr);
+            } else {
+                return usage(stderr);
+            }
         default:
             return usage(stderr);
     }
 }
 
 function usage(stderr: Writable): number {
-    stderr.write('usage: novice asm <file>\n');
+    stderr.write('usage: novice asm <file>\n' +
+                 '       novice tablegen\n');
     return 1;
 }
 
@@ -36,9 +43,22 @@ async function asm(path: string, stdout: Writable, stderr: Writable):
         stdout.write(JSON.stringify(assembly));
         return 0;
     } catch (err) {
-        stderr.write('asm error: ' + err.message + '\n');
+        stderr.write(`asm error: ${err.message}\n`);
         return 1;
     }
+}
+
+function tablegen(stdout: Writable, stderr: Writable): number {
+    let table: object;
+    try {
+        table = genTable();
+    } catch (err) {
+        stderr.write(`error generating LR(1) table: ${err.message}\n`);
+        return 1;
+    }
+
+    stdout.write(JSON.stringify(table));
+    return 0;
 }
 
 export default main;

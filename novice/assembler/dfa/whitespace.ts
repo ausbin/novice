@@ -1,4 +1,4 @@
-import DFA from './dfa';
+import { DFA, Kind } from './dfa';
 
 export default class WhitespaceDFA extends DFA {
     private alive!: boolean;
@@ -41,7 +41,7 @@ export default class WhitespaceDFA extends DFA {
         this.acceptingLength = 0;
     }
 
-    public isToken(): boolean {
-        return false;
+    public getKind(): null {
+        return null;
     }
 }

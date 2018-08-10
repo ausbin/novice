@@ -8,10 +8,6 @@ describe('symbol DFA', () => {
         dfa = new SymbolDFA();
     });
 
-    it('is a token', () => {
-        expect(dfa.isToken()).toBe(true);
-    });
-
     it('rejects unknown symbols', () => {
         const len = feedDFA(dfa, '', '^ asdfasdf');
         expect(dfa.getAcceptingLength()).toBe(len);
@@ -22,23 +18,34 @@ describe('symbol DFA', () => {
         const len = feedDFA(dfa, ',', 'r0');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(false);
+        expect(dfa.getKind()).toEqual(',');
     });
 
     it('dies after ,', () => {
         const len = feedDFA(dfa, ',');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(false);
+        expect(dfa.getKind()).toEqual(',');
     });
 
     it('recognizes (', () => {
         const len = feedDFA(dfa, '(', 'r0');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(false);
+        expect(dfa.getKind()).toEqual('(');
     });
 
     it('recognizes )', () => {
         const len = feedDFA(dfa, ')');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(false);
+        expect(dfa.getKind()).toEqual(')');
+    });
+
+    it('recognizes :', () => {
+        const len = feedDFA(dfa, ':');
+        expect(dfa.getAcceptingLength()).toBe(len);
+        expect(dfa.isAlive()).toBe(false);
+        expect(dfa.getKind()).toEqual(':');
     });
 });

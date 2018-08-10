@@ -25,12 +25,12 @@ describe('scanner', () => {
         return new Scanner(fp).scan().then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
-                    {col: 4,  val: 'add'},
-                    {col: 8,  val: 'r0'},
-                    {col: 10, val: ','},
-                    {col: 12, val: 'r0'},
-                    {col: 14, val: ','},
-                    {col: 16, val: 'r1'},
+                    {col: 4,  val: 'add', kind: 'word'},
+                    {col: 8,  val: 'r0',  kind: 'reg'},
+                    {col: 10, val: ',',   kind: ','},
+                    {col: 12, val: 'r0',  kind: 'reg'},
+                    {col: 14, val: ',',   kind: ','},
+                    {col: 16, val: 'r1',  kind: 'reg'},
                 ]},
             ]);
         });
@@ -44,8 +44,8 @@ describe('scanner', () => {
         return new Scanner(fp).scan().then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
-                    {col: 1, val: '.fill'},
-                    {col: 7, val: '420'},
+                    {col: 1, val: '.fill', kind: 'pseudoop'},
+                    {col: 7, val: '420',   kind: 'int-decimal'},
                 ]},
             ]);
         });
@@ -59,8 +59,8 @@ describe('scanner', () => {
         return new Scanner(fp).scan().then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
-                    {col: 1, val: 'trap'},
-                    {col: 6, val: 'x69'},
+                    {col: 1, val: 'trap', kind: 'word'},
+                    {col: 6, val: 'x69',  kind: 'int-hex'},
                 ]},
             ]);
         });
@@ -75,10 +75,10 @@ describe('scanner', () => {
         return new Scanner(fp).scan().then(lines => {
             expect(lines).toEqual([
                 {num: 2, tokens: [
-                    {col: 1, val: 'not'},
-                    {col: 5, val: 'r0'},
-                    {col: 7, val: ','},
-                    {col: 9, val: 'r0'},
+                    {col: 1, val: 'not', kind: 'word'},
+                    {col: 5, val: 'r0',  kind: 'reg'},
+                    {col: 7, val: ',',   kind: ','},
+                    {col: 9, val: 'r0',  kind: 'reg'},
                 ]},
             ]);
         });
@@ -94,19 +94,19 @@ describe('scanner', () => {
         return new Scanner(fp).scan().then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
-                    {col: 1, val: '.orig'},
-                    {col: 7, val: 'x3000'},
+                    {col: 1, val: '.orig', kind: 'pseudoop'},
+                    {col: 7, val: 'x3000', kind: 'int-hex'},
                 ]},
                 {num: 2, tokens: [
-                    {col: 1,  val: 'add'},
-                    {col: 5,  val: 'r1'},
-                    {col: 7,  val: ','},
-                    {col: 9,  val: 'r1'},
-                    {col: 11, val: ','},
-                    {col: 13, val: 'r2'},
+                    {col: 1,  val: 'add',  kind: 'word'},
+                    {col: 5,  val: 'r1',   kind: 'reg'},
+                    {col: 7,  val: ',',    kind: ','},
+                    {col: 9,  val: 'r1',   kind: 'reg'},
+                    {col: 11, val: ',',    kind: ','},
+                    {col: 13, val: 'r2',   kind: 'reg'},
                 ]},
                 {num: 3, tokens: [
-                    {col: 1, val: '.end'},
+                    {col: 1, val: '.end',  kind: 'pseudoop'},
                 ]},
             ]);
         });
@@ -121,11 +121,12 @@ describe('scanner', () => {
         return new Scanner(fp).scan().then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
-                    {col: 1, val: 'bob:'},
+                    {col: 1, val: 'bob',  kind: 'word'},
+                    {col: 4, val: ':',    kind: ':'},
                 ]},
                 {num: 2, tokens: [
-                    {col: 1, val: 'goto'},
-                    {col: 6, val: 'bob'},
+                    {col: 1, val: 'goto', kind: 'word'},
+                    {col: 6, val: 'bob',  kind: 'word'},
                 ]},
             ]);
         });
@@ -139,8 +140,8 @@ describe('scanner', () => {
         return new Scanner(fp).scan().then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
-                    {col: 1,  val: '.stringz'},
-                    {col: 10, val: '"hi\\npatrick"'},
+                    {col: 1,  val: '.stringz', kind: 'pseudoop'},
+                    {col: 10, val: '"hi\\npatrick"', kind: 'string'},
                 ]},
             ]);
         });
@@ -154,8 +155,8 @@ describe('scanner', () => {
         return new Scanner(fp).scan().then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
-                    {col: 1, val: '.fill'},
-                    {col: 9, val: "'\\n'"},
+                    {col: 1, val: '.fill', kind: 'pseudoop'},
+                    {col: 9, val: "'\\n'", kind: 'char'},
                 ]},
             ]);
         });

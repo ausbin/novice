@@ -1,4 +1,4 @@
-import DFA from './dfa';
+import { DFA, Kind } from './dfa';
 
 enum State {
     Start,
@@ -54,7 +54,7 @@ export default class CommentDFA extends DFA {
         this.acceptingLength = 0;
     }
 
-    public isToken(): boolean {
-        return false;
+    public getKind(): null {
+        return null;
     }
 }

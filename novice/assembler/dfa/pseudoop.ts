@@ -1,4 +1,5 @@
-import DFA from './dfa';
+import { isWordChar } from '../lex';
+import { DFA, Kind } from './dfa';
 
 enum State {
     Start,
@@ -23,11 +24,7 @@ export default class PseudoOpDFA extends DFA {
 
         this.length++;
 
-        const charCode = c.charCodeAt(0);
-        const isText = c === '_' || c === '-' ||
-            charCode >= 'a'.charCodeAt(0) && charCode <= 'z'.charCodeAt(0) ||
-            charCode >= 'A'.charCodeAt(0) && charCode <= 'Z'.charCodeAt(0);
-
+        const isText = isWordChar(c);
         switch (this.state) {
             case State.Start:
                 if (c === '.') {
@@ -59,5 +56,9 @@ export default class PseudoOpDFA extends DFA {
         this.alive = true;
         this.length = 0;
         this.acceptingLength = 0;
+    }
+
+    public getKind(): Kind {
+        return 'pseudoop';
     }
 }

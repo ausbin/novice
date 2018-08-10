@@ -1,4 +1,5 @@
-import DFA from './dfa';
+import { isDecimalDigit, isHexDigit } from '../lex';
+import { DFA, Kind } from './dfa';
 
 enum State {
     Start,
@@ -11,6 +12,7 @@ export default class IntegerDFA extends DFA {
     private alive!: boolean;
     private length!: number;
     private acceptingLength!: number;
+    private kind!: Kind;
 
     public constructor() {
         super();
@@ -24,35 +26,31 @@ export default class IntegerDFA extends DFA {
 
         this.length++;
 
-        const charCode = c.charCodeAt(0);
-        const isDecimalDigit =
-            charCode >= '0'.charCodeAt(0) && charCode <= '9'.charCodeAt(0);
-        const isHexDigit = isDecimalDigit ||
-            charCode >= 'a'.charCodeAt(0) && charCode <= 'f'.charCodeAt(0) ||
-            charCode >= 'A'.charCodeAt(0) && charCode <= 'F'.charCodeAt(0);
-
         switch (this.state) {
             case State.Start:
                 if (c.toLowerCase() === 'x') {
                     this.state = State.Hexadecimal;
-                } else if (isDecimalDigit) {
+                    this.kind = 'int-hex';
+                } else if (isDecimalDigit(c)) {
                     this.state = State.Decimal;
                     this.acceptingLength = this.length;
+                    this.kind = 'int-decimal';
                 } else if (c.toLowerCase() === 'r') {
                     this.state = State.Decimal;
+                    this.kind = 'reg';
                 } else {
                     this.alive = false;
                 }
                 break;
             case State.Hexadecimal:
-                if (isHexDigit) {
+                if (isHexDigit(c)) {
                     this.acceptingLength = this.length;
                 } else {
                     this.alive = false;
                 }
                 break;
             case State.Decimal:
-                if (isDecimalDigit) {
+                if (isDecimalDigit(c)) {
                     this.acceptingLength = this.length;
                 } else {
                     this.alive = false;
@@ -74,5 +72,9 @@ export default class IntegerDFA extends DFA {
         this.alive = true;
         this.length = 0;
         this.acceptingLength = 0;
+    }
+
+    public getKind(): Kind {
+        return this.kind;
     }
 }

@@ -8,10 +8,6 @@ describe('integer DFA', () => {
         dfa = new IntegerDFA();
     });
 
-    it('is a token', () => {
-        expect(dfa.isToken()).toBe(true);
-    });
-
     it('rejects raw hex digits', () => {
         const len = feedDFA(dfa, '', 'abc');
         expect(dfa.getAcceptingLength()).toBe(len);
@@ -34,23 +30,27 @@ describe('integer DFA', () => {
         const len = feedDFA(dfa, 'xbeef');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(true);
+        expect(dfa.getKind()).toEqual('int-hex');
     });
 
     it('recognizes capitalized hex literals', () => {
         const len = feedDFA(dfa, 'XBEeeeF');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(true);
+        expect(dfa.getKind()).toEqual('int-hex');
     });
 
     it('recognizes decimal numbers', () => {
         const len = feedDFA(dfa, '69');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(true);
+        expect(dfa.getKind()).toEqual('int-decimal');
     });
 
     it('recognizes registers', () => {
         const len = feedDFA(dfa, 'r0');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(true);
+        expect(dfa.getKind()).toEqual('reg');
     });
 });

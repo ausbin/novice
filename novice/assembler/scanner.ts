@@ -1,9 +1,10 @@
 import { Readable } from 'stream';
-import { DFA, dfas } from './dfa';
+import { DFA, dfas, Kind, kinds } from './dfa';
 
 interface Token {
     col: number;
     val: string;
+    kind: Kind;
 }
 
 interface Line {
@@ -79,15 +80,17 @@ class Scanner {
 
             if (best.getAcceptingLength() > 0) {
                 const tokenLen = best.getAcceptingLength();
+                const tokenKind = best.getKind();
 
-                // Leave out stuff like whitespace
-                if (best.isToken()) {
+                // Leave out stuff like whitespace (will be null in that
+                // case)
+                if (tokenKind) {
                     if (this.newline) {
                         this.newline = false;
                         this.lines.push({num: this.lineNum, tokens: []});
                     }
                     const newVal = this.currentToken.substring(0, tokenLen);
-                    const newToken = {col: this.col, val: newVal};
+                    const newToken = {col: this.col, val: newVal, kind: tokenKind};
                     this.lines[this.lines.length - 1].tokens.push(newToken);
                 }
 
@@ -128,4 +131,4 @@ class Scanner {
     }
 }
 
-export { Line, Token, Scanner };
+export { Line, Token, Kind, kinds, Scanner };

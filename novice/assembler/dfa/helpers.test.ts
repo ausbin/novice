@@ -1,4 +1,4 @@
-import DFA from './dfa';
+import { DFA } from './dfa';
 
 function feedDFA(dfa: DFA, str: string, follow?: string): number {
     let food = follow? str + follow : str;

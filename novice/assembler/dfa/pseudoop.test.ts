@@ -8,10 +8,6 @@ describe('pseudo-op DFA', () => {
         dfa = new PseudoOpDFA();
     });
 
-    it('is a token', () => {
-        expect(dfa.isToken()).toBe(true);
-    });
-
     it('rejects nonsense', () => {
         const len = feedDFA(dfa, '', '^.fill');
         expect(dfa.getAcceptingLength()).toBe(len);
@@ -28,5 +24,6 @@ describe('pseudo-op DFA', () => {
         const len = feedDFA(dfa, '.fill', ' xBEEF');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(false);
+        expect(dfa.getKind()).toEqual('pseudoop');
     });
 });

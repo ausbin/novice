@@ -8,10 +8,6 @@ describe('word DFA', () => {
         dfa = new WordDFA();
     });
 
-    it('is a token', () => {
-        expect(dfa.isToken()).toBe(true);
-    });
-
     it('rejects nonsense', () => {
         const len = feedDFA(dfa, '', '^ woweee');
         expect(dfa.getAcceptingLength()).toBe(len);
@@ -28,5 +24,6 @@ describe('word DFA', () => {
         const len = feedDFA(dfa, 'add', ' r0, r0, r1');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(false);
+        expect(dfa.getKind()).toEqual('word');
     });
 });

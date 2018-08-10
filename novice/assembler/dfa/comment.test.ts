@@ -8,10 +8,6 @@ describe('comment DFA', () => {
         dfa = new CommentDFA();
     });
 
-    it('is not a token', () => {
-        expect(dfa.isToken()).toBe(false);
-    });
-
     it('rejects text without ; or #', () => {
         const len = feedDFA(dfa, '', 'this is a comment');
         expect(dfa.getAcceptingLength()).toBe(len);
@@ -28,17 +24,20 @@ describe('comment DFA', () => {
         const len = feedDFA(dfa, '; hello');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(true);
+        expect(dfa.getKind()).toBe(null);
     });
 
     it('recognizes # comments', () => {
         const len = feedDFA(dfa, '#  end gaming today');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(true);
+        expect(dfa.getKind()).toBe(null);
     });
 
     it('recognizes empty comments', () => {
         const len = feedDFA(dfa, ';');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(true);
+        expect(dfa.getKind()).toBe(null);
     });
 });

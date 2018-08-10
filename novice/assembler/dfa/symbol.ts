@@ -1,8 +1,9 @@
-import DFA from './dfa';
+import { DFA, Kind } from './dfa';
 
 export default class SymbolDFA extends DFA {
     private alive!: boolean;
     private acceptingLength!: number;
+    private kind!: Kind;
 
     public constructor() {
         super();
@@ -18,7 +19,9 @@ export default class SymbolDFA extends DFA {
             case '(':
             case ')':
             case ',':
+            case ':':
                 this.acceptingLength = 1;
+                this.kind = c;
             default:
                 this.alive = false;
         }
@@ -35,5 +38,9 @@ export default class SymbolDFA extends DFA {
     public reset(): void {
         this.alive = true;
         this.acceptingLength = 0;
+    }
+
+    public getKind(): Kind {
+        return this.kind;
     }
 }

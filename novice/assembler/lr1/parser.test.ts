@@ -111,6 +111,11 @@ describe('parser', () => {
             expect(parser.parse(line)).toEqual(expectedParseTree);
         });
 
+        it('blows up for empty line', () => {
+            const line: Line<T> = {num: 1207, tokens: []};
+            expect(() => {parser.parse(line)}).toThrow('unexpected end-of-file');
+        });
+
         it('blows up for early eof', () => {
             const tokens: Token<T>[] = [
                 {col: 1, val: '(', kind: '('},

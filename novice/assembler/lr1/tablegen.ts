@@ -16,7 +16,7 @@ class ParseItem<NT, T> implements Hashable {
     }
 
     public hash(): string {
-        return `[${this.production.hash()}, ${this.stacktop}, ${this.lookahead}]`;
+        return `[${this.production.lhs} -> ${this.production.rhs.join(' ')}, ${this.stacktop}, ${this.lookahead}]`;
     }
 }
 

@@ -10,8 +10,8 @@ describe('LR(1) table generator', () => {
             type NT = 'goal';
             let NTs = new Set(<NT[]>['goal']);
             let productions: Production<NT, T>[] = [
-                new Production<NT, T>('goal', ['a', 'b']),
-                new Production<NT, T>('goal', ['a', 'goal', 'b']),
+                {lhs: 'goal', rhs: ['a', 'b']},
+                {lhs: 'goal', rhs: ['a', 'goal', 'b']},
             ];
 
             let tablegen = new TableGenerator<NT, T>('goal', productions, NTs, Ts);
@@ -59,21 +59,21 @@ describe('LR(1) table generator', () => {
             const Ts = new Set(<T[]> Object.keys(_Ts));
 
             let productions: Production<NT, T>[] = [
-                new Production<NT, T>('imp',     ['main', '(', 'vars', ')', '{', 'decl', 'assign', ')']),
-                new Production<NT, T>('vars',    []),
-                new Production<NT, T>('vars',    ['nevars']),
-                new Production<NT, T>('nevars',  ['var', 'nevars2']),
-                new Production<NT, T>('nevars2', []),
-                new Production<NT, T>('nevars2', [',', 'nevars']),
-                new Production<NT, T>('decl',    ['type', 'nevars', ';']),
-                new Production<NT, T>('assign',  ['var', '=', 'expr', ';']),
-                new Production<NT, T>('expr',    ['var', 'expr2']),
-                new Production<NT, T>('expr2',   []),
-                new Production<NT, T>('expr2',   ['op', 'expr']),
-                new Production<NT, T>('op',      ['+']),
-                new Production<NT, T>('op',      ['*']),
-                new Production<NT, T>('type',    ['int']),
-                new Production<NT, T>('type',    ['float']),
+                {lhs: 'imp',     rhs: ['main', '(', 'vars', ')', '{', 'decl', 'assign', ')']},
+                {lhs: 'vars',    rhs: []},
+                {lhs: 'vars',    rhs: ['nevars']},
+                {lhs: 'nevars',  rhs: ['var', 'nevars2']},
+                {lhs: 'nevars2', rhs: []},
+                {lhs: 'nevars2', rhs: [',', 'nevars']},
+                {lhs: 'decl',    rhs: ['type', 'nevars', ';']},
+                {lhs: 'assign',  rhs: ['var', '=', 'expr', ';']},
+                {lhs: 'expr',    rhs: ['var', 'expr2']},
+                {lhs: 'expr2',   rhs: []},
+                {lhs: 'expr2',   rhs: ['op', 'expr']},
+                {lhs: 'op',      rhs: ['+']},
+                {lhs: 'op',      rhs: ['*']},
+                {lhs: 'type',    rhs: ['int']},
+                {lhs: 'type',    rhs: ['float']},
             ];
 
             let tablegen = new TableGenerator<NT, T>('imp', productions, NTs, Ts);
@@ -129,15 +129,15 @@ describe('LR(1) table generator', () => {
             const Ts = new Set(<T[]> Object.keys(_Ts));
 
             let productions: Production<NT, T>[] = [
-                new Production<NT, T>('A',  ['A2', 'A3', 'A4']),
-                new Production<NT, T>('A2', []),
-                new Production<NT, T>('A2', ['b', 'B']),
-                new Production<NT, T>('A3', []),
-                new Production<NT, T>('A3', ['e', 'd']),
-                new Production<NT, T>('A4', []),
-                new Production<NT, T>('A4', ['B']),
-                new Production<NT, T>('B',  ['c', 'a', 'B']),
-                new Production<NT, T>('C',  ['A3', 'A2', 'B']),
+                {lhs: 'A',  rhs: ['A2', 'A3', 'A4']},
+                {lhs: 'A2', rhs: []},
+                {lhs: 'A2', rhs: ['b', 'B']},
+                {lhs: 'A3', rhs: []},
+                {lhs: 'A3', rhs: ['e', 'd']},
+                {lhs: 'A4', rhs: []},
+                {lhs: 'A4', rhs: ['B']},
+                {lhs: 'B',  rhs: ['c', 'a', 'B']},
+                {lhs: 'C',  rhs: ['A3', 'A2', 'B']},
             ];
 
             let tablegen = new TableGenerator<NT, T>('A', productions, NTs, Ts);
@@ -179,12 +179,12 @@ describe('LR(1) table generator', () => {
             const Ts = new Set(<T[]> Object.keys(_Ts));
 
             let productions: Production<NT, T>[] = [
-                new Production<NT, T>('goal',   ['expr']),
-                new Production<NT, T>('expr',   ['term', '-', 'expr']),
-                new Production<NT, T>('expr',   ['term']),
-                new Production<NT, T>('term',   ['factor', '*', 'term']),
-                new Production<NT, T>('term',   ['factor']),
-                new Production<NT, T>('factor', ['ident']),
+                {lhs: 'goal',   rhs: ['expr']},
+                {lhs: 'expr',   rhs: ['term', '-', 'expr']},
+                {lhs: 'expr',   rhs: ['term']},
+                {lhs: 'term',   rhs: ['factor', '*', 'term']},
+                {lhs: 'term',   rhs: ['factor']},
+                {lhs: 'factor', rhs: ['ident']},
             ];
 
             let tablegen = new TableGenerator<NT, T>('goal', productions, NTs, Ts);
@@ -227,12 +227,12 @@ describe('LR(1) table generator', () => {
             const Ts = new Set(<T[]> Object.keys(_Ts));
 
             let productions: Production<NT, T>[] = [
-                new Production<NT, T>('goal',   ['expr']),
-                new Production<NT, T>('expr',   ['term', '-', 'expr']),
-                new Production<NT, T>('expr',   ['term']),
-                new Production<NT, T>('term',   ['factor', '*', 'term']),
-                new Production<NT, T>('term',   ['factor']),
-                new Production<NT, T>('factor', ['ident']),
+                {lhs: 'goal',   rhs: ['expr']},
+                {lhs: 'expr',   rhs: ['term', '-', 'expr']},
+                {lhs: 'expr',   rhs: ['term']},
+                {lhs: 'term',   rhs: ['factor', '*', 'term']},
+                {lhs: 'term',   rhs: ['factor']},
+                {lhs: 'factor', rhs: ['ident']},
             ];
 
             let tablegen = new TableGenerator<NT, T>('goal', productions, NTs, Ts);
@@ -273,12 +273,12 @@ describe('LR(1) table generator', () => {
             type T = keyof typeof _Ts;
             const Ts = new Set(<T[]> Object.keys(_Ts));
 
-            let productions: Production<NT, T>[] = [
-                new Production<NT, T>('goal', ['list']),
-                new Production<NT, T>('list', ['list', 'pair']),
-                new Production<NT, T>('list', ['pair']),
-                new Production<NT, T>('pair', ['(', 'pair', ')']),
-                new Production<NT, T>('pair', ['(', ')']),
+            const productions: Production<NT, T>[] = [
+                {lhs: 'goal', rhs: ['list']},
+                {lhs: 'list', rhs: ['list', 'pair']},
+                {lhs: 'list', rhs: ['pair']},
+                {lhs: 'pair', rhs: ['(', 'pair', ')']},
+                {lhs: 'pair', rhs: ['(', ')']},
             ];
 
             let tablegen = new TableGenerator<NT, T>('goal', productions, NTs, Ts);
@@ -405,12 +405,12 @@ describe('LR(1) table generator', () => {
             type T = keyof typeof _Ts;
             const Ts = new Set(<T[]> Object.keys(_Ts));
 
-            let productions: Production<NT, T>[] = [
-                new Production<NT, T>('goal', ['list']),
-                new Production<NT, T>('list', ['list', 'pair']),
-                new Production<NT, T>('list', ['pair']),
-                new Production<NT, T>('pair', ['(', 'pair', ')']),
-                new Production<NT, T>('pair', ['(', ')']),
+            const productions: Production<NT, T>[] = [
+                {lhs: 'goal', rhs: ['list']},
+                {lhs: 'list', rhs: ['list', 'pair']},
+                {lhs: 'list', rhs: ['pair']},
+                {lhs: 'pair', rhs: ['(', 'pair', ')']},
+                {lhs: 'pair', rhs: ['(', ')']},
             ];
 
             let tablegen = new TableGenerator<NT, T>('goal', productions, NTs, Ts);

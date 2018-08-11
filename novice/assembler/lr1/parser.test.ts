@@ -9,11 +9,11 @@ describe('parser', () => {
         type T = '(' | ')';
 
         const productions: Production<NT, T>[] = [
-            new Production<NT, T>('goal', ['list']),
-            new Production<NT, T>('list', ['list', 'pair']),
-            new Production<NT, T>('list', ['pair']),
-            new Production<NT, T>('pair', ['(', 'pair', ')']),
-            new Production<NT, T>('pair', ['(', ')']),
+            {lhs: 'goal', rhs: ['list']},
+            {lhs: 'list', rhs: ['list', 'pair']},
+            {lhs: 'list', rhs: ['pair']},
+            {lhs: 'pair', rhs: ['(', 'pair', ')']},
+            {lhs: 'pair', rhs: ['(', ')']},
         ];
 
         const table: ParseTable<NT, T> = {

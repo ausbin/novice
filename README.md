@@ -13,5 +13,6 @@ Getting Started
 Useful stuff:
 
     $ npm run build:watch
-    $ npm run test
     $ npm run lint
+    $ npm test
+    $ ./generate-parse-table.sh

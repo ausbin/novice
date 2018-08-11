@@ -1,4 +1,5 @@
 import { goal, grammar, NT, NTs, T, Ts } from './grammar';
+import table from './table';
 import { TableGenerator } from './tablegen';
 
 function genTable(): object {
@@ -6,4 +7,4 @@ function genTable(): object {
     return tablegen.genTable();
 }
 
-export { genTable };
+export { genTable, table };

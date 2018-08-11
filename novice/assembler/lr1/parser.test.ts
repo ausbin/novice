@@ -68,8 +68,8 @@ describe('parser', () => {
                 {token: 'goal', children: [
                     {token: 'list', children: [
                         {token: 'pair', children: [
-                            {token: '(', val: '(', line: 69, col: 1},
-                            {token: ')', val: ')', line: 69, col: 10},
+                            {token: '(', val: '(', line: 69, col: 1, children: []},
+                            {token: ')', val: ')', line: 69, col: 10, children: []},
                         ]},
                     ]},
                 ]}
@@ -93,17 +93,17 @@ describe('parser', () => {
                     {token: 'list', children: [
                         {token: 'list', children: [
                             {token: 'pair', children: [
-                                {token: '(', val: '(', line: 42, col: 1},
+                                {token: '(', val: '(', line: 42, col: 1, children: []},
                                 {token: 'pair', children: [
-                                    {token: '(', val: '(', line: 42, col: 2},
-                                    {token: ')', val: ')', line: 42, col: 3},
+                                    {token: '(', val: '(', line: 42, col: 2, children: []},
+                                    {token: ')', val: ')', line: 42, col: 3, children: []},
                                 ]},
-                                {token: ')', val: ')', line: 42, col: 4},
+                                {token: ')', val: ')', line: 42, col: 4, children: []},
                             ]},
                         ]},
                         {token: 'pair', children: [
-                            {token: '(', val: '(', line: 42, col: 5},
-                            {token: ')', val: ')', line: 42, col: 6},
+                            {token: '(', val: '(', line: 42, col: 5, children: []},
+                            {token: ')', val: ')', line: 42, col: 6, children: []},
                         ]},
                     ]},
                 ]}

@@ -9,7 +9,7 @@ interface ParseTree<NT, T> {
     val?: string;
     line?: number;
     col?: number;
-    children?: ParseTree<NT, T>[];
+    children: ParseTree<NT, T>[];
 }
 
 class Parser<NT, T> {
@@ -44,7 +44,7 @@ class Parser<NT, T> {
             switch (entry.action) {
                 case 'shift':
                     stack.push({token: token.kind, val: token.val,
-                                line: line.num, col: token.col});
+                                line: line.num, col: token.col, children: []});
                     stack.push(entry.newState as number);
                     token = line.tokens[i++] || null;
                     break;

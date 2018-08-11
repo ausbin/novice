@@ -1,4 +1,5 @@
 import { goal, grammar, NT, NTs, T, Ts } from './grammar';
+import { Parser, ParseTree } from './parser';
 import table from './table';
 import { TableGenerator } from './tablegen';
 
@@ -7,4 +8,4 @@ function genTable(): object {
     return tablegen.genTable();
 }
 
-export { genTable, table };
+export { NT, Parser, ParseTree, T, genTable, table };

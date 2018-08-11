@@ -1,21 +1,21 @@
 import { Readable } from 'stream';
 import { DFA, dfas, Kind, kinds } from './dfa';
 
-interface Token {
+interface Token<T> {
     col: number;
     val: string;
-    kind: Kind;
+    kind: T;
 }
 
-interface Line {
+interface Line<T> {
     num: number;
-    tokens: Token[];
+    tokens: Token<T>[];
 }
 
 class Scanner {
     private static readonly EOF = '';
     private currentToken: string;
-    private lines: Line[];
+    private lines: Line<Kind>[];
     private fp: Readable;
     private dfas: DFA[];
     private newline: boolean;
@@ -37,7 +37,7 @@ class Scanner {
         this.lastChar = '';
     }
 
-    public async scan(): Promise<Line[]> {
+    public async scan(): Promise<Line<Kind>[]> {
         const endPromise = new Promise((resolve, reject) => {
             this.rejectCallback = reject;
             this.fp.on('end', () => {

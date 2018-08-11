@@ -488,8 +488,8 @@ describe('LR(1) table generator', () => {
                 ],
                 // state 1
                 [
-                    ['eof', {action: 'accept'}],
-                    ['(',   {action: 'shift', newState: 3}],
+                    ['eof', {action: 'accept', production: productions[0]}],
+                    ['(',   {action: 'shift',  newState: 3}],
                 ],
                 // state 2
                 [

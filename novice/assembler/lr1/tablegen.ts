@@ -122,7 +122,8 @@ class TableGenerator<NT, T> {
                     if (item.production.lhs === this.goal &&
                             item.lookahead === 'eof') {
                         const index = result.positions[item.lookahead.toString()];
-                        this.insertIntoRow(actionRow, index, {action: 'accept'});
+                        this.insertIntoRow(actionRow, index,
+                            {action: 'accept', production: item.production});
                     } else {
                         const index = result.positions[item.lookahead.toString()];
                         this.insertIntoRow(actionRow, index,
@@ -367,4 +368,4 @@ class TableGenerator<NT, T> {
     }
 }
 
-export { TableGenerator, S, ParseItem, ParseState, ParseTransition, ParseAction };
+export { TableGenerator, S, ParseItem, ParseState, ParseTable, ParseTransition, ParseAction };

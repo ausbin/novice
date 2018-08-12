@@ -26,6 +26,24 @@ describe('integer DFA', () => {
         expect(dfa.isAlive()).toBe(false);
     });
 
+    it('rejects lonely dashes', () => {
+        const len = feedDFA(dfa, '', '-');
+        expect(dfa.getAcceptingLength()).toBe(len);
+        expect(dfa.isAlive()).toBe(true);
+    });
+
+    it('rejects signed hex', () => {
+        const len = feedDFA(dfa, '', '-xbeef');
+        expect(dfa.getAcceptingLength()).toBe(len);
+        expect(dfa.isAlive()).toBe(false);
+    });
+
+    it('rejects signed registers', () => {
+        const len = feedDFA(dfa, '', 'r-2');
+        expect(dfa.getAcceptingLength()).toBe(len);
+        expect(dfa.isAlive()).toBe(false);
+    });
+
     it('recognizes hex literals', () => {
         const len = feedDFA(dfa, 'xbeef');
         expect(dfa.getAcceptingLength()).toBe(len);
@@ -44,6 +62,13 @@ describe('integer DFA', () => {
         const len = feedDFA(dfa, '69');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(true);
+        expect(dfa.getKind()).toEqual('int-decimal');
+    });
+
+    it('recognizes negative decimal numbers', () => {
+        const len = feedDFA(dfa, '-69', 'banana');
+        expect(dfa.getAcceptingLength()).toBe(len);
+        expect(dfa.isAlive()).toBe(false);
         expect(dfa.getKind()).toEqual('int-decimal');
     });
 

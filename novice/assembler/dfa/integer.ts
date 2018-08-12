@@ -35,6 +35,9 @@ export default class IntegerDFA extends DFA {
                     this.state = State.Decimal;
                     this.acceptingLength = this.length;
                     this.kind = 'int-decimal';
+                } else if (c === '-') {
+                    this.state = State.Decimal;
+                    this.kind = 'int-decimal';
                 } else if (c.toLowerCase() === 'r') {
                     this.state = State.Decimal;
                     this.kind = 'reg';

@@ -65,5 +65,42 @@ describe('assembler', () => {
                 });
             });
         });
+
+        it('parses multiple sections', () => {
+            const assembler = new Assembler(fp);
+
+            fp.push('.orig x3000\n')
+            fp.push('halt: halt\n')
+            fp.push('.end\n')
+            fp.push('\n')
+            fp.push('.orig x4000\n')
+            fp.push('and r0, r0, -3\n')
+            fp.push('halt2: halt\n')
+            fp.push('.end\n')
+            fp.push(null)
+
+            expect.hasAssertions();
+            return assembler.parse().then(assembly => {
+                expect(assembly).toEqual({
+                    sections: [
+                        {startAddr: 0x3000, instructions: [
+                            {kind: 'instr', op: 'halt', operands: []},
+                        ]},
+                        {startAddr: 0x4000, instructions: [
+                            {kind: 'instr', op: 'and', operands: [
+                                {kind: 'reg', num: 0},
+                                {kind: 'reg', num: 0},
+                                {kind: 'int', val: -3},
+                            ]},
+                            {kind: 'instr', op: 'halt', operands: []},
+                        ]},
+                    ],
+                    labels: {
+                        'halt':  [0, 0],
+                        'halt2': [1, 1],
+                    },
+                });
+            });
+        });
     });
 });

@@ -236,6 +236,9 @@ class Assembler {
                     case 'r':
                         result += '\r';
                         break;
+                    case 't':
+                        result += '\t';
+                        break;
                     case '\\':
                         result += '\\';
                         break;

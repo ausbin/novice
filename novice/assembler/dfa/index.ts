@@ -7,6 +7,6 @@ import SymbolDFA from './symbol';
 import WhitespaceDFA from './whitespace';
 import WordDFA from './word';
 
-const dfas = [ WhitespaceDFA, WordDFA, PseudoOpDFA, IntegerDFA, SymbolDFA,
+const dfas = [ WhitespaceDFA, IntegerDFA, WordDFA, PseudoOpDFA, SymbolDFA,
                StringDFA, CommentDFA ];
 export { dfas, DFA, Kind, kinds };

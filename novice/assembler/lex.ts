@@ -1,6 +1,6 @@
 function isWordChar(c: string): boolean {
     const charCode = c.charCodeAt(0);
-    return c === '_' || c === '-' ||
+    return isDecimalDigit(c) || c === '_' || c === '-' ||
            charCode >= 'a'.charCodeAt(0) && charCode <= 'z'.charCodeAt(0) ||
            charCode >= 'A'.charCodeAt(0) && charCode <= 'Z'.charCodeAt(0);
 

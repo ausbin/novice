@@ -26,4 +26,11 @@ describe('word DFA', () => {
         expect(dfa.isAlive()).toBe(false);
         expect(dfa.getKind()).toEqual('word');
     });
+
+    it('recognizes word with digits', () => {
+        const len = feedDFA(dfa, 'mylabel2', ': add r0, r0, r1');
+        expect(dfa.getAcceptingLength()).toBe(len);
+        expect(dfa.isAlive()).toBe(false);
+        expect(dfa.getKind()).toEqual('word');
+    });
 });

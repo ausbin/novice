@@ -17,16 +17,13 @@ describe('assembler', () => {
             fp.push('.end\n')
             fp.push(null)
 
-            expect.hasAssertions();
-            return assembler.parse().then(assembly => {
-                expect(assembly).toEqual({
-                    sections: [
-                        {startAddr: 0x3000, instructions: [
-                            {kind: 'instr', op: 'halt', operands: []},
-                        ]},
-                    ],
-                    labels: {},
-                });
+            return expect(assembler.parse()).resolves.toEqual({
+                sections: [
+                    {startAddr: 0x3000, instructions: [
+                        {kind: 'instr', op: 'halt', operands: []},
+                    ]},
+                ],
+                labels: {},
             });
         });
 
@@ -41,26 +38,23 @@ describe('assembler', () => {
             fp.push('.end\n')
             fp.push(null)
 
-            expect.hasAssertions();
-            return assembler.parse().then(assembly => {
-                expect(assembly).toEqual({
-                    sections: [
-                        {startAddr: 0x3000, instructions: [
-                            {kind: 'instr', op: 'lea', operands: [
-                                {kind: 'reg',   num: 0},
-                                {kind: 'label', label: 'mystring'},
-                            ]},
-                            {kind: 'instr', op: 'puts', operands: []},
-                            {kind: 'instr', op: 'halt', operands: []},
-                            {kind: 'pseudoop', op: 'stringz', operand:
-                                {kind: 'string', contents: "hello world!"},
-                            },
+            return expect(assembler.parse()).resolves.toEqual({
+                sections: [
+                    {startAddr: 0x3000, instructions: [
+                        {kind: 'instr', op: 'lea', operands: [
+                            {kind: 'reg',   num: 0},
+                            {kind: 'label', label: 'mystring'},
                         ]},
-                    ],
-                    labels: {
-                        'mystring': [0, 3]
-                    },
-                });
+                        {kind: 'instr', op: 'puts', operands: []},
+                        {kind: 'instr', op: 'halt', operands: []},
+                        {kind: 'pseudoop', op: 'stringz', operand:
+                            {kind: 'string', contents: "hello world!"},
+                        },
+                    ]},
+                ],
+                labels: {
+                    'mystring': [0, 3]
+                },
             });
         });
 
@@ -75,27 +69,24 @@ describe('assembler', () => {
             fp.push('.end\n')
             fp.push(null)
 
-            expect.hasAssertions();
-            return assembler.parse().then(assembly => {
-                expect(assembly).toEqual({
-                    sections: [
-                        {startAddr: 0x3000, instructions: [
-                            {kind: 'instr', op: 'halt', operands: []},
+            return expect(assembler.parse()).resolves.toEqual({
+                sections: [
+                    {startAddr: 0x3000, instructions: [
+                        {kind: 'instr', op: 'halt', operands: []},
+                    ]},
+                    {startAddr: 0x4000, instructions: [
+                        {kind: 'instr', op: 'and', operands: [
+                            {kind: 'reg', num: 0},
+                            {kind: 'reg', num: 0},
+                            {kind: 'int', val: -3},
                         ]},
-                        {startAddr: 0x4000, instructions: [
-                            {kind: 'instr', op: 'and', operands: [
-                                {kind: 'reg', num: 0},
-                                {kind: 'reg', num: 0},
-                                {kind: 'int', val: -3},
-                            ]},
-                            {kind: 'instr', op: 'halt', operands: []},
-                        ]},
-                    ],
-                    labels: {
-                        'halt':  [0, 0],
-                        'halt2': [1, 1],
-                    },
-                });
+                        {kind: 'instr', op: 'halt', operands: []},
+                    ]},
+                ],
+                labels: {
+                    'halt':  [0, 0],
+                    'halt2': [1, 1],
+                },
             });
         });
 
@@ -107,24 +98,21 @@ describe('assembler', () => {
             fp.push('.end\n')
             fp.push(null)
 
-            expect.hasAssertions();
-            return assembler.parse().then(assembly => {
-                expect(assembly).toEqual({
-                    sections: [
-                        {startAddr: 0x3000, instructions: [
-                            {kind: 'instr', op: 'halt', operands: []},
-                            {kind: 'pseudoop', op: 'blkw', operand:
-                                {kind: 'int', val: 1}},
-                            {kind: 'pseudoop', op: 'blkw', operand:
-                                {kind: 'int', val: 1}},
-                        ]},
-                    ],
-                    labels: {
-                        'mYlAbeL':       [0, 0],
-                        'another-label': [0, 1],
-                        'LOUD_LABEL':    [0, 2],
-                    },
-                });
+            return expect(assembler.parse()).resolves.toEqual({
+                sections: [
+                    {startAddr: 0x3000, instructions: [
+                        {kind: 'instr', op: 'halt', operands: []},
+                        {kind: 'pseudoop', op: 'blkw', operand:
+                            {kind: 'int', val: 1}},
+                        {kind: 'pseudoop', op: 'blkw', operand:
+                            {kind: 'int', val: 1}},
+                    ]},
+                ],
+                labels: {
+                    'mYlAbeL':       [0, 0],
+                    'another-label': [0, 1],
+                    'LOUD_LABEL':    [0, 2],
+                },
             });
         });
     });

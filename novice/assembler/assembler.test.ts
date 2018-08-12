@@ -4,14 +4,14 @@ import { Assembler } from './assembler';
 describe('assembler', () => {
     describe('parse()', () => {
         let fp: Readable;
+        let assembler: Assembler;
 
         beforeEach(() => {
             fp = new Readable();
+            assembler = new Assembler(fp);
         });
 
         it('parses trivial program', () => {
-            const assembler = new Assembler(fp);
-
             fp.push('.orig x3000\n')
             fp.push('halt\n')
             fp.push('.end\n')
@@ -31,8 +31,6 @@ describe('assembler', () => {
         });
 
         it('parses hello world program', () => {
-            const assembler = new Assembler(fp);
-
             fp.push('.orig x3000\n')
             fp.push('lea r0, mystring\n')
             fp.push('puts\n')
@@ -67,8 +65,6 @@ describe('assembler', () => {
         });
 
         it('parses multiple sections', () => {
-            const assembler = new Assembler(fp);
-
             fp.push('.orig x3000\n')
             fp.push('halt: halt\n')
             fp.push('.end\n')
@@ -98,6 +94,35 @@ describe('assembler', () => {
                     labels: {
                         'halt':  [0, 0],
                         'halt2': [1, 1],
+                    },
+                });
+            });
+        });
+
+        it('preserves label case', () => {
+            fp.push('.orig x3000\n')
+            fp.push('mYlAbeL: halt\n')
+            fp.push('another-label: .blkw 1\n')
+            fp.push('LOUD_LABEL: .blkw 1\n')
+            fp.push('.end\n')
+            fp.push(null)
+
+            expect.hasAssertions();
+            return assembler.parse().then(assembly => {
+                expect(assembly).toEqual({
+                    sections: [
+                        {startAddr: 0x3000, instructions: [
+                            {kind: 'instr', op: 'halt', operands: []},
+                            {kind: 'pseudoop', op: 'blkw', operand:
+                                {kind: 'int', val: 1}},
+                            {kind: 'pseudoop', op: 'blkw', operand:
+                                {kind: 'int', val: 1}},
+                        ]},
+                    ],
+                    labels: {
+                        'mYlAbeL':       [0, 0],
+                        'another-label': [0, 1],
+                        'LOUD_LABEL':    [0, 2],
                     },
                 });
             });

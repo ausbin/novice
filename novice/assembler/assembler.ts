@@ -149,7 +149,7 @@ class Assembler {
 
     private parseLabel(label: ParseTree<NT, T>): string {
         const word = label.children[0];
-        return (word.val as string).toLowerCase();
+        return word.val as string;
     }
 
     private parsePseudoOpLine(pseudoOpLine: ParseTree<NT, T>): PseudoOp {
@@ -216,7 +216,7 @@ class Assembler {
             case 'int-hex':
                 return {kind: 'int', val: parseInt(val.substring(1), 16)};
             case 'word':
-                return {kind: 'label', label: val.toLowerCase()};
+                return {kind: 'label', label: val};
             default:
                 throw new Error(`unknown operand ${someOperand.token}`);
         }

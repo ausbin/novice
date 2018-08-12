@@ -162,6 +162,21 @@ describe('scanner', () => {
         });
     });
 
+    it('scans escaped single quote', () => {
+        fp.push(".fill '\\''");
+        fp.push(null);
+
+        expect.hasAssertions();
+        return new Scanner(fp).scan().then(lines => {
+            expect(lines).toEqual([
+                {num: 1, tokens: [
+                    {col: 1, val: '.fill', kind: 'pseudoop'},
+                    {col: 7, val: "'\\''", kind: 'char'},
+                ]},
+            ]);
+        });
+    });
+
     it('handles weird chars', () => {
         fp.push("add r1, r1, r2\n");
         fp.push("    ^ banana");

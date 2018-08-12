@@ -27,6 +27,25 @@ describe('assembler', () => {
             });
         });
 
+        it('parses label on its own line', () => {
+            fp.push('.orig x3000\n')
+            fp.push('fun:\n')
+            fp.push('br fun\n')
+            fp.push('.end\n')
+            fp.push(null)
+
+            return expect(assembler.parse()).resolves.toEqual({
+                sections: [
+                    {startAddr: 0x3000, instructions: [
+                        {kind: 'instr', op: 'br', operands: [
+                            {kind: 'label', label: 'fun'}
+                        ]},
+                    ]},
+                ],
+                labels: {'fun': [0, 0]},
+            });
+        });
+
         it('parses hello world program', () => {
             fp.push('.orig x3000\n')
             fp.push('lea r0, mystring\n')
@@ -114,6 +133,123 @@ describe('assembler', () => {
                     'LOUD_LABEL':    [0, 2],
                 },
             });
+        });
+
+        it('understands string escapes', () => {
+            fp.push('.orig x3000\n')
+            fp.push(".fill '\\n'\n")
+            fp.push(".fill '\\r'\n")
+            fp.push(".fill '\\t'\n")
+            fp.push(".fill '\\\\'\n")
+            fp.push(".fill '\\''\n")
+            fp.push(".fill '\a'\n")
+            fp.push('.end\n')
+            fp.push(null)
+
+            return expect(assembler.parse()).resolves.toEqual({
+                sections: [
+                    {startAddr: 0x3000, instructions: [
+                        {kind: 'pseudoop', op: 'fill', operand:
+                            {kind: 'int', val: '\n'.charCodeAt(0)}},
+                        {kind: 'pseudoop', op: 'fill', operand:
+                            {kind: 'int', val: '\r'.charCodeAt(0)}},
+                        {kind: 'pseudoop', op: 'fill', operand:
+                            {kind: 'int', val: '\t'.charCodeAt(0)}},
+                        {kind: 'pseudoop', op: 'fill', operand:
+                            {kind: 'int', val: '\\'.charCodeAt(0)}},
+                        {kind: 'pseudoop', op: 'fill', operand:
+                            {kind: 'int', val: '\''.charCodeAt(0)}},
+                        {kind: 'pseudoop', op: 'fill', operand:
+                            {kind: 'int', val: 'a'.charCodeAt(0)}},
+                    ]},
+                ],
+                labels: {},
+            });
+        });
+
+        it('errors on duplicate labels', () => {
+            fp.push('.orig x3000\n')
+            fp.push('mylabel: .blkw 1\n')
+            fp.push('mylabel: .blkw 1\n')
+            fp.push('.end\n')
+            fp.push(null)
+
+            return expect(assembler.parse()).rejects.toThrow(
+                'duplicate label mylabel on line 3');
+        });
+
+        it('errors on missing .end', () => {
+            fp.push('.orig x3000\n')
+            fp.push('halt\n')
+            fp.push(null)
+
+            return expect(assembler.parse()).rejects.toThrow('missing an .end');
+        });
+
+        it('errors on .end label', () => {
+            fp.push('.orig x3000\n')
+            fp.push('halt\n')
+            fp.push('duh: .end\n')
+            fp.push(null)
+
+            return expect(assembler.parse()).rejects.toThrow('should not have a label');
+        });
+
+        it('errors on .end with operand', () => {
+            fp.push('.orig x3000\n')
+            fp.push('halt\n')
+            fp.push('.end "ho ho"\n')
+            fp.push(null)
+
+            return expect(assembler.parse()).rejects.toThrow('should not have an operand');
+        });
+
+        it('errors on .orig label', () => {
+            fp.push('duhhhh: .orig x3000\n')
+            fp.push('halt\n')
+            fp.push('.end\n')
+            fp.push(null)
+
+            return expect(assembler.parse()).rejects.toThrow('should not have a label');
+        });
+
+        it('errors on .orig without operand', () => {
+            fp.push('.orig\n')
+            fp.push('halt\n')
+            fp.push('.end\n')
+            fp.push(null)
+
+            return expect(assembler.parse()).rejects.toThrow('needs an address operand');
+        });
+
+        it('errors on .orig with wrong operand type', () => {
+            fp.push('.orig "duhhhh"\n')
+            fp.push('halt\n')
+            fp.push('.end\n')
+            fp.push(null)
+
+            return expect(assembler.parse()).rejects.toThrow('needs an address operand');
+        });
+
+        it('errors on stray pseudo-op', () => {
+            fp.push('.blkw 1\n')
+            fp.push(null)
+
+            return expect(assembler.parse()).rejects.toThrow('stray assembler directive');
+        });
+
+        it('errors on stray label', () => {
+            fp.push('doh:\n')
+            fp.push(null)
+
+            return expect(assembler.parse()).rejects.toThrow('stray label');
+        });
+
+        it('errors on stray instruction', () => {
+            fp.push('trap x420\n')
+            fp.push(null)
+
+            return expect(assembler.parse()).rejects.toThrow('stray instruction');
         });
     });
 });

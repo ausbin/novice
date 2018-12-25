@@ -7,10 +7,10 @@ async function main(args: string[], stdout: Writable, stderr: Writable):
     const subcommand = args[0];
 
     switch (subcommand) {
-        case 'asm':
+        case 'asm-pass1':
             if (args.length === 2) {
                 const path = args[1];
-                return await asm(path, stdout, stderr);
+                return await asmPass1(path, stdout, stderr);
             } else {
                 return usage(stderr);
             }
@@ -26,12 +26,12 @@ async function main(args: string[], stdout: Writable, stderr: Writable):
 }
 
 function usage(stderr: Writable): number {
-    stderr.write('usage: novice asm <file>\n' +
+    stderr.write('usage: novice asm-pass1 <file>\n' +
                  '       novice tablegen\n');
     return 1;
 }
 
-async function asm(path: string, stdout: Writable, stderr: Writable):
+async function asmPass1(path: string, stdout: Writable, stderr: Writable):
         Promise<number> {
     try {
         const fp = fs.createReadStream(path);

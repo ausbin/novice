@@ -43,16 +43,16 @@ describe('cli', () => {
         });
     });
 
-    describe('asm subcommand', () => {
-        it('prints usage with missing asm args', () => {
-            return main(['asm'], stdout, stderr).then(exitCode => {
+    describe('asm-pass1 subcommand', () => {
+        it('prints usage with missing asm-pass1 args', () => {
+            return main(['asm-pass1'], stdout, stderr).then(exitCode => {
                 expect(exitCode).toEqual(1);
                 expect(stdoutActual).toEqual('');
                 expect(stderrActual).toContain('usage');
             });
         });
 
-        it('assembles asm file', () => {
+        it('parses asm file', () => {
             let mockFp = {
                 on(event: string, handler: () => void) {
                     if (event === 'readable') {
@@ -70,7 +70,7 @@ describe('cli', () => {
                 return { parse: mockParse };
             });
 
-            return main(['asm', 'patrick.asm'], stdout, stderr).then(exitCode => {
+            return main(['asm-pass1', 'patrick.asm'], stdout, stderr).then(exitCode => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['patrick.asm']]);
                 // @ts-ignore
@@ -94,7 +94,7 @@ describe('cli', () => {
             // @ts-ignore
             fs.createReadStream.mockReturnValue(mockFp);
 
-            return main(['asm', 'sanjay.asm'], stdout, stderr).then(exitCode => {
+            return main(['asm-pass1', 'sanjay.asm'], stdout, stderr).then(exitCode => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['sanjay.asm']]);
 

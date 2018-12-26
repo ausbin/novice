@@ -1,5 +1,5 @@
-import { isWordChar } from '../lex';
 import { DFA, Kind } from './dfa';
+import { isWordChar } from './lex';
 
 enum State {
     Start,

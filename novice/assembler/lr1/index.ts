@@ -1,11 +1,5 @@
-import { goal, grammar, NT, NTs, T, Ts } from './grammar';
 import { Parser, ParseTree } from './parser';
-import table from './table';
-import { TableGenerator } from './tablegen';
+import { Production } from './production';
+import { ParseTable, TableGenerator } from './tablegen';
 
-function genTable(): object {
-    const tablegen = new TableGenerator<NT, T>(goal, grammar, NTs, Ts);
-    return tablegen.genTable();
-}
-
-export { NT, Parser, ParseTree, T, genTable, table };
+export { Parser, ParseTree, TableGenerator, ParseTable, Production };

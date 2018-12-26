@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { Writable } from 'stream';
-import { Assembler, genTable } from './assembler';
+import { Assembler, getParser } from './assembler';
 
 async function main(args: string[], stdout: Writable, stderr: Writable):
         Promise<number> {
@@ -8,15 +8,17 @@ async function main(args: string[], stdout: Writable, stderr: Writable):
 
     switch (subcommand) {
         case 'asm-pass1':
-            if (args.length === 2) {
-                const path = args[1];
-                return await asmPass1(path, stdout, stderr);
+            if (args.length === 3) {
+                const parser = args[1];
+                const path = args[2];
+                return await asmPass1(parser, path, stdout, stderr);
             } else {
                 return usage(stderr);
             }
         case 'tablegen':
-            if (args.length === 1) {
-                return tablegen(stdout, stderr);
+            if (args.length === 2) {
+                const parser = args[1];
+                return tablegen(parser, stdout, stderr);
             } else {
                 return usage(stderr);
             }
@@ -26,32 +28,35 @@ async function main(args: string[], stdout: Writable, stderr: Writable):
 }
 
 function usage(stderr: Writable): number {
-    stderr.write('usage: novice asm-pass1 <file>\n' +
-                 '       novice tablegen\n');
+    stderr.write('usage: novice asm-pass1 <parser> <file>\n' +
+                 '       novice tablegen  <parser>\n');
     return 1;
 }
 
-async function asmPass1(path: string, stdout: Writable, stderr: Writable):
-        Promise<number> {
+async function asmPass1(parserName: string, path: string, stdout: Writable,
+                        stderr: Writable): Promise<number> {
     try {
+        const parser = getParser(parserName);
         const fp = fs.createReadStream(path);
         await new Promise((resolve, reject) => {
             fp.on('readable', resolve);
             fp.on('error', reject);
         });
-        const assembly = await new Assembler(fp).parse();
+        const assembly = await new Assembler(parser).parse(fp);
         stdout.write(JSON.stringify(assembly));
         return 0;
     } catch (err) {
-        stderr.write(`asm error: ${err.message}\n`);
+        stderr.write(`asm-pass1 error: ${err.message}\n`);
         return 1;
     }
 }
 
-function tablegen(stdout: Writable, stderr: Writable): number {
+function tablegen(parserName: string, stdout: Writable,
+                  stderr: Writable): number {
     let table: object;
     try {
-        table = genTable();
+        const parser = getParser(parserName);
+        table = parser.genTable();
     } catch (err) {
         stderr.write(`error generating LR(1) table: ${err.message}\n`);
         return 1;

@@ -1,5 +1,5 @@
-import { Kind as T, kinds as Ts } from '../scanner';
-import { Production } from './production';
+import { Production } from '../../lr1';
+import { Grammar, T } from '../grammar';
 
 const NTsObj = {
     'line'             : '',
@@ -15,7 +15,7 @@ const NTsObj = {
 type NT = keyof typeof NTsObj;
 const NTs = new Set(Object.keys(NTsObj) as NT[]);
 
-const grammar: Production<NT, T>[] = [
+const productions: Production<NT, T>[] = [
     {lhs: 'line', rhs: ['label']},
     {lhs: 'line', rhs: ['instr-line']},
     {lhs: 'line', rhs: ['pseudoop-line']},
@@ -41,6 +41,8 @@ const grammar: Production<NT, T>[] = [
     {lhs: 'pseudoop-operand', rhs: ['char']},
     {lhs: 'pseudoop-operand', rhs: ['string']},
 ];
-const goal = 'line';
+const goal: NT = 'line';
 
-export { Production, goal, grammar, T, Ts, NT, NTs };
+const grammar: Grammar<NT> = { NTs, productions, goal };
+
+export { NT, T, grammar };

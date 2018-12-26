@@ -16,7 +16,6 @@ class Scanner {
     private static readonly EOF = '';
     private currentToken: string;
     private lines: Line<Kind>[];
-    private fp: Readable;
     private dfas: DFA[];
     private newline: boolean;
     private lineNum: number;
@@ -24,10 +23,9 @@ class Scanner {
     private lastChar: string;
     private rejectCallback!: (err: Error) => void;
 
-    constructor(fp: Readable) {
+    constructor() {
         this.currentToken = '';
         this.lines = [];
-        this.fp = fp;
         this.dfas = dfas.map(cls => new cls());
         // Need to add a new line for the next token (at the beginning
         // of the file or after a newline)
@@ -37,16 +35,16 @@ class Scanner {
         this.lastChar = '';
     }
 
-    public async scan(): Promise<Line<Kind>[]> {
+    public async scan(fp: Readable): Promise<Line<Kind>[]> {
         const endPromise = new Promise((resolve, reject) => {
             this.rejectCallback = reject;
-            this.fp.on('end', () => {
+            fp.on('end', () => {
                 // send EOF to scanner
                 this.nextChar(Scanner.EOF);
                 resolve();
             });
         });
-        this.fp.on('data', this.onData.bind(this));
+        fp.on('data', this.onData.bind(this));
         await endPromise;
         return this.lines;
     }

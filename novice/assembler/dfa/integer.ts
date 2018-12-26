@@ -1,5 +1,5 @@
-import { isDecimalDigit, isHexDigit } from '../lex';
 import { DFA, Kind } from './dfa';
+import { isDecimalDigit, isHexDigit } from './lex';
 
 enum State {
     Start,

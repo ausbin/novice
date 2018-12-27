@@ -1,11 +1,12 @@
 import { Readable, Writable } from 'stream';
 import main from './cli';
+import { Parser } from './assembler/parsers';
 
 // Mocks
 jest.mock('fs');
 import * as fs from 'fs';
 jest.mock('./assembler');
-import { Assembler, genTable } from './assembler';
+import { Assembler, getParser } from './assembler';
 
 describe('cli', () => {
     let stdout: Writable, stderr: Writable;
@@ -32,7 +33,7 @@ describe('cli', () => {
         // @ts-ignore
         Assembler.mockReset();
         // @ts-ignore
-        genTable.mockReset();
+        getParser.mockReset();
     });
 
     it('prints usage with no args', () => {
@@ -44,7 +45,7 @@ describe('cli', () => {
     });
 
     describe('asm-pass1 subcommand', () => {
-        it('prints usage with missing asm-pass1 args', () => {
+        it('prints usage with missing args', () => {
             return main(['asm-pass1'], stdout, stderr).then(exitCode => {
                 expect(exitCode).toEqual(1);
                 expect(stdoutActual).toEqual('');
@@ -64,18 +65,27 @@ describe('cli', () => {
             fs.createReadStream.mockReturnValue(mockFp);
 
             let json = {kush: 'coma'};
-            let mockParse = jest.fn(() => Promise.resolve(json));
+            let mockParse = jest.fn((fp: Readable) => Promise.resolve(json));
             // @ts-ignore
-            Assembler.mockImplementation((fp: Readable) => {
+            Assembler.mockImplementation((parser: Parser) => {
                 return { parse: mockParse };
             });
+            // @ts-ignore
+            let mockParser: Parser = {thanku: 'next'};
+            // @ts-ignore
+            getParser.mockImplementation((parserName: string) => {
+                return mockParser;
+            });
 
-            return main(['asm-pass1', 'patrick.asm'], stdout, stderr).then(exitCode => {
+            return main(['asm-pass1', 'pasta', 'patrick.asm'],
+                        stdout, stderr).then(exitCode => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['patrick.asm']]);
                 // @ts-ignore
-                expect(Assembler.mock.calls).toEqual([[mockFp]]);
-                expect(mockParse.mock.calls).toEqual([[]]);
+                expect(getParser.mock.calls).toEqual([['pasta']]);
+                // @ts-ignore
+                expect(Assembler.mock.calls).toEqual([[mockParser]]);
+                expect(mockParse.mock.calls).toEqual([[mockFp]]);
 
                 expect(exitCode).toEqual(0);
                 expect(stdoutActual).toEqual(JSON.stringify(json));
@@ -94,7 +104,8 @@ describe('cli', () => {
             // @ts-ignore
             fs.createReadStream.mockReturnValue(mockFp);
 
-            return main(['asm-pass1', 'sanjay.asm'], stdout, stderr).then(exitCode => {
+            return main(['asm-pass1', 'pizza', 'sanjay.asm'],
+                        stdout, stderr).then(exitCode => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['sanjay.asm']]);
 
@@ -106,8 +117,16 @@ describe('cli', () => {
     });
 
     describe('tablegen subcommand', () => {
+        it('prints usage with no args', () => {
+            return main(['tablegen'], stdout, stderr).then(exitCode => {
+                expect(exitCode).toEqual(1);
+                expect(stdoutActual).toEqual('');
+                expect(stderrActual).toContain('usage');
+            });
+        });
+
         it('prints usage with extra args', () => {
-            return main(['tablegen', 'bob'], stdout, stderr).then(exitCode => {
+            return main(['tablegen', 'big', 'daddy'], stdout, stderr).then(exitCode => {
                 expect(exitCode).toEqual(1);
                 expect(stdoutActual).toEqual('');
                 expect(stderrActual).toContain('usage');
@@ -115,14 +134,19 @@ describe('cli', () => {
         });
 
         it('generates table', () => {
-            const json = {big: 'banana'};
+            const json = {massive: 'banana'};
+            const mockGenTable = jest.fn(() => json);
+            // @ts-ignore
+            const mockParser: Parser = {genTable: mockGenTable};
 
             // @ts-ignore
-            genTable.mockReturnValue(json);
+            getParser.mockReturnValue(mockParser);
 
-            return main(['tablegen'], stdout, stderr).then(exitCode => {
+            return main(['tablegen', 'farzam'],
+                        stdout, stderr).then(exitCode => {
                 // @ts-ignore
-                expect(genTable.mock.calls).toEqual([[]]);
+                expect(getParser.mock.calls).toEqual([['farzam']]);
+                expect(mockGenTable.mock.calls).toEqual([[]]);
 
                 expect(exitCode).toEqual(0);
                 expect(stdoutActual).toEqual(JSON.stringify(json));
@@ -130,13 +154,31 @@ describe('cli', () => {
             });
         });
 
-        it('handles conflicts', () => {
+        it('handles invalid parsers', () => {
             // @ts-ignore
-            genTable.mockImplementation(() => {throw new Error('big bad conflict!')});
+            getParser.mockImplementation(() => {throw new Error('excuse me son')});
 
-            return main(['tablegen'], stdout, stderr).then(exitCode => {
+            return main(['tablegen', 'gucci'], stdout, stderr).then(exitCode => {
                 // @ts-ignore
-                expect(genTable.mock.calls).toEqual([[]]);
+                expect(getParser.mock.calls).toEqual([['gucci']]);
+
+                expect(exitCode).toEqual(1);
+                expect(stdoutActual).toEqual('');
+                expect(stderrActual).toContain('excuse me son');
+            });
+        });
+
+        it('handles conflicts', () => {
+            const mockGenTable = jest.fn(() => {throw new Error('big bad conflict!')});
+            // @ts-ignore
+            const mockParser: Parser = {genTable: mockGenTable};
+
+            // @ts-ignore
+            getParser.mockReturnValue(mockParser);
+
+            return main(['tablegen', 'guwop'], stdout, stderr).then(exitCode => {
+                // @ts-ignore
+                expect(getParser.mock.calls).toEqual([['guwop']]);
 
                 expect(exitCode).toEqual(1);
                 expect(stdoutActual).toEqual('');

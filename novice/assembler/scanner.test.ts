@@ -12,7 +12,7 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner(fp).scan().then(lines => {
+        return new Scanner().scan(fp).then(lines => {
             expect(lines).toEqual([]);
         });
     });
@@ -22,7 +22,7 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner(fp).scan().then(lines => {
+        return new Scanner().scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
                     {col: 4,  val: 'add', kind: 'word'},
@@ -41,7 +41,7 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner(fp).scan().then(lines => {
+        return new Scanner().scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
                     {col: 1, val: '.fill', kind: 'pseudoop'},
@@ -56,7 +56,7 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner(fp).scan().then(lines => {
+        return new Scanner().scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
                     {col: 1, val: 'trap', kind: 'word'},
@@ -72,7 +72,7 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner(fp).scan().then(lines => {
+        return new Scanner().scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 2, tokens: [
                     {col: 1, val: 'not', kind: 'word'},
@@ -91,7 +91,7 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner(fp).scan().then(lines => {
+        return new Scanner().scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
                     {col: 1, val: '.orig', kind: 'pseudoop'},
@@ -118,7 +118,7 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner(fp).scan().then(lines => {
+        return new Scanner().scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
                     {col: 1, val: 'bob',  kind: 'word'},
@@ -137,7 +137,7 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner(fp).scan().then(lines => {
+        return new Scanner().scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
                     {col: 1,  val: '.stringz', kind: 'pseudoop'},
@@ -152,7 +152,7 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner(fp).scan().then(lines => {
+        return new Scanner().scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
                     {col: 1, val: '.fill', kind: 'pseudoop'},
@@ -167,7 +167,7 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner(fp).scan().then(lines => {
+        return new Scanner().scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
                     {col: 1, val: '.fill', kind: 'pseudoop'},
@@ -183,7 +183,7 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner(fp).scan().catch(err => {
+        return new Scanner().scan(fp).catch(err => {
             expect(err.message).toContain('line 2');
             expect(err.message).toContain('column 5');
         });

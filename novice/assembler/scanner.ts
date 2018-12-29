@@ -14,28 +14,22 @@ interface Line<T> {
 
 class Scanner {
     private static readonly EOF = '';
-    private currentToken: string;
-    private lines: Line<Kind>[];
-    private dfas: DFA[];
-    private newline: boolean;
-    private lineNum: number;
-    private col: number;
-    private lastChar: string;
+    private currentToken!: string;
+    private lines!: Line<Kind>[];
+    private dfas!: DFA[];
+    private newline!: boolean;
+    private lineNum!: number;
+    private col!: number;
+    private lastChar!: string;
     private rejectCallback!: (err: Error) => void;
 
     constructor() {
-        this.currentToken = '';
-        this.lines = [];
-        this.dfas = dfas.map(cls => new cls());
-        // Need to add a new line for the next token (at the beginning
-        // of the file or after a newline)
-        this.newline = true;
-        this.lineNum = 1;
-        this.col = 1;
-        this.lastChar = '';
+        this.reset();
     }
 
     public async scan(fp: Readable): Promise<Line<Kind>[]> {
+        this.reset();
+
         const endPromise = new Promise((resolve, reject) => {
             this.rejectCallback = reject;
             fp.on('end', () => {
@@ -47,6 +41,18 @@ class Scanner {
         fp.on('data', this.onData.bind(this));
         await endPromise;
         return this.lines;
+    }
+
+    private reset(): void {
+        this.currentToken = '';
+        this.lines = [];
+        this.dfas = dfas.map(cls => new cls());
+        // Need to add a new line for the next token (at the beginning
+        // of the file or after a newline)
+        this.newline = true;
+        this.lineNum = 1;
+        this.col = 1;
+        this.lastChar = '';
     }
 
     private onData(data: string | Buffer) {

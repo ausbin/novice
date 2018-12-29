@@ -1,14 +1,15 @@
 import { Readable } from 'stream';
-import { Assembler } from './assembler';
+import { getParser, Assembler } from '.';
 
 describe('assembler', () => {
-    describe('parse()', () => {
+    describe('parse(fp)', () => {
         let fp: Readable;
         let assembler: Assembler;
 
         beforeEach(() => {
             fp = new Readable();
-            assembler = new Assembler(fp);
+            // Test the complx parser for now
+            assembler = new Assembler(getParser("complx"));
         });
 
         it('parses trivial program', () => {
@@ -17,7 +18,7 @@ describe('assembler', () => {
             fp.push('.end\n')
             fp.push(null)
 
-            return expect(assembler.parse()).resolves.toEqual({
+            return expect(assembler.parse(fp)).resolves.toEqual({
                 sections: [
                     {startAddr: 0x3000, instructions: [
                         {kind: 'instr', op: 'halt', operands: []},
@@ -34,7 +35,7 @@ describe('assembler', () => {
             fp.push('.end\n')
             fp.push(null)
 
-            return expect(assembler.parse()).resolves.toEqual({
+            return expect(assembler.parse(fp)).resolves.toEqual({
                 sections: [
                     {startAddr: 0x3000, instructions: [
                         {kind: 'instr', op: 'br', operands: [
@@ -57,7 +58,7 @@ describe('assembler', () => {
             fp.push('.end\n')
             fp.push(null)
 
-            return expect(assembler.parse()).resolves.toEqual({
+            return expect(assembler.parse(fp)).resolves.toEqual({
                 sections: [
                     {startAddr: 0x3000, instructions: [
                         {kind: 'instr', op: 'lea', operands: [
@@ -88,7 +89,7 @@ describe('assembler', () => {
             fp.push('.end\n')
             fp.push(null)
 
-            return expect(assembler.parse()).resolves.toEqual({
+            return expect(assembler.parse(fp)).resolves.toEqual({
                 sections: [
                     {startAddr: 0x3000, instructions: [
                         {kind: 'instr', op: 'halt', operands: []},
@@ -117,7 +118,7 @@ describe('assembler', () => {
             fp.push('.end\n')
             fp.push(null)
 
-            return expect(assembler.parse()).resolves.toEqual({
+            return expect(assembler.parse(fp)).resolves.toEqual({
                 sections: [
                     {startAddr: 0x3000, instructions: [
                         {kind: 'instr', op: 'halt', operands: []},
@@ -146,7 +147,7 @@ describe('assembler', () => {
             fp.push('.end\n')
             fp.push(null)
 
-            return expect(assembler.parse()).resolves.toEqual({
+            return expect(assembler.parse(fp)).resolves.toEqual({
                 sections: [
                     {startAddr: 0x3000, instructions: [
                         {kind: 'pseudoop', op: 'fill', operand:
@@ -174,7 +175,7 @@ describe('assembler', () => {
             fp.push('.end\n')
             fp.push(null)
 
-            return expect(assembler.parse()).rejects.toThrow(
+            return expect(assembler.parse(fp)).rejects.toThrow(
                 'duplicate label mylabel on line 3');
         });
 
@@ -183,7 +184,7 @@ describe('assembler', () => {
             fp.push('halt\n')
             fp.push(null)
 
-            return expect(assembler.parse()).rejects.toThrow('missing an .end');
+            return expect(assembler.parse(fp)).rejects.toThrow('missing an .end');
         });
 
         it('errors on .end label', () => {
@@ -192,7 +193,7 @@ describe('assembler', () => {
             fp.push('duh: .end\n')
             fp.push(null)
 
-            return expect(assembler.parse()).rejects.toThrow('should not have a label');
+            return expect(assembler.parse(fp)).rejects.toThrow('should not have a label');
         });
 
         it('errors on .end with operand', () => {
@@ -201,7 +202,7 @@ describe('assembler', () => {
             fp.push('.end "ho ho"\n')
             fp.push(null)
 
-            return expect(assembler.parse()).rejects.toThrow('should not have an operand');
+            return expect(assembler.parse(fp)).rejects.toThrow('should not have an operand');
         });
 
         it('errors on .orig label', () => {
@@ -210,7 +211,7 @@ describe('assembler', () => {
             fp.push('.end\n')
             fp.push(null)
 
-            return expect(assembler.parse()).rejects.toThrow('should not have a label');
+            return expect(assembler.parse(fp)).rejects.toThrow('should not have a label');
         });
 
         it('errors on .orig without operand', () => {
@@ -219,7 +220,7 @@ describe('assembler', () => {
             fp.push('.end\n')
             fp.push(null)
 
-            return expect(assembler.parse()).rejects.toThrow('needs an address operand');
+            return expect(assembler.parse(fp)).rejects.toThrow('needs an address operand');
         });
 
         it('errors on .orig with wrong operand type', () => {
@@ -228,28 +229,28 @@ describe('assembler', () => {
             fp.push('.end\n')
             fp.push(null)
 
-            return expect(assembler.parse()).rejects.toThrow('needs an address operand');
+            return expect(assembler.parse(fp)).rejects.toThrow('needs an address operand');
         });
 
         it('errors on stray pseudo-op', () => {
             fp.push('.blkw 1\n')
             fp.push(null)
 
-            return expect(assembler.parse()).rejects.toThrow('stray assembler directive');
+            return expect(assembler.parse(fp)).rejects.toThrow('stray assembler directive');
         });
 
         it('errors on stray label', () => {
             fp.push('doh:\n')
             fp.push(null)
 
-            return expect(assembler.parse()).rejects.toThrow('stray label');
+            return expect(assembler.parse(fp)).rejects.toThrow('stray label');
         });
 
         it('errors on stray instruction', () => {
             fp.push('trap x420\n')
             fp.push(null)
 
-            return expect(assembler.parse()).rejects.toThrow('stray instruction');
+            return expect(assembler.parse(fp)).rejects.toThrow('stray instruction');
         });
     });
 });

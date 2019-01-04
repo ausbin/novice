@@ -16,13 +16,11 @@ type NT = keyof typeof NTsObj;
 const NTs = new Set(Object.keys(NTsObj) as NT[]);
 
 const productions: Production<NT, T>[] = [
-    {lhs: 'line', rhs: ['label']},
+    {lhs: 'line', rhs: ['word']},
     {lhs: 'line', rhs: ['instr-line']},
     {lhs: 'line', rhs: ['pseudoop-line']},
-    {lhs: 'label', rhs: ['word', ':']},
-    {lhs: 'instr-line', rhs: ['label', 'instr']},
+    {lhs: 'instr-line', rhs: ['word', 'instr']},
     {lhs: 'instr-line', rhs: ['instr']},
-    {lhs: 'instr', rhs: ['word']},
     {lhs: 'instr', rhs: ['word', 'instr-operands']},
     {lhs: 'instr-operands', rhs: ['operand']},
     {lhs: 'instr-operands', rhs: ['instr-operands', ',', 'operand']},
@@ -31,7 +29,7 @@ const productions: Production<NT, T>[] = [
     {lhs: 'operand', rhs: ['int-decimal']},
     {lhs: 'operand', rhs: ['int-hex']},
     {lhs: 'operand', rhs: ['reg']},
-    {lhs: 'pseudoop-line', rhs: ['label', 'pseudoop-call']},
+    {lhs: 'pseudoop-line', rhs: ['word', 'pseudoop-call']},
     {lhs: 'pseudoop-line', rhs: ['pseudoop-call']},
     {lhs: 'pseudoop-call', rhs: ['pseudoop']},
     {lhs: 'pseudoop-call', rhs: ['pseudoop', 'pseudoop-operand']},

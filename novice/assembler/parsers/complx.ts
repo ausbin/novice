@@ -1,4 +1,5 @@
 // Parser for complx syntax
+import { Isa } from '../isa';
 import { ParseTable, ParseTree } from '../lr1';
 import { Grammar } from './grammar';
 import { grammar, NT, T } from './grammars/complx';
@@ -8,6 +9,7 @@ import { AbstractParser, Instruction, IntegerOperand, LabelOperand, Line,
 import table from './tables/complx';
 
 interface ParseContext {
+    isa: Isa;
     currentSection: Section|null;
     labels: string[];
     assembly: ParsedAssembly;
@@ -22,8 +24,8 @@ class ComplxParser extends AbstractParser<ParseContext, NT> {
         return grammar;
     }
 
-    protected initCtx(): ParseContext {
-        return {currentSection: null, labels: [],
+    protected initCtx(isa: Isa): ParseContext {
+        return {isa, currentSection: null, labels: [],
                 assembly: {sections: [], labels: {}}};
     }
 
@@ -33,23 +35,63 @@ class ComplxParser extends AbstractParser<ParseContext, NT> {
         const op = parseTree.children[0];
 
         switch (op.token) {
-            case 'label':
+            case 'word':
+                // Two cases for a word on its own:
+                // 1. it's an instruction, ex:
+                //        halt
+                // 2. it's a label, ex:
+                //        cleanup
+                // We can't handle these two cases in the ISA-agnostic
+                // grammar unambiguously, so handle them here when
+                // inspecting the parse tree
+                const isInstr = this.isInstruction(ctx, op);
+
                 if (!ctx.currentSection) {
-                    throw new Error(`stray label on line ${line.num}`);
+                    const what = isInstr ? 'instruction' : 'label';
+                    throw new Error(`stray ${what} on line ${line.num}`);
                 }
-                this.pushLabel(ctx, this.parseLabel(op), line);
+
+                if (isInstr) {
+                    ctx.currentSection.instructions.push(
+                        {kind: 'instr', op: this.parseLabel(op).toLowerCase(),
+                         operands: []});
+                    this.applyLabels(ctx);
+                } else {
+                    this.pushLabel(ctx, this.parseLabel(op), line);
+                }
                 break;
 
             case 'instr-line':
                 if (!ctx.currentSection) {
                     throw new Error(`stray instruction on line ${line.num}`);
                 }
-                const instrLabel = this.parseLineLabel(op);
+
+                // Another ambiguity which plagues LC-3 assembly:
+                // Which of these two cases is the following:
+                //
+                //     word word
+                //
+                // 1. A labelled solo instruction, ex:
+                //        myhaltlabel halt
+                // 2. An instruction with one label operand, like
+                //        jsr myfunc
+                //
+                // To prevent being an ambiguous grammar, the grammar
+                // permits only #2 (that is, the parse trees we receive
+                // will contain only #2), so we need to handle case #1
+                // here.
+                let [instr, instrLabel] = this.handleLabelledSoloInstr(ctx, op);
+
+                if (!instr) {
+                    instrLabel = this.parseLineLabel(op);
+                    instr = this.parseInstrLine(op);
+                }
+
                 if (instrLabel) {
                     this.pushLabel(ctx, instrLabel, line);
                 }
 
-                ctx.currentSection.instructions.push(this.parseInstrLine(op));
+                ctx.currentSection.instructions.push(instr);
                 this.applyLabels(ctx);
                 break;
 
@@ -104,19 +146,23 @@ class ComplxParser extends AbstractParser<ParseContext, NT> {
         return ctx.assembly;
     }
 
+    private isInstruction(ctx: ParseContext, op: ParseTree<NT, T>) {
+        const wordVal = this.parseLabel(op).toLowerCase();
+        return ctx.isa.instructions.some(
+            instr => instr.op.toLowerCase() === wordVal);
+    }
+
     // Takes either an insr-line or a pseudoop-line, returns its label
     // or null
     private parseLineLabel(line: ParseTree<NT, T>): string|null {
-        if (line.children[0].token === 'label') {
-            const label = line.children[0];
-            return this.parseLabel(label);
+        if (line.children[0].token === 'word') {
+            return this.parseLabel(line.children[0]);
         } else {
             return null;
         }
     }
 
-    private parseLabel(label: ParseTree<NT, T>): string {
-        const word = label.children[0];
+    private parseLabel(word: ParseTree<NT, T>): string {
         return word.val as string;
     }
 
@@ -132,6 +178,39 @@ class ComplxParser extends AbstractParser<ParseContext, NT> {
         }
 
         return {kind: 'pseudoop', op, operand};
+    }
+
+    private handleLabelledSoloInstr(ctx: ParseContext,
+                                    instrLine: ParseTree<NT, T>):
+            [Instruction|null, string|null] {
+        // Intended to handle this parse tree:
+        //
+        //   instr-line
+        //       |
+        //     instr
+        //     /   \
+        //  word   instr-operands
+        //              |
+        //           operand
+        //              |
+        //             word
+
+        if (instrLine.children.length === 1 &&
+                instrLine.children[0].children[1].children.length === 1 &&
+                instrLine.children[0].children[1].children[0].children[0].token === 'word' &&
+                !this.isInstruction(ctx, instrLine.children[0].children[0])) {
+            const label = this.parseLabel(instrLine.children[0].children[0]);
+            const instr: Instruction = {
+                kind: 'instr',
+                op: this.parseLabel(instrLine.children[0]
+                                             .children[1]
+                                             .children[0]
+                                             .children[0]).toLowerCase(),
+                operands: []};
+            return [instr, label];
+        } else {
+            return [null, null];
+        }
     }
 
     private parseInstrLine(instrLine: ParseTree<NT, T>): Instruction {

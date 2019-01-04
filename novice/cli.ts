@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { Writable } from 'stream';
-import { Assembler, getParser } from './assembler';
+import { Assembler, getIsa, getParser } from './assembler';
 
 async function main(args: string[], stdout: Writable, stderr: Writable):
         Promise<number> {
@@ -8,10 +8,11 @@ async function main(args: string[], stdout: Writable, stderr: Writable):
 
     switch (subcommand) {
         case 'asm-pass1':
-            if (args.length === 3) {
+            if (args.length === 4) {
                 const parser = args[1];
-                const path = args[2];
-                return await asmPass1(parser, path, stdout, stderr);
+                const isa = args[2];
+                const path = args[3];
+                return await asmPass1(parser, isa, path, stdout, stderr);
             } else {
                 return usage(stderr);
             }
@@ -28,21 +29,22 @@ async function main(args: string[], stdout: Writable, stderr: Writable):
 }
 
 function usage(stderr: Writable): number {
-    stderr.write('usage: novice asm-pass1 <parser> <file>\n' +
+    stderr.write('usage: novice asm-pass1 <parser> <isa> <file>\n' +
                  '       novice tablegen  <parser>\n');
     return 1;
 }
 
-async function asmPass1(parserName: string, path: string, stdout: Writable,
+async function asmPass1(parserName: string, isaName: string, path: string, stdout: Writable,
                         stderr: Writable): Promise<number> {
     try {
         const parser = getParser(parserName);
+        const isa = getIsa(isaName);
         const fp = fs.createReadStream(path);
         await new Promise((resolve, reject) => {
             fp.on('readable', resolve);
             fp.on('error', reject);
         });
-        const assembly = await new Assembler(parser).parse(fp);
+        const assembly = await new Assembler(parser, isa).parse(fp);
         stdout.write(JSON.stringify(assembly));
         return 0;
     } catch (err) {

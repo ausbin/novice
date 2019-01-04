@@ -6,7 +6,7 @@ import { Parser } from './assembler/parsers';
 jest.mock('fs');
 import * as fs from 'fs';
 jest.mock('./assembler');
-import { Assembler, getParser } from './assembler';
+import { Assembler, getParser, getIsa } from './assembler';
 
 describe('cli', () => {
     let stdout: Writable, stderr: Writable;
@@ -34,6 +34,8 @@ describe('cli', () => {
         Assembler.mockReset();
         // @ts-ignore
         getParser.mockReset();
+        // @ts-ignore
+        getIsa.mockReset();
     });
 
     it('prints usage with no args', () => {
@@ -73,18 +75,22 @@ describe('cli', () => {
             // @ts-ignore
             let mockParser: Parser = {thanku: 'next'};
             // @ts-ignore
-            getParser.mockImplementation((parserName: string) => {
-                return mockParser;
-            });
+            getParser.mockReturnValue(mockParser);
+            // @ts-ignore
+            let mockIsa: Isa = {its: 'gucci'};
+            // @ts-ignore
+            getIsa.mockReturnValue(mockIsa);
 
-            return main(['asm-pass1', 'pasta', 'patrick.asm'],
+            return main(['asm-pass1', 'pizza', 'roll', 'patrick.asm'],
                         stdout, stderr).then(exitCode => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['patrick.asm']]);
                 // @ts-ignore
-                expect(getParser.mock.calls).toEqual([['pasta']]);
+                expect(getParser.mock.calls).toEqual([['pizza']]);
                 // @ts-ignore
-                expect(Assembler.mock.calls).toEqual([[mockParser]]);
+                expect(getIsa.mock.calls).toEqual([['roll']]);
+                // @ts-ignore
+                expect(Assembler.mock.calls).toEqual([[mockParser, mockIsa]]);
                 expect(mockParse.mock.calls).toEqual([[mockFp]]);
 
                 expect(exitCode).toEqual(0);
@@ -104,7 +110,7 @@ describe('cli', () => {
             // @ts-ignore
             fs.createReadStream.mockReturnValue(mockFp);
 
-            return main(['asm-pass1', 'pizza', 'sanjay.asm'],
+            return main(['asm-pass1', 'michael', 'lin', 'sanjay.asm'],
                         stdout, stderr).then(exitCode => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['sanjay.asm']]);

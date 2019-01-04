@@ -2,8 +2,11 @@ import { Fields, Isa } from './isa';
 import { MachineState, MachineStateUpdate } from './state';
 
 function calcCC(val: number): number {
-    const fixed = val & 0xffff | -1 << 16;
-    return (fixed < 0) ? 0b100 : (fixed > 0) ? 0b001 : 0b010;
+    const fixed = val & 0xffff;
+    return (fixed === 0) ? 0b010 :
+           // MSB is set
+           (fixed & 1 << 15) ? 0b100 :
+           0b001;
 }
 
 const Lc3Isa: Isa = {
@@ -42,6 +45,296 @@ const Lc3Isa: Isa = {
                 {kind: 'reg', reg: 'cc', val: calcCC(sum)},
              ];
         }},
+
+        {op: 'and', fields: [
+            {kind: 'const', bits: [15, 12], val: 0b0101},
+            {kind: 'reg',   bits: [11,  9], prefix: 'r', name: 'dr'},
+            {kind: 'reg',   bits: [ 8,  6], prefix: 'r', name: 'sr1'},
+            {kind: 'const', bits: [ 5,  3], val: 0b000},
+            {kind: 'reg',   bits: [ 2,  0], prefix: 'r', name: 'sr2'},
+         ],
+         sim: (state: MachineState, ir: Fields) => {
+             const res = state.reg(ir.regs.sr1) & state.reg(ir.regs.sr2);
+             return [
+                {kind: 'reg', reg: ir.regs.dr, val: res},
+                {kind: 'reg', reg: 'cc', val: calcCC(res)},
+             ];
+        }},
+
+        {op: 'and', fields: [
+            {kind: 'const', bits: [15, 12], val: 0b0101},
+            {kind: 'reg',   bits: [11,  9], prefix: 'r', name: 'dr'},
+            {kind: 'reg',   bits: [ 8,  6], prefix: 'r', name: 'sr1'},
+            {kind: 'const', bits: [ 5,  5], val: 0b1},
+            {kind: 'imm',   bits: [ 4,  0], sext: true, label: false,
+             name: 'imm5'},
+         ],
+         sim: (state: MachineState, ir: Fields) => {
+             const res = state.reg(ir.regs.sr1) & ir.imms.imm5;
+             return [
+                {kind: 'reg', reg: ir.regs.dr, val: res},
+                {kind: 'reg', reg: 'cc', val: calcCC(res)},
+             ];
+        }},
+
+        {op: 'nop', fields: [
+            {kind: 'const', bits: [15,  0], val: 0x0000},
+         ],
+         sim: (state: MachineState, ir: Fields) => [],
+        },
+
+        {op: 'br', fields: [
+            {kind: 'const', bits: [15,  9], val: 0b0000111},
+            {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
+             name: 'pcoffset9'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}],
+        },
+
+        {op: 'brnzp', fields: [
+            {kind: 'const', bits: [15,  9], val: 0b0000111},
+            {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
+             name: 'pcoffset9'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}],
+        },
+
+        {op: 'brp', fields: [
+            {kind: 'const', bits: [15,  9], val: 0b0000001},
+            {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
+             name: 'pcoffset9'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             (state.reg('cc') & 0b001)
+             ? [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}]
+             : [],
+        },
+
+        {op: 'brz', fields: [
+            {kind: 'const', bits: [15,  9], val: 0b0000001},
+            {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
+             name: 'pcoffset9'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             (state.reg('cc') & 0b010)
+             ? [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}]
+             : [],
+        },
+
+        {op: 'brzp', fields: [
+            {kind: 'const', bits: [15,  9], val: 0b0000001},
+            {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
+             name: 'pcoffset9'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             (state.reg('cc') & 0b011)
+             ? [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}]
+             : [],
+        },
+
+        {op: 'brn', fields: [
+            {kind: 'const', bits: [15,  9], val: 0b0000001},
+            {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
+             name: 'pcoffset9'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             (state.reg('cc') & 0b100)
+             ? [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}]
+             : [],
+        },
+
+        {op: 'brnp', fields: [
+            {kind: 'const', bits: [15,  9], val: 0b0000001},
+            {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
+             name: 'pcoffset9'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             (state.reg('cc') & 0b101)
+             ? [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}]
+             : [],
+        },
+
+        {op: 'brnz', fields: [
+            {kind: 'const', bits: [15,  9], val: 0b0000001},
+            {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
+             name: 'pcoffset9'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             (state.reg('cc') & 0b110)
+             ? [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}]
+             : [],
+        },
+
+        {op: 'jmp', fields: [
+            {kind: 'const', bits: [15,  9], val: 0b1100000},
+            {kind: 'reg',   bits: [ 8,  6], prefix: 'r', name: 'baser'},
+            {kind: 'const', bits: [ 5,  0], val: 0b000000},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             [{kind: 'pc', where: state.reg(ir.regs.baser)}],
+        },
+
+        {op: 'ret', fields: [
+            {kind: 'const', bits: [15,  0], val: 0b1100000111000000},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             [{kind: 'pc', where: state.reg(['r', 7])}],
+        },
+
+        {op: 'jsr', fields: [
+            {kind: 'const', bits: [15, 11], val: 0b01000},
+            {kind: 'imm',   bits: [10,  0], sext: true, label: true,
+             name: 'pcoffset11'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset11},
+              {kind: 'reg', reg: ['r', 7], val: state.pc + 1}],
+        },
+
+        {op: 'jsrr', fields: [
+            {kind: 'const', bits: [15,  9], val: 0b1000000},
+            {kind: 'reg',   bits: [ 8,  6], prefix: 'r', name: 'baser'},
+            {kind: 'const', bits: [ 5,  0], val: 0b000000},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             [{kind: 'pc', where: state.reg(ir.regs.baser)},
+              {kind: 'reg', reg: ['r', 7], val: state.pc + 1}],
+        },
+
+        {op: 'ld', fields: [
+            {kind: 'const', bits: [15, 12], val: 0b0010},
+            {kind: 'reg',   bits: [11,  9], prefix: 'r', name: 'dr'},
+            {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
+             name: 'pcoffset9'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             [{kind: 'reg', reg: ir.regs.dr,
+               val: state.load(state.pc + 1 + ir.imms.pcoffset9)}],
+        },
+
+        {op: 'ldi', fields: [
+            {kind: 'const', bits: [15, 12], val: 0b1010},
+            {kind: 'reg',   bits: [11,  9], prefix: 'r', name: 'dr'},
+            {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
+             name: 'pcoffset9'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             [{kind: 'reg', reg: ir.regs.dr,
+               val: state.load(state.pc + 1 + ir.imms.pcoffset9)}],
+        },
+
+        {op: 'ldr', fields: [
+            {kind: 'const', bits: [15, 12], val: 0b0110},
+            {kind: 'reg',   bits: [11,  9], prefix: 'r', name: 'dr'},
+            {kind: 'reg',   bits: [ 8,  6], prefix: 'r', name: 'baser'},
+            {kind: 'imm',   bits: [ 5,  0], sext: true, label: false,
+             name: 'offset6'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             [{kind: 'reg', reg: ir.regs.dr,
+               val: state.load(state.reg(ir.regs.baser) + 1 +
+                               ir.imms.offset6)}],
+        },
+
+        {op: 'lea', fields: [
+            {kind: 'const', bits: [15, 12], val: 0b1110},
+            {kind: 'reg',   bits: [11,  9], prefix: 'r', name: 'dr'},
+            {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
+             name: 'pcoffset9'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             [{kind: 'reg', reg: ir.regs.dr,
+               val: state.pc + 1 + ir.imms.pcoffset9}],
+        },
+
+        {op: 'not', fields: [
+            {kind: 'const', bits: [15, 12], val: 0b1001},
+            {kind: 'reg',   bits: [11,  9], prefix: 'r', name: 'dr'},
+            {kind: 'reg',   bits: [ 8,  6], prefix: 'r', name: 'sr'},
+            {kind: 'const', bits: [ 5,  0], val: 0b111111},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             [{kind: 'reg', reg: ir.regs.dr, val: ~state.reg(ir.regs.sr)}],
+        },
+
+        {op: 'st', fields: [
+            {kind: 'const', bits: [15, 12], val: 0b0011},
+            {kind: 'reg',   bits: [11,  9], prefix: 'r', name: 'sr'},
+            {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
+             name: 'pcoffset9'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             [{kind: 'mem', addr: state.pc + 1 + ir.imms.pcoffset9,
+               val: state.reg(ir.regs.sr)}],
+        },
+
+        {op: 'sti', fields: [
+            {kind: 'const', bits: [15, 12], val: 0b1011},
+            {kind: 'reg',   bits: [11,  9], prefix: 'r', name: 'sr'},
+            {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
+             name: 'pcoffset9'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             [{kind: 'mem',
+               addr: state.load(state.pc + 1 + ir.imms.pcoffset9),
+               val: state.reg(ir.regs.sr)}],
+        },
+
+        {op: 'str', fields: [
+            {kind: 'const', bits: [15, 12], val: 0b0111},
+            {kind: 'reg',   bits: [11,  9], prefix: 'r', name: 'sr'},
+            {kind: 'reg',   bits: [ 8,  6], prefix: 'r', name: 'baser'},
+            {kind: 'imm',   bits: [ 5,  0], sext: true, label: false,
+             name: 'offset6'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             [{kind: 'mem',
+               addr: state.reg(ir.regs.baser) + ir.imms.offset6,
+               val: state.reg(ir.regs.sr)}],
+        },
+
+        {op: 'trap', fields: [
+            {kind: 'const', bits: [15,  8], val: 0b11110000},
+            {kind: 'imm',   bits: [ 7,  0], sext: false, label: false,
+             name: 'trapvect8'},
+         ],
+         sim: (state: MachineState, ir: Fields) =>
+             [{kind: 'reg', reg: ['r', 7], val: state.pc + 1},
+              {kind: 'pc', where: state.load(ir.imms.trapvect8)}],
+        },
+
+        // TODO: implement these
+        {op: 'getc', fields: [
+            {kind: 'const', bits: [15,  0], val: 0b1111000000100000},
+         ],
+         sim: (state: MachineState, ir: Fields) => [],
+        },
+
+        {op: 'out', fields: [
+            {kind: 'const', bits: [15,  0], val: 0b1111000000100001},
+         ],
+         sim: (state: MachineState, ir: Fields) => [],
+        },
+
+        {op: 'puts', fields: [
+            {kind: 'const', bits: [15,  0], val: 0b1111000000100010},
+         ],
+         sim: (state: MachineState, ir: Fields) => [],
+        },
+
+        {op: 'in', fields: [
+            {kind: 'const', bits: [15,  0], val: 0b1111000000100011},
+         ],
+         sim: (state: MachineState, ir: Fields) => [],
+        },
+
+        {op: 'halt', fields: [
+            {kind: 'const', bits: [15,  0], val: 0b1111000000100101},
+         ],
+         sim: (state: MachineState, ir: Fields) => [],
+        },
     ],
 };
 

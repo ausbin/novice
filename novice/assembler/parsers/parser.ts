@@ -1,4 +1,5 @@
 import { Readable } from 'stream';
+import { Isa } from '../isa';
 import { Parser as LR1Parser, ParseTable, ParseTree,
          TableGenerator } from '../lr1';
 import { Line, Scanner, Token } from '../scanner';
@@ -47,7 +48,7 @@ interface ParsedAssembly {
 }
 
 interface Parser {
-    parse(line: Line<T>[]): ParsedAssembly;
+    parse(isa: Isa, line: Line<T>[]): ParsedAssembly;
     // Pass back an object because higher levels of abstraction don't
     // care about what exactly is in here, it's just a blob of JSON
     genTable(): object;
@@ -61,8 +62,8 @@ abstract class AbstractParser<Ctx, NT> implements Parser {
         this.parser = new LR1Parser<NT, T>(this.getTable());
     }
 
-    public parse(lines: Line<T>[]): ParsedAssembly {
-        const ctx = this.initCtx();
+    public parse(isa: Isa, lines: Line<T>[]): ParsedAssembly {
+        const ctx = this.initCtx(isa);
 
         for (const line of lines) {
             const parseTree = this.parser.parse(line);
@@ -80,7 +81,7 @@ abstract class AbstractParser<Ctx, NT> implements Parser {
 
     protected abstract getTable(): ParseTable<NT, T>;
     protected abstract getGrammar(): Grammar<NT>;
-    protected abstract initCtx(): Ctx;
+    protected abstract initCtx(isa: Isa): Ctx;
     protected abstract parseLine(ctx: Ctx, parseTree: ParseTree<NT, T>,
                                  line: Line<T>): void;
     protected abstract finish(ctx: Ctx): ParsedAssembly;

@@ -1,4 +1,5 @@
 import { Assembler } from './assembler';
+import { Isa, isas } from './isa';
 import { Parser, parsers } from './parsers';
 
 function getParser(parserName: string): Parser {
@@ -9,4 +10,12 @@ function getParser(parserName: string): Parser {
     return new parsers[parserName]();
 }
 
-export { Assembler, getParser };
+function getIsa(isaName: string): Isa {
+    if (!isas.hasOwnProperty(isaName)) {
+        throw new Error(`no such isa \`${isaName}'\n`);
+    }
+
+    return isas[isaName];
+}
+
+export { Assembler, getParser, getIsa };

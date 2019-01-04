@@ -4,6 +4,10 @@ type RegIdentifier = string|[string, number];
 interface MachineState {
     // Auto sign-extends and everything
     reg: (reg: RegIdentifier) => number;
+    // Address of current instruction. NOT incremented!
+    pc: number;
+    // memory accesses
+    load: (addr: number) => number;
 }
 
 interface MachineStateRegUpdate {
@@ -18,6 +22,13 @@ interface MachineStateMemUpdate {
     val: number;
 }
 
-type MachineStateUpdate = MachineStateRegUpdate|MachineStateMemUpdate;
+interface MachineStatePcUpdate {
+    kind: 'pc';
+    where: number;
+}
+
+type MachineStateUpdate = MachineStateRegUpdate|
+                          MachineStateMemUpdate|
+                          MachineStatePcUpdate;
 
 export { RegIdentifier, MachineState, MachineStateUpdate };

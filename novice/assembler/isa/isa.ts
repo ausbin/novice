@@ -1,5 +1,15 @@
 import { MachineState, MachineStateUpdate, RegIdentifier } from './state';
 
+interface Pc {
+    // by how much is the pc incremented during FETCH?
+    increment: number;
+}
+
+interface Mem {
+    space: number;
+    addressability: number;
+}
+
 interface RegSolo {
     kind: 'reg';
     name: string;
@@ -50,6 +60,8 @@ interface Instruction {
 }
 
 interface Isa {
+    pc: Pc;
+    mem: Mem;
     regs: Reg[];
     instructions: Instruction[];
 }

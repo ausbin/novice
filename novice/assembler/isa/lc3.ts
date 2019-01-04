@@ -10,6 +10,13 @@ function calcCC(val: number): number {
 }
 
 const Lc3Isa: Isa = {
+    pc: {
+        increment: 1,
+    },
+    mem: {
+        space: 16,
+        addressability: 16,
+    },
     regs: [
         {kind: 'reg', name: 'cc', bits: 3},
         {kind: 'reg-range', count: 8, prefix: 'r', bits: 16},

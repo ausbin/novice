@@ -14,5 +14,7 @@ Useful stuff:
 
     $ npm run build:watch
     $ npm run lint
+    $ npm run lint:fix
     $ npm test
-    $ ./generate-parse-table.sh
+    $ ./bootstrap-parse-table.sh complx
+    $ ./generate-parse-table.sh complx

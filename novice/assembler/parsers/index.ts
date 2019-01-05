@@ -1,8 +1,8 @@
 import ComplxParser from './complx';
-import { ParsedAssembly, Parser } from './parser';
+import { ParsedAssembly, Parser, Section } from './parser';
 
 const parsers: {[s: string]: new() => Parser} = {
     complx: ComplxParser,
 };
 
-export { ParsedAssembly, Parser, parsers };
+export { ParsedAssembly, Section, Parser, parsers };

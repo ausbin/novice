@@ -23,6 +23,7 @@ const Lc3Isa: Isa = {
     pc: {
         increment: 1,
         resetVector: 0x3000,
+        instrBits: 16,
     },
     mem: {
         space: 16,

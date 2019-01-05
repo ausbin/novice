@@ -4,6 +4,7 @@ interface Pc {
     // by how much is the pc incremented during FETCH?
     increment: number;
     resetVector: number;
+    instrBits: number;
 }
 
 interface Mem {

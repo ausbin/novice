@@ -10,7 +10,7 @@ function calcCc(val: number): number {
 }
 
 function withCcUpdate(updates: MachineStateUpdate[]): MachineStateUpdate[] {
-    for (let update of updates) {
+    for (const update of updates) {
         if (update.kind === 'reg') {
             updates.push({kind: 'reg', reg: 'cc', val: calcCc(update.val)});
             break;

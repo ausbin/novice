@@ -22,6 +22,7 @@ function withCcUpdate(updates: MachineStateUpdate[]): MachineStateUpdate[] {
 const Lc3Isa: Isa = {
     pc: {
         increment: 1,
+        resetVector: 0x3000,
     },
     mem: {
         space: 16,

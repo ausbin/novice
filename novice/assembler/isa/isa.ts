@@ -68,4 +68,4 @@ interface Isa {
     instructions: Instruction[];
 }
 
-export { Isa, Fields };
+export { Isa, Fields, Instruction };

@@ -1,13 +1,13 @@
+import { Isa } from '../isa';
 import { ParsedAssembly } from '../parsers';
 
 interface MachineCodeSection {
     startAddr: number;
-    length: number;
     words: number[];
 }
 
 interface MachineCodeGenerator {
-    gen(asm: ParsedAssembly): MachineCodeSection[];
+    gen(isa: Isa, asm: ParsedAssembly): MachineCodeSection[];
 }
 
 export { MachineCodeSection, MachineCodeGenerator };

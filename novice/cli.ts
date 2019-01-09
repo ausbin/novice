@@ -1,18 +1,18 @@
 import * as fs from 'fs';
 import { Writable } from 'stream';
-import { Assembler, getIsa, getParser } from './assembler';
+import { Assembler, getGenerator, getIsa, getParser } from './assembler';
 
-async function main(args: string[], stdout: Writable, stderr: Writable):
-        Promise<number> {
+async function main(args: string[], stdout: Writable,
+                    stderr: Writable): Promise<number> {
     const subcommand = args[0];
 
     switch (subcommand) {
-        case 'asm-pass1':
+        case 'asm':
             if (args.length === 4) {
                 const parser = args[1];
                 const isa = args[2];
                 const path = args[3];
-                return await asmPass1(parser, isa, path, stdout, stderr);
+                return await asm(parser, isa, path, stdout, stderr);
             } else {
                 return usage(stderr);
             }
@@ -29,26 +29,28 @@ async function main(args: string[], stdout: Writable, stderr: Writable):
 }
 
 function usage(stderr: Writable): number {
-    stderr.write('usage: novice asm-pass1 <parser> <isa> <file>\n' +
-                 '       novice tablegen  <parser>\n');
+    stderr.write('usage: novice asm      <parser> <isa> <file>\n' +
+                 '       novice tablegen <parser>\n');
     return 1;
 }
 
-async function asmPass1(parserName: string, isaName: string, path: string, stdout: Writable,
-                        stderr: Writable): Promise<number> {
+async function asm(parserName: string, isaName: string, path: string,
+                   stdout: Writable, stderr: Writable): Promise<number> {
     try {
         const parser = getParser(parserName);
+        const generator = getGenerator();
         const isa = getIsa(isaName);
         const fp = fs.createReadStream(path);
         await new Promise((resolve, reject) => {
             fp.on('readable', resolve);
             fp.on('error', reject);
         });
-        const assembly = await new Assembler(parser, isa).parse(fp);
-        stdout.write(JSON.stringify(assembly));
+        const assembler = new Assembler(parser, generator, isa);
+        const machineCode = await assembler.assemble(fp);
+        stdout.write(JSON.stringify(machineCode));
         return 0;
     } catch (err) {
-        stderr.write(`asm-pass1 error: ${err.message}\n`);
+        stderr.write(`asm error: ${err.message}\n`);
         return 1;
     }
 }

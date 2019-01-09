@@ -1,4 +1,5 @@
 import { Assembler } from './assembler';
+import { BaseMachineCodeGenerator, MachineCodeGenerator } from './codegen';
 import { Isa, isas } from './isa';
 import { Parser, parsers } from './parsers';
 
@@ -10,6 +11,11 @@ function getParser(parserName: string): Parser {
     return new parsers[parserName]();
 }
 
+function getGenerator(): MachineCodeGenerator {
+    // Go ahead and return only this lil fella for now
+    return new BaseMachineCodeGenerator();
+}
+
 function getIsa(isaName: string): Isa {
     if (!isas.hasOwnProperty(isaName)) {
         throw new Error(`no such isa \`${isaName}'\n`);
@@ -18,4 +24,4 @@ function getIsa(isaName: string): Isa {
     return isas[isaName];
 }
 
-export { Assembler, getParser, getIsa };
+export { Assembler, getParser, getGenerator, getIsa };

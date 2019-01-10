@@ -1,4 +1,5 @@
 import { Instruction as IsaInstruction, Isa } from '../isa';
+import { AsmContext, OpOperands, OpSpec, PseudoOpSpec } from '../opspec';
 import { Instruction, ParsedAssembly, PseudoOp, Section } from '../parsers';
 import { MachineCodeGenerator, MachineCodeSection } from './codegen';
 
@@ -12,7 +13,8 @@ interface ReassembleVictim {
 type SymbTable = {[s: string]: number};
 
 class BaseMachineCodeGenerator implements MachineCodeGenerator {
-    public gen(isa: Isa, asm: ParsedAssembly): MachineCodeSection[] {
+    public gen(isa: Isa, opSpec: PseudoOpSpec, asm: ParsedAssembly):
+            MachineCodeSection[] {
         const sections: MachineCodeSection[] = [];
         const symbtable: SymbTable = {};
         const reassemble: ReassembleVictim[] = [];
@@ -34,7 +36,8 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                 }
 
                 const instr = asmSection.instructions[j];
-                const [words, hasLabel] = this.inflateInstr(isa, instr, pc, null);
+                const [words, hasLabel] = this.inflateInstr(
+                    isa, opSpec, instr, pc, null);
 
                 // If this instruction uses a label, we'll need to
                 // reassmble it
@@ -52,7 +55,8 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
             const section = asm.sections[victim.sectionIdx];
             const instr = section.instructions[victim.instrIdx];
             const pc = sections[victim.sectionIdx].startAddr + victim.index;
-            const [words, _] = this.inflateInstr(isa, instr, pc, symbtable);
+            const [words, _] = this.inflateInstr(
+                isa, opSpec, instr, pc, symbtable);
 
             for (let k = 0; k < words.length; k++) {
                 sections[victim.sectionIdx].words[victim.index + k] = words[k];
@@ -65,12 +69,39 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
     }
 
     private inflateInstr(isa: Isa,
+                         opSpec: PseudoOpSpec,
                          instr: Instruction|PseudoOp,
                          pc: number,
                          symbtable: SymbTable|null): [number[], boolean] {
-        // TODO: actually implement pseudoops
         if (instr.kind === 'pseudoop') {
-            return [[0, 0, 0, 0], false];
+            let match: OpSpec|null = null;
+
+            for (const op of opSpec.ops) {
+                if (this.opMatch(instr, op)) {
+                    match = op;
+                    break;
+                }
+            }
+
+            if (!match) {
+                // TODO: multiple operands
+                const operand = (instr.operand ? instr.operand.kind : 'no') + ' operand';
+
+                // TODO: line numbers
+                throw new Error(`unknown assembler directive .${instr.op} ` +
+                                `with ${operand}`);
+            }
+
+            if (!symbtable && instr.operand &&
+                    instr.operand.kind === 'label') {
+                // TODO: make sure this is true
+                const estimator = match.size as ((isa: Isa) => number);
+                return [new Array<number>(estimator(isa)), true];
+            } else {
+                const ctx: AsmContext = {isa, symbtable: symbtable as SymbTable};
+                const operands: OpOperands = this.operandify(match, instr);
+                return [match.asm(ctx, operands), false];
+            }
         } else {
             let match: IsaInstruction|null = null;
 
@@ -98,10 +129,33 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
             const skip = !symbtable &&
                          instr.operands.some(op => op.kind === 'label');
             const instrBin = skip ? 0 : this.genInstrBin(instr, match, pc,
-                                                      symbtable as SymbTable,
-                                                      isa);
+                                                         symbtable as SymbTable,
+                                                         isa);
             return [[instrBin], skip];
         }
+    }
+
+    private operandify(opSpec: OpSpec, pseudoOp: PseudoOp): OpOperands {
+        const operands: OpOperands = {ints: {}, labels: {}, strings: {}};
+
+        // TODO: >1 operands
+        if (pseudoOp.operand) {
+            const spec = opSpec.operands[0];
+
+            switch (pseudoOp.operand.kind) {
+                case 'string':
+                    operands.strings[spec.name] = pseudoOp.operand.contents;
+                    break;
+                case 'int':
+                    operands.ints[spec.name] = pseudoOp.operand.val;
+                    break;
+                case 'label':
+                    operands.labels[spec.name] = pseudoOp.operand.label;
+                    break;
+            }
+        }
+
+        return operands;
     }
 
     private genInstrBin(instr: Instruction, isaInstr: IsaInstruction,
@@ -146,6 +200,13 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
         return bin;
     }
 
+    private opMatch(pseudoOp: PseudoOp, opSpec: OpSpec): boolean {
+        return pseudoOp.op === opSpec.name && (
+            !pseudoOp.operand && !opSpec.operands.length ||
+            opSpec.operands.length === 1 && !!pseudoOp.operand &&
+                pseudoOp.operand.kind === opSpec.operands[0].kind);
+    }
+
     private instrMatch(instr: Instruction, isaInstr: IsaInstruction): boolean {
         if (instr.op !== isaInstr.op) {
             return false;
@@ -155,7 +216,6 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
         let o = 0;
         let f = 0;
 
-        // while (ok && o < instr.operands.length && f < isaInstr.fields.length) {
         while (ok && f < isaInstr.fields.length) {
             const field = isaInstr.fields[f];
 

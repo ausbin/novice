@@ -20,10 +20,16 @@ interface OpSpec {
     name: string;
     operands: OpOperandSpec[];
     asm: (ctx: AsmContext, operands: OpOperands) => number[];
+    size?: (isa: Isa) => number;
 }
 
 interface PseudoOpSpec {
     ops: OpSpec[];
 }
 
-export { AsmContext, OpOperands, PseudoOpSpec };
+// Size is one word
+function oneWord(isa: Isa) {
+    return isa.mem.word / isa.mem.addressability;
+}
+
+export { AsmContext, OpOperands, PseudoOpSpec, OpSpec, oneWord };

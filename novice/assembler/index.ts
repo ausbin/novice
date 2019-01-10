@@ -1,6 +1,8 @@
-import { Assembler } from './assembler';
+import { Assembler, AssemblerConfig } from './assembler';
 import { BaseMachineCodeGenerator, MachineCodeGenerator } from './codegen';
+import { configs } from './configs';
 import { Isa, isas } from './isa';
+import { opSpecs, PseudoOpSpec } from './opspec';
 import { Parser, parsers } from './parsers';
 
 function getParser(parserName: string): Parser {
@@ -24,4 +26,27 @@ function getIsa(isaName: string): Isa {
     return isas[isaName];
 }
 
-export { Assembler, getParser, getGenerator, getIsa };
+function getOpSpec(opSpecName: string): PseudoOpSpec {
+    if (!opSpecs.hasOwnProperty(opSpecName)) {
+        throw new Error(`no such opspec \`${opSpecName}'\n`);
+    }
+
+    return opSpecs[opSpecName];
+}
+
+function getConfig(configName: string): AssemblerConfig {
+    if (!configs.hasOwnProperty(configName)) {
+        throw new Error(`no such assembler config \`${configName}'\n`);
+    }
+
+    const configNames = configs[configName];
+
+    return {
+        parser: getParser(configNames.parser),
+        generator: getGenerator(),
+        isa: getIsa(configNames.isa),
+        opSpec: getOpSpec(configNames.opSpec),
+    };
+}
+
+export { Assembler, getParser, getGenerator, getIsa, getOpSpec, getConfig };

@@ -26,6 +26,7 @@ const Lc3Isa: Isa = {
         instrBits: 16,
     },
     mem: {
+        word: 16,
         space: 16,
         addressability: 16,
     },

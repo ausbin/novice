@@ -8,6 +8,7 @@ interface Pc {
 }
 
 interface Mem {
+    word: number;
     space: number;
     addressability: number;
 }

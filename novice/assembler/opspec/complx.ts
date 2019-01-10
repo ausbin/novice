@@ -1,4 +1,4 @@
-import { AsmContext, OpOperands, PseudoOpSpec } from './opspec';
+import { AsmContext, oneWord, OpOperands, PseudoOpSpec } from './opspec';
 
 const complxOpSpec: PseudoOpSpec = {
     ops: [
@@ -10,6 +10,7 @@ const complxOpSpec: PseudoOpSpec = {
 
         {name: 'fill',
          operands: [{kind: 'label', name: 'label'}],
+         size: oneWord,
          asm: (ctx: AsmContext, operands: OpOperands) =>
             // TODO: complain if nonexistent
             [ctx.symbtable[operands.labels.label]]},

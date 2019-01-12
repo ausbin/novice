@@ -29,6 +29,8 @@ async function main(argv: string[], stdout: Writable,
                                   'the selected assembler configuration' });
 
     const tablegenParser = sub.addParser('tablegen');
+    tablegenParser.addArgument(['parser'],
+                               { help: 'parser whose table to generate' });
 
     const args = parser.parseArgs(argv);
     switch (args.subcmd) {

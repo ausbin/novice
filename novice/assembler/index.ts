@@ -4,6 +4,7 @@ import { configs } from './configs';
 import { Isa, isas } from './isa';
 import { opSpecs, PseudoOpSpec } from './opspec';
 import { Parser, parsers } from './parsers';
+import { Serializer, serializers } from './serializers';
 
 function getParser(parserName: string): Parser {
     if (!parsers.hasOwnProperty(parserName)) {
@@ -34,6 +35,14 @@ function getOpSpec(opSpecName: string): PseudoOpSpec {
     return opSpecs[opSpecName];
 }
 
+function getSerializer(serializerName: string): Serializer {
+    if (!serializers.hasOwnProperty(serializerName)) {
+        throw new Error(`no such serializer \`${serializerName}'\n`);
+    }
+
+    return new serializers[serializerName]();
+}
+
 function getConfig(configName: string): AssemblerConfig {
     if (!configs.hasOwnProperty(configName)) {
         throw new Error(`no such assembler config \`${configName}'\n`);
@@ -46,7 +55,8 @@ function getConfig(configName: string): AssemblerConfig {
         generator: getGenerator(),
         isa: getIsa(configNames.isa),
         opSpec: getOpSpec(configNames.opSpec),
+        serializer: getSerializer(configNames.serializer),
     };
 }
 
-export { Assembler, getParser, getGenerator, getIsa, getOpSpec, getConfig };
+export { Assembler, getParser, getGenerator, getIsa, getOpSpec, getSerializer, getConfig };

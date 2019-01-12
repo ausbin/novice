@@ -2,6 +2,7 @@ interface Config {
     parser: string;
     isa: string;
     opSpec: string;
+    serializer: string;
 }
 
 const configs: {[s: string]: Config} = {
@@ -9,6 +10,7 @@ const configs: {[s: string]: Config} = {
         parser: 'complx',
         isa: 'lc3',
         opSpec: 'complx',
+        serializer: 'complx',
     },
 };
 

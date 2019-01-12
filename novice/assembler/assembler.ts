@@ -1,15 +1,17 @@
-import { Readable } from 'stream';
+import { Readable, Writable } from 'stream';
 import { MachineCodeGenerator, MachineCodeSection } from './codegen';
 import { Isa } from './isa';
 import { PseudoOpSpec } from './opspec';
 import { ParsedAssembly, Parser } from './parsers';
 import { Scanner } from './scanner';
+import { Serializer } from './serializers';
 
 interface AssemblerConfig {
     parser: Parser;
     generator: MachineCodeGenerator;
     isa: Isa;
     opSpec: PseudoOpSpec;
+    serializer: Serializer;
 }
 
 class Assembler {
@@ -31,6 +33,11 @@ class Assembler {
 
     public async assemble(fp: Readable): Promise<MachineCodeSection[]> {
         return this.codegen(await this.parse(fp));
+    }
+
+    public async assembleTo(inFp: Readable, outFp: Writable): Promise<void> {
+        this.cfg.serializer.serialize(
+            this.cfg.isa, await this.assemble(inFp), outFp);
     }
 }
 

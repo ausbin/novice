@@ -4,7 +4,7 @@ set -e
 [[ $# -eq 1 ]] || {
     printf 'usage: %s <parser>\n' "$0"
     printf '\n'
-    printf 'will generate an empty parse table for parser.ts\n'
+    printf 'will generate an LR(1) parse table for parser.ts\n'
     exit 1
 } >&2
 

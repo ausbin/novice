@@ -490,6 +490,7 @@ describe('assembler', () => {
             fp.push('.fill x1337\n');
             fp.push('.blkw 1\n');
             fp.push('.fill -2\n');
+            fp.push('label .fill label\n');
             fp.push('.stringz ""\n');
             fp.push('.stringz "hi"\n');
             fp.push('.end\n')
@@ -505,6 +506,7 @@ describe('assembler', () => {
                         0x1337,
                         0x0,
                         0xfffe,
+                        0x5006,
                         0x0,
                         'h'.charCodeAt(0),
                         'i'.charCodeAt(0),

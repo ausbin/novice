@@ -388,7 +388,7 @@ describe('LR(1) table generator', () => {
         });
     });
 
-    describe('calcStates()', () => {
+    describe('genTable()', () => {
         it('table example from textbook', () => {
             const _NTs = {
                 'goal' : '',

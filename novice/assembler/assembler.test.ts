@@ -2,26 +2,26 @@ import { Readable } from 'stream';
 import { getConfig, Assembler } from '.';
 
 describe('assembler', () => {
+    let fp: Readable;
+    let assembler: Assembler;
+
+    beforeEach(() => {
+        fp = new Readable();
+        // Test the complx parser and lc3 isa for now
+        assembler = new Assembler(getConfig('lc3'));
+    });
+
     describe('parse(fp)', () => {
-        let fp: Readable;
-        let assembler: Assembler;
-
-        beforeEach(() => {
-            fp = new Readable();
-            // Test the complx parser and lc3 isa for now
-            assembler = new Assembler(getConfig('lc3'));
-        });
-
         it('parses trivial program', () => {
             fp.push('.orig x3000\n')
-            fp.push('add\n')
+            fp.push('halt\n')
             fp.push('.end\n')
             fp.push(null)
 
             return expect(assembler.parse(fp)).resolves.toEqual({
                 sections: [
                     {startAddr: 0x3000, instructions: [
-                        {kind: 'instr', op: 'add', operands: []},
+                        {kind: 'instr', op: 'halt', operands: []},
                     ]},
                 ],
                 labels: {},
@@ -251,6 +251,267 @@ describe('assembler', () => {
             fp.push(null)
 
             return expect(assembler.parse(fp)).rejects.toThrow('stray instruction');
+        });
+    });
+
+    describe('assemble(fp)', () => {
+        it('assembles trivial program', () => {
+            fp.push('.orig x3000\n')
+            fp.push('halt\n')
+            fp.push('.end\n')
+            fp.push(null)
+
+            return expect(assembler.assemble(fp)).resolves.toEqual([
+                {
+                    startAddr: 0x3000,
+                    words: [
+                        0xf025,
+                    ],
+                },
+            ]);
+        });
+
+        it('assembles branch', () => {
+            fp.push('.orig x3000\n')
+            fp.push('fun\n')
+            fp.push('br fun\n')
+            fp.push('.end\n')
+            fp.push(null)
+
+            return expect(assembler.assemble(fp)).resolves.toEqual([
+                {
+                    startAddr: 0x3000,
+                    words: [
+                        0b0000111111111111,
+                    ],
+                },
+            ]);
+        });
+
+        it('assembles hello world program', () => {
+            fp.push('.orig x3000\n')
+            fp.push('lea r0, mystring\n')
+            fp.push('puts\n')
+            fp.push('halt\n')
+            fp.push('\n');
+            fp.push('\n');
+            fp.push('mystring .stringz "hello world!"\n')
+            fp.push('.end\n')
+            fp.push(null)
+
+            return expect(assembler.assemble(fp)).resolves.toEqual([
+                {
+                    startAddr: 0x3000,
+                    words: [
+                        0b1110000000000010,
+                        0xf022,
+                        0xf025,
+                        'h'.charCodeAt(0),
+                        'e'.charCodeAt(0),
+                        'l'.charCodeAt(0),
+                        'l'.charCodeAt(0),
+                        'o'.charCodeAt(0),
+                        ' '.charCodeAt(0),
+                        'w'.charCodeAt(0),
+                        'o'.charCodeAt(0),
+                        'r'.charCodeAt(0),
+                        'l'.charCodeAt(0),
+                        'd'.charCodeAt(0),
+                        '!'.charCodeAt(0),
+                        0,
+                    ],
+                },
+            ]);
+        });
+
+        it('assembles multiple sections', () => {
+            fp.push('.orig x3000\n')
+            fp.push('haltme halt\n')
+            fp.push('.end\n')
+            fp.push('\n')
+            fp.push('.orig x4000\n')
+            fp.push('and r1, r2, -3\n')
+            fp.push('halt2 halt\n')
+            fp.push('.end\n')
+            fp.push(null)
+
+            return expect(assembler.assemble(fp)).resolves.toEqual([
+                {
+                    startAddr: 0x3000,
+                    words: [
+                        0xf025,
+                    ],
+                },
+                {
+                    startAddr: 0x4000,
+                    words: [
+                        0b0101001010111101,
+                        0xf025,
+                    ],
+                },
+            ]);
+        });
+
+        it('assembles arithmetic instructions', () => {
+            fp.push('.orig x3000\n')
+            fp.push('add r4, r5, r3\n')
+            fp.push('add r4, r5, 3\n')
+            fp.push('and r6, r3, r2\n')
+            fp.push('and r6, r3, 2\n')
+            fp.push('asdf not r3, r4\n')
+            fp.push('.end\n')
+            fp.push(null)
+
+            return expect(assembler.assemble(fp)).resolves.toEqual([
+                {
+                    startAddr: 0x3000,
+                    words: [
+                        0b0001100101000011,
+                        0b0001100101100011,
+                        0b0101110011000010,
+                        0b0101110011100010,
+                        0b1001011100111111,
+                    ],
+                },
+            ]);
+        });
+
+        it('assembles branch instructions', () => {
+            fp.push('.orig x3000\n')
+            fp.push('nop\n')
+            fp.push('\n')
+            fp.push('asdf0 brp   asdf0\n')
+            fp.push('asdf1 brz   asdf1\n')
+            fp.push('asdf2 brzp  asdf2\n')
+            fp.push('asdf3 brn   asdf3\n')
+            fp.push('asdf4 brnp  asdf4\n')
+            fp.push('asdf5 brnz  asdf5\n')
+            fp.push('asdf6 brnzp asdf6\n')
+            fp.push('asdf7 br    asdf7\n')
+            fp.push('\n')
+            fp.push('subr jmp r3\n')
+            fp.push('jsr subr\n')
+            fp.push('jsrr r5\n')
+            fp.push('ret\n')
+            fp.push('\n')
+            fp.push('trap x69\n')
+            fp.push('.end\n')
+            fp.push(null)
+
+            return expect(assembler.assemble(fp)).resolves.toEqual([
+                {
+                    startAddr: 0x3000,
+                    words: [
+                        // nop
+                        0b0000000000000000,
+
+                        // br
+                        0b0000001111111111,
+                        0b0000010111111111,
+                        0b0000011111111111,
+                        0b0000100111111111,
+                        0b0000101111111111,
+                        0b0000110111111111,
+                        0b0000111111111111,
+                        0b0000111111111111,
+
+                        // jmp/jsr/ret
+                        0b1100000011000000,
+                        0b0100111111111110,
+                        0b0100000101000000,
+                        0b1100000111000000,
+
+                        // trap
+                        0b1111000001101001,
+                    ],
+                },
+            ]);
+        });
+
+        it('assembles memory instructions', () => {
+            fp.push('.orig x3000\n')
+            fp.push('asdf0 ld  r3, asdf0\n')
+            fp.push('asdf1 ldi r4, asdf1\n')
+            fp.push('asdf2 lea r2, asdf2\n')
+            fp.push('ldr r1, r5, -4\n')
+            fp.push('\n')
+            fp.push('asdf3 st  r3, asdf3\n')
+            fp.push('asdf4 sti r4, asdf4\n')
+            fp.push('str r1, r5, -4\n')
+            fp.push('.end\n')
+            fp.push(null)
+
+            return expect(assembler.assemble(fp)).resolves.toEqual([
+                {
+                    startAddr: 0x3000,
+                    words: [
+                        // loads
+                        0b0010011111111111,
+                        0b1010100111111111,
+                        0b1110010111111111,
+                        0b0110001101111100,
+
+                        // stores
+                        0b0011011111111111,
+                        0b1011100111111111,
+                        0b0111001101111100,
+                    ],
+                },
+            ]);
+        });
+
+        it('assembles trap aliases', () => {
+            fp.push('.orig x3000\n')
+            fp.push('getc\n');
+            fp.push('out\n');
+            fp.push('puts\n');
+            fp.push('in\n');
+            fp.push('halt\n');
+            fp.push('.end\n')
+            fp.push(null)
+
+            return expect(assembler.assemble(fp)).resolves.toEqual([
+                {
+                    startAddr: 0x3000,
+                    words: [
+                        0xf020,
+                        0xf021,
+                        0xf022,
+                        0xf023,
+                        0xf025,
+                    ],
+                },
+            ]);
+        });
+
+        it('assembles pseudo-ops', () => {
+            fp.push('.orig x5000\n')
+            fp.push('.blkw 3\n');
+            fp.push('.fill x1337\n');
+            fp.push('.blkw 1\n');
+            fp.push('.fill -2\n');
+            fp.push('.stringz ""\n');
+            fp.push('.stringz "hi"\n');
+            fp.push('.end\n')
+            fp.push(null)
+
+            return expect(assembler.assemble(fp)).resolves.toEqual([
+                {
+                    startAddr: 0x5000,
+                    words: [
+                        0x0,
+                        0x0,
+                        0x0,
+                        0x1337,
+                        0x0,
+                        0xfffe,
+                        0x0,
+                        'h'.charCodeAt(0),
+                        'i'.charCodeAt(0),
+                        0x0,
+                    ],
+                },
+            ]);
         });
     });
 });

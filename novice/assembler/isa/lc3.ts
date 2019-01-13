@@ -121,7 +121,7 @@ const Lc3Isa: Isa = {
         },
 
         {op: 'brz', fields: [
-            {kind: 'const', bits: [15,  9], val: 0b0000001},
+            {kind: 'const', bits: [15,  9], val: 0b0000010},
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
@@ -132,7 +132,7 @@ const Lc3Isa: Isa = {
         },
 
         {op: 'brzp', fields: [
-            {kind: 'const', bits: [15,  9], val: 0b0000001},
+            {kind: 'const', bits: [15,  9], val: 0b0000011},
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
@@ -143,7 +143,7 @@ const Lc3Isa: Isa = {
         },
 
         {op: 'brn', fields: [
-            {kind: 'const', bits: [15,  9], val: 0b0000001},
+            {kind: 'const', bits: [15,  9], val: 0b0000100},
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
@@ -154,7 +154,7 @@ const Lc3Isa: Isa = {
         },
 
         {op: 'brnp', fields: [
-            {kind: 'const', bits: [15,  9], val: 0b0000001},
+            {kind: 'const', bits: [15,  9], val: 0b0000101},
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
@@ -165,7 +165,7 @@ const Lc3Isa: Isa = {
         },
 
         {op: 'brnz', fields: [
-            {kind: 'const', bits: [15,  9], val: 0b0000001},
+            {kind: 'const', bits: [15,  9], val: 0b0000110},
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
@@ -192,7 +192,7 @@ const Lc3Isa: Isa = {
         },
 
         {op: 'jsr', fields: [
-            {kind: 'const', bits: [15, 11], val: 0b01000},
+            {kind: 'const', bits: [15, 11], val: 0b01001},
             {kind: 'imm',   bits: [10,  0], sext: true, label: true,
              name: 'pcoffset11'},
          ],
@@ -202,7 +202,7 @@ const Lc3Isa: Isa = {
         },
 
         {op: 'jsrr', fields: [
-            {kind: 'const', bits: [15,  9], val: 0b1000000},
+            {kind: 'const', bits: [15,  9], val: 0b0100000},
             {kind: 'reg',   bits: [ 8,  6], prefix: 'r', name: 'baser'},
             {kind: 'const', bits: [ 5,  0], val: 0b000000},
          ],

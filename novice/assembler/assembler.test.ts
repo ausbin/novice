@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import { getParser, getIsa, Assembler } from '.';
+import { getConfig, Assembler } from '.';
 
 describe('assembler', () => {
     describe('parse(fp)', () => {
@@ -9,7 +9,7 @@ describe('assembler', () => {
         beforeEach(() => {
             fp = new Readable();
             // Test the complx parser and lc3 isa for now
-            assembler = new Assembler(getParser("complx"), getIsa("lc3"));
+            assembler = new Assembler(getConfig('lc3'));
         });
 
         it('parses trivial program', () => {

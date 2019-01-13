@@ -1,12 +1,11 @@
 import { Readable, Writable } from 'stream';
 import main from './cli';
-import { Parser } from './assembler/parsers';
 
 // Mocks
 jest.mock('fs');
 import * as fs from 'fs';
 jest.mock('./assembler');
-import { Assembler, getParser, getIsa } from './assembler';
+import { Assembler, AssemblerConfig, getConfig, getParser } from './assembler';
 
 describe('cli', () => {
     let stdout: Writable, stderr: Writable;
@@ -31,32 +30,25 @@ describe('cli', () => {
         // @ts-ignore
         fs.createReadStream.mockReset();
         // @ts-ignore
+        fs.createWriteStream.mockReset();
+        // @ts-ignore
         Assembler.mockReset();
         // @ts-ignore
-        getParser.mockReset();
+        getConfig.mockReset();
         // @ts-ignore
-        getIsa.mockReset();
+        getParser.mockReset();
     });
 
-    it('prints usage with no args', () => {
-        return main([], stdout, stderr).then(exitCode => {
-            expect(exitCode).toEqual(1);
-            expect(stdoutActual).toEqual('');
-            expect(stderrActual).toContain('usage');
-        });
-    });
+    describe('asm subcommand', () => {
+        let mockInFp: Readable;
+        let mockOutFp: Writable;
+        let mockAssembleTo: (inFp: Readable, outFp: Writable) => Promise<void>;
+        let mockConfig: AssemblerConfig;
 
-    describe('asm-pass1 subcommand', () => {
-        it('prints usage with missing args', () => {
-            return main(['asm-pass1'], stdout, stderr).then(exitCode => {
-                expect(exitCode).toEqual(1);
-                expect(stdoutActual).toEqual('');
-                expect(stderrActual).toContain('usage');
-            });
-        });
-
-        it('parses asm file', () => {
-            let mockFp = {
+        beforeEach(() => {
+            // @ts-ignore
+            mockInFp = {
+                // @ts-ignore
                 on(event: string, handler: () => void) {
                     if (event === 'readable') {
                         handler();
@@ -64,53 +56,63 @@ describe('cli', () => {
                 }
             };
             // @ts-ignore
-            fs.createReadStream.mockReturnValue(mockFp);
+            fs.createReadStream.mockReturnValue(mockInFp);
 
-            let json = {kush: 'coma'};
-            let mockParse = jest.fn((fp: Readable) => Promise.resolve(json));
             // @ts-ignore
-            Assembler.mockImplementation((parser: Parser) => {
-                return { parse: mockParse };
+            mockOutFp = {
+                cork: () => {},
+                uncork: () => {},
+                end: () => {},
+            };
+            // @ts-ignore
+            fs.createWriteStream.mockReturnValue(mockOutFp);
+
+            // @ts-ignore
+            mockAssembleTo = jest.fn((inFp: Readable, outFp: Writable) => Promise.resolve());
+            // @ts-ignore
+            Assembler.mockImplementation((cfg: AssemblerConfig) => {
+                return { assembleTo: mockAssembleTo };
             });
             // @ts-ignore
-            let mockParser: Parser = {thanku: 'next'};
+            mockConfig = {
+                // @ts-ignore
+                serializer: {
+                    fileExt: () => 'star',
+                },
+            };
             // @ts-ignore
-            getParser.mockReturnValue(mockParser);
-            // @ts-ignore
-            let mockIsa: Isa = {its: 'gucci'};
-            // @ts-ignore
-            getIsa.mockReturnValue(mockIsa);
+            getConfig.mockReturnValue(mockConfig);
+        });
 
-            return main(['asm-pass1', 'pizza', 'roll', 'patrick.asm'],
+        it('parses asm file', () => {
+            return main(['asm', '-c', 'bread', 'patrick.asm'],
                         stdout, stderr).then(exitCode => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['patrick.asm']]);
                 // @ts-ignore
-                expect(getParser.mock.calls).toEqual([['pizza']]);
+                expect(fs.createWriteStream.mock.calls).toEqual([['patrick.star']]);
                 // @ts-ignore
-                expect(getIsa.mock.calls).toEqual([['roll']]);
+                expect(getConfig.mock.calls).toEqual([['bread']]);
                 // @ts-ignore
-                expect(Assembler.mock.calls).toEqual([[mockParser, mockIsa]]);
-                expect(mockParse.mock.calls).toEqual([[mockFp]]);
+                expect(Assembler.mock.calls).toEqual([[mockConfig]]);
+                // @ts-ignore
+                expect(mockAssembleTo.mock.calls).toEqual([[mockInFp, mockOutFp]]);
 
                 expect(exitCode).toEqual(0);
-                expect(stdoutActual).toEqual(JSON.stringify(json));
+                expect(stdoutActual).toEqual('');
                 expect(stderrActual).toEqual('');
             });
         });
 
         it('handles nonexistent file', () => {
-            let mockFp = {
-                on(event: string, handler: (reason: any) => void) {
-                    if (event === 'error') {
-                        handler(new Error('wow bad'));
-                    }
+            // @ts-ignore
+            mockInFp.on = (event: string, handler: (reason: any) => void) => {
+                if (event === 'error') {
+                    handler(new Error('wow bad'));
                 }
             };
-            // @ts-ignore
-            fs.createReadStream.mockReturnValue(mockFp);
 
-            return main(['asm-pass1', 'michael', 'lin', 'sanjay.asm'],
+            return main(['asm', 'sanjay.asm'],
                         stdout, stderr).then(exitCode => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['sanjay.asm']]);
@@ -123,22 +125,6 @@ describe('cli', () => {
     });
 
     describe('tablegen subcommand', () => {
-        it('prints usage with no args', () => {
-            return main(['tablegen'], stdout, stderr).then(exitCode => {
-                expect(exitCode).toEqual(1);
-                expect(stdoutActual).toEqual('');
-                expect(stderrActual).toContain('usage');
-            });
-        });
-
-        it('prints usage with extra args', () => {
-            return main(['tablegen', 'big', 'daddy'], stdout, stderr).then(exitCode => {
-                expect(exitCode).toEqual(1);
-                expect(stdoutActual).toEqual('');
-                expect(stderrActual).toContain('usage');
-            });
-        });
-
         it('generates table', () => {
             const json = {massive: 'banana'};
             const mockGenTable = jest.fn(() => json);

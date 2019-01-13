@@ -59,4 +59,4 @@ function getConfig(configName: string): AssemblerConfig {
     };
 }
 
-export { Assembler, getParser, getGenerator, getIsa, getOpSpec, getSerializer, getConfig };
+export { Assembler, AssemblerConfig, getParser, getGenerator, getIsa, getOpSpec, getSerializer, getConfig };

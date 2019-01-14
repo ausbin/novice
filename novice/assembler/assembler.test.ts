@@ -524,5 +524,15 @@ describe('assembler', () => {
                 },
             ]);
         });
+
+        it('errors on nonexistent label', () => {
+            fp.push('.orig x3000\n');
+            fp.push('lea r0, mystringputs\n');
+            fp.push('halt\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects.toThrow('mystringputs');
+        });
     });
 });

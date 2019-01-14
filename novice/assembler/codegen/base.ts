@@ -181,9 +181,13 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                     const masked = operand.val & ~(-1 << numBits);
                     bin |= masked << field.bits[1];
                 } else if (field.kind === 'imm' && operand.kind === 'label') {
+                    if (!symbtable.hasOwnProperty(operand.label)) {
+                        // TODO: line numbers
+                        throw new Error(`unknown label \`${operand.label}'`);
+                    }
+
                     const actualPc = pc + isa.pc.increment;
                     // TODO: check if too big
-                    // TODO: check if nonexistent labels
                     // TODO: check if offset is negative but sext is false
                     const offset = symbtable[operand.label] - actualPc;
                     // TODO: make this a helper function

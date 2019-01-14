@@ -1,6 +1,6 @@
 import { Writable } from 'stream';
+import { Isa } from '../../isa';
 import { MachineCodeSection } from '../codegen';
-import { Isa } from '../isa';
 
 interface Serializer {
     serialize(isa: Isa, code: MachineCodeSection[], fp: Writable): void;

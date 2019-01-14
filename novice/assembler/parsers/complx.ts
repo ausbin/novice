@@ -1,5 +1,5 @@
 // Parser for complx syntax
-import { Isa } from '../isa';
+import { Isa } from '../../isa';
 import { ParseTable, ParseTree } from '../lr1';
 import { Grammar } from './grammar';
 import { grammar, NT, T } from './grammars/complx';

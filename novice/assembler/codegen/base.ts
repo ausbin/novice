@@ -1,4 +1,4 @@
-import { Instruction as IsaInstruction, Isa } from '../isa';
+import { Instruction as IsaInstruction, Isa } from '../../isa';
 import { AsmContext, OpOperands, OpSpec, PseudoOpSpec } from '../opspec';
 import { Instruction, ParsedAssembly, PseudoOp, Section } from '../parsers';
 import { MachineCodeGenerator, MachineCodeSection } from './codegen';

@@ -1,4 +1,4 @@
-import { Isa } from '../isa';
+import { Isa } from '../../isa';
 import { PseudoOpSpec } from '../opspec';
 import { ParsedAssembly } from '../parsers';
 

@@ -1,4 +1,4 @@
-import { Isa } from '../isa';
+import { Isa } from '../../isa';
 
 interface AsmContext {
     isa: Isa;

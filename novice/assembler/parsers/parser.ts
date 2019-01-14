@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import { Isa } from '../isa';
+import { Isa } from '../../isa';
 import { Parser as LR1Parser, ParseTable, ParseTree,
          TableGenerator } from '../lr1';
 import { Line, Scanner, Token } from '../scanner';

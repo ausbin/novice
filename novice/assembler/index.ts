@@ -1,7 +1,7 @@
+import { Isa, isas } from '../isa';
 import { Assembler, AssemblerConfig } from './assembler';
 import { BaseMachineCodeGenerator, MachineCodeGenerator } from './codegen';
 import { configs } from './configs';
-import { Isa, isas } from './isa';
 import { opSpecs, PseudoOpSpec } from './opspec';
 import { Parser, parsers } from './parsers';
 import { Serializer, serializers } from './serializers';

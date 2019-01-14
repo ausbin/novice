@@ -1,6 +1,6 @@
 import { Readable, Writable } from 'stream';
+import { Isa } from '../isa';
 import { MachineCodeGenerator, MachineCodeSection } from './codegen';
-import { Isa } from './isa';
 import { PseudoOpSpec } from './opspec';
 import { ParsedAssembly, Parser } from './parsers';
 import { Scanner } from './scanner';

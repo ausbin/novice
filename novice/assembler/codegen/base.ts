@@ -87,9 +87,8 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                 // TODO: multiple operands
                 const operand = (instr.operand ? instr.operand.kind : 'no') + ' operand';
 
-                // TODO: line numbers
                 throw new Error(`unknown assembler directive .${instr.op} ` +
-                                `with ${operand}`);
+                                `with ${operand} on line ${instr.line}`);
             }
 
             if (!symbtable && instr.operand &&
@@ -121,9 +120,8 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                                                .join(', ')
                     : 'no operands';
 
-                // TODO: line numbers
                 throw new Error(`unknown instruction ${instr.op} with ` +
-                                operands);
+                                `${operands} on line ${instr.line}`);
             }
 
             const skip = !symbtable &&
@@ -182,8 +180,8 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                     bin |= masked << field.bits[1];
                 } else if (field.kind === 'imm' && operand.kind === 'label') {
                     if (!symbtable.hasOwnProperty(operand.label)) {
-                        // TODO: line numbers
-                        throw new Error(`unknown label \`${operand.label}'`);
+                        throw new Error(`unknown label \`${operand.label}' ` +
+                                        `on line ${instr.line}`);
                     }
 
                     const actualPc = pc + isa.pc.increment;
@@ -195,8 +193,8 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                     bin |= masked << field.bits[1];
                 } else {
                     // TODO: non-garbage error message
-                    // TODO: line numbers
-                    throw new Error(`unknown operand ${operand.kind}`);
+                    throw new Error(`unknown operand ${operand.kind} ` +
+                                    `on line ${instr.line}`);
                 }
             }
         }

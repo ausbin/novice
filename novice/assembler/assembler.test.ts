@@ -1,4 +1,5 @@
-import { Readable } from 'stream';
+import { Buffer } from 'buffer';
+import { Writable, Readable } from 'stream';
 import { getConfig, Assembler } from '.';
 
 describe('assembler', () => {
@@ -533,6 +534,128 @@ describe('assembler', () => {
             fp.push(null);
 
             return expect(assembler.assemble(fp)).rejects.toThrow('mystringputs');
+        });
+    });
+
+    describe('assembleTo(inFp, outFp)', () => {
+        let outFp: Writable;
+        let outActual: Buffer;
+        let outActualLen: number;
+
+        beforeEach(() => {
+            outActualLen = 0;
+            outActual = Buffer.alloc(1024);
+            outFp = new Writable({
+                write(arr, encoding, callback) {
+                    for (let i = 0; i < arr.length; i++) {
+                        if (outActualLen === outActual.length) {
+                            throw new Error('object file too big');
+                        }
+
+                        outActual[outActualLen++] = arr[i];
+                    }
+                    callback();
+                },
+            });
+        });
+
+        it('generates object file for minimal program', () => {
+            fp.push('.orig x3000\n');
+            fp.push('halt\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return assembler.assembleTo(fp, outFp).then(() => {
+                let exp = new Uint8Array([
+                    0x30,0x00,
+                    0x00,0x01,
+                    0xf0,0x25,
+                ]);
+                expect(outActualLen).toEqual(exp.length);
+                expect(outActual.slice(0, outActualLen).equals(exp)).toBe(true);
+            });
+        });
+
+        it('generates object file for hello world', () => {
+            fp.push('.orig x3000\n')
+            fp.push('lea r0, mystring\n')
+            fp.push('puts\n')
+            fp.push('halt\n')
+            fp.push('\n');
+            fp.push('\n');
+            fp.push('mystring .stringz "hello world!"\n')
+            fp.push('.end\n')
+            fp.push(null)
+
+            return assembler.assembleTo(fp, outFp).then(() => {
+                let exp = new Uint8Array([
+                    0x30,0x00,
+                    0x00,0x10,
+                    0xe0,0x02,
+                    0xf0,0x22,
+                    0xf0,0x25,
+                    0x00,'h'.charCodeAt(0),
+                    0x00,'e'.charCodeAt(0),
+                    0x00,'l'.charCodeAt(0),
+                    0x00,'l'.charCodeAt(0),
+                    0x00,'o'.charCodeAt(0),
+                    0x00,' '.charCodeAt(0),
+                    0x00,'w'.charCodeAt(0),
+                    0x00,'o'.charCodeAt(0),
+                    0x00,'r'.charCodeAt(0),
+                    0x00,'l'.charCodeAt(0),
+                    0x00,'d'.charCodeAt(0),
+                    0x00,'!'.charCodeAt(0),
+                    0x00,0x00,
+                ]);
+                expect(outActualLen).toEqual(exp.length);
+                expect(outActual.slice(0, outActualLen).equals(exp)).toBe(true);
+            });
+        });
+
+        it('generates object file for multiple sections', () => {
+            fp.push('.orig x8000\n');
+            fp.push('lea r0, hi\n');
+            fp.push('puts\n');
+            fp.push('halt\n');
+            fp.push('hi .fill \'h\'\n');
+            fp.push('.fill \'i\'\n');
+            fp.push('.fill 0\n');
+            fp.push('.end\n');
+            fp.push('.orig x3000\n');
+            fp.push('halt\n');
+            fp.push('.end\n');
+            fp.push('.orig x5000\n');
+            fp.push('and r0, r0, 0\n');
+            fp.push('add r0, r0, 1\n');
+            fp.push('halt\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return assembler.assembleTo(fp, outFp).then(() => {
+                let exp = new Uint8Array([
+                    0x80,0x00,
+                    0x00,0x06,
+                    0xe0,0x02,
+                    0xf0,0x22,
+                    0xf0,0x25,
+                    0x00,'h'.charCodeAt(0),
+                    0x00,'i'.charCodeAt(0),
+                    0x00,0x00,
+
+                    0x30,0x00,
+                    0x00,0x01,
+                    0xf0,0x25,
+
+                    0x50,0x00,
+                    0x00,0x03,
+                    0x50,0x20,
+                    0x10,0x21,
+                    0xf0,0x25,
+                ]);
+                expect(outActualLen).toEqual(exp.length);
+                expect(outActual.slice(0, outActualLen).equals(exp)).toBe(true);
+            });
         });
     });
 });

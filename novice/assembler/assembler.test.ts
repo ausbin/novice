@@ -252,6 +252,15 @@ describe('assembler', () => {
 
             return expect(assembler.parse(fp)).rejects.toThrow('stray instruction');
         });
+
+        it('errors on dangling operand', () => {
+            fp.push('.orig x3000\n');
+            fp.push('lea r0, mystring puts\n');
+            fp.push('halt\n');
+            fp.push('.end\n');
+            fp.push(null);
+            return expect(assembler.parse(fp)).rejects.toThrow('puts');
+        });
     });
 
     describe('assemble(fp)', () => {

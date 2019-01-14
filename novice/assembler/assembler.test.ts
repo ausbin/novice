@@ -545,15 +545,6 @@ describe('assembler', () => {
             return expect(assembler.assemble(fp)).rejects.toThrow('-64');
         });
 
-        it('errors on oversized immediate', () => {
-            fp.push('.orig x3000\n');
-            fp.push('add r0, r0, 64\n');
-            fp.push('.end\n');
-            fp.push(null);
-
-            return expect(assembler.assemble(fp)).rejects.toThrow('64');
-        });
-
         it('errors on barely undersized immediate', () => {
             fp.push('.orig x3000\n');
             fp.push('add r0, r0, -17\n');
@@ -563,6 +554,31 @@ describe('assembler', () => {
             return expect(assembler.assemble(fp)).rejects.toThrow('-17');
         });
 
+        it('assembles almost undersized immediate', () => {
+            fp.push('.orig x3000\n');
+            fp.push('add r0, r0, -16\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).resolves.toEqual([
+                {
+                    startAddr: 0x3000,
+                    words: [
+                        0b0001000000110000,
+                    ],
+                },
+            ]);
+        });
+
+        it('errors on oversized immediate', () => {
+            fp.push('.orig x3000\n');
+            fp.push('add r0, r0, 64\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects.toThrow('64');
+        });
+
         it('errors on barely oversized immediate', () => {
             fp.push('.orig x3000\n');
             fp.push('add r0, r0, 16\n');
@@ -570,6 +586,22 @@ describe('assembler', () => {
             fp.push(null);
 
             return expect(assembler.assemble(fp)).rejects.toThrow('16');
+        });
+
+        it('assembles almost oversized immediate', () => {
+            fp.push('.orig x3000\n');
+            fp.push('add r0, r0, 15\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).resolves.toEqual([
+                {
+                    startAddr: 0x3000,
+                    words: [
+                        0b0001000000101111,
+                    ],
+                },
+            ]);
         });
 
         it('errors on oversized label offset', () => {
@@ -614,6 +646,43 @@ describe('assembler', () => {
             fp.push(null);
 
             return expect(assembler.assemble(fp)).rejects.toThrow('-257');
+        });
+
+        it('assembles non-overlapping sections', () => {
+            fp.push('.orig x4001\n');
+            fp.push('.blkw 1\n');
+            fp.push('.end\n');
+            fp.push('.orig x4000\n');
+            fp.push('.blkw 1\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).resolves.toEqual([
+                {
+                    startAddr: 0x4001,
+                    words: [
+                        0x0,
+                    ],
+                },
+                {
+                    startAddr: 0x4000,
+                    words: [
+                        0x0,
+                    ],
+                },
+            ]);
+        });
+
+        it('errors on overlapping sections', () => {
+            fp.push('.orig x4001\n');
+            fp.push('.blkw 1\n');
+            fp.push('.end\n');
+            fp.push('.orig x4000\n');
+            fp.push('.blkw 2\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects.toThrow('overlap');
         });
     });
 

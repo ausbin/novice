@@ -63,7 +63,19 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
             }
         }
 
-        // TODO: check for overlapping sections
+        // Check for overlapping sections
+        let sortedSections = sections.slice(0);
+        sortedSections.sort((left, right) => left.startAddr - right.startAddr);
+        for (let i = 1; i < sortedSections.length; i++) {
+            // TODO: support different addressability
+            let left = sortedSections[i - 1];
+            let right = sortedSections[i];
+            if (right.startAddr >= left.startAddr &&
+                    right.startAddr < left.startAddr + left.words.length) {
+                throw new Error(`sections at x${left.startAddr.toString(16)} ` +
+                                `and x${right.startAddr.toString(16)} overlap`);
+            }
+        }
 
         return sections;
     }
@@ -223,8 +235,6 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                     }
 
                     const actualPc = pc + isa.pc.increment;
-                    // TODO: check if too big
-                    // TODO: check if offset is negative but sext is false
                     const offset = symbtable[operand.label] - actualPc;
 
                     if (field.sext) {

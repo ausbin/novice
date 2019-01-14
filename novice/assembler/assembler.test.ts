@@ -535,6 +535,86 @@ describe('assembler', () => {
 
             return expect(assembler.assemble(fp)).rejects.toThrow('mystringputs');
         });
+
+        it('errors on undersized immediate', () => {
+            fp.push('.orig x3000\n');
+            fp.push('add r0, r0, -64\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects.toThrow('-64');
+        });
+
+        it('errors on oversized immediate', () => {
+            fp.push('.orig x3000\n');
+            fp.push('add r0, r0, 64\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects.toThrow('64');
+        });
+
+        it('errors on barely undersized immediate', () => {
+            fp.push('.orig x3000\n');
+            fp.push('add r0, r0, -17\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects.toThrow('-17');
+        });
+
+        it('errors on barely oversized immediate', () => {
+            fp.push('.orig x3000\n');
+            fp.push('add r0, r0, 16\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects.toThrow('16');
+        });
+
+        it('errors on oversized label offset', () => {
+            fp.push('.orig x3000\n');
+            fp.push('ld r3, faraway\n');
+            fp.push('.blkw 1024\n');
+            fp.push('faraway .fill 69\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects.toThrow('1024');
+        });
+
+        it('errors on barely oversized label offset', () => {
+            fp.push('.orig x3000\n');
+            fp.push('ld r3, faraway\n');
+            fp.push('.blkw 256\n');
+            fp.push('faraway .fill 69\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects.toThrow('256');
+        });
+
+        it('errors on undersized label offset', () => {
+            fp.push('.orig x3000\n');
+            fp.push('faraway .fill 69\n');
+            fp.push('.blkw 1024\n');
+            fp.push('ld r3, faraway\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects.toThrow('-1026');
+        });
+
+        it('errors on barely oversized label offset', () => {
+            fp.push('.orig x3000\n');
+            fp.push('faraway .fill 69\n');
+            fp.push('.blkw 255\n');
+            fp.push('ld r3, faraway\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects.toThrow('-257');
+        });
     });
 
     describe('assembleTo(inFp, outFp)', () => {

@@ -169,13 +169,51 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
             } else {
                 const operand = instr.operands[o++];
                 const numBits = field.bits[0] - field.bits[1] + 1;
+                // max/min values.
+                const maxUns = ~(-1 << numBits);
+                const maxTwos = (1 << (numBits - 1)) - 1;
+                const minTwos = (1 << (numBits - 1)) | (-1 << numBits);
 
                 if (field.kind === 'reg' && operand.kind === 'reg') {
-                    // TODO: check for reg too big
                     // TODO: support other prefixes etc
+
+                    if (operand.num < 0) {
+                        throw new Error(`negative register number ` +
+                                        `${operand.num} on line ${instr.line}`);
+                    }
+                    if (operand.num > maxUns) {
+                        throw new Error(`register number ${operand.num} ` +
+                                        `requires too many bits (max is ` +
+                                        `${maxUns}) on line ${instr.line}`);
+                    }
+
                     bin |= operand.num << field.bits[1];
                 } else if (field.kind === 'imm' && operand.kind === 'int') {
-                    // TODO: check if too big
+                    if (field.sext) {
+                        if (operand.val < minTwos) {
+                            throw new Error(`immediate value ${operand.val} ` +
+                                            `is smaller than minimum ${minTwos} ` +
+                                            `on line ${instr.line}`);
+                        }
+                        if (operand.val > maxTwos) {
+                            throw new Error(`immediate value ${operand.val} ` +
+                                            `is larger than maximum ${maxTwos} ` +
+                                            `on line ${instr.line}`);
+                        }
+                    } else {
+                        if (operand.val < 0) {
+                            throw new Error(`negative immediate value ` +
+                                            `${operand.val} in a ` +
+                                            `non-sign-extended field on ` +
+                                            `line ${instr.line}`);
+                        }
+                        if (operand.val > maxUns) {
+                            throw new Error(`immediate value ${operand.val} ` +
+                                            `is larger than maximum ${maxUns} ` +
+                                            `on line ${instr.line}`);
+                        }
+                    }
+
                     const masked = operand.val & ~(-1 << numBits);
                     bin |= masked << field.bits[1];
                 } else if (field.kind === 'imm' && operand.kind === 'label') {
@@ -188,6 +226,35 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                     // TODO: check if too big
                     // TODO: check if offset is negative but sext is false
                     const offset = symbtable[operand.label] - actualPc;
+
+                    if (field.sext) {
+                        if (offset < minTwos) {
+                            throw new Error(`required pc offset ${offset} to ` +
+                                            `label ${operand.label} is smaller ` +
+                                            `than minimum ${minTwos} on line ` +
+                                            `${instr.line}`);
+                        }
+                        if (offset > maxTwos) {
+                            throw new Error(`required pc offset ${offset} to ` +
+                                            `label ${operand.label} is larger ` +
+                                            `than maximum ${maxTwos} on line ` +
+                                            `${instr.line}`);
+                        }
+                    } else {
+                        if (offset < 0) {
+                            throw new Error(`required pc offset ${offset} to ` +
+                                            `label ${operand.label} is negative ` +
+                                            `but field is not sign extended ` +
+                                            `on line ${instr.line}`);
+                        }
+                        if (offset > maxUns) {
+                            throw new Error(`required pc offset ${offset} to ` +
+                                            `label ${operand.label} is larger ` +
+                                            `than maximum ${maxTwos} on line ` +
+                                            `${instr.line}`);
+                        }
+                    }
+
                     // TODO: make this a helper function
                     const masked = offset & ~(-1 << numBits);
                     bin |= masked << field.bits[1];

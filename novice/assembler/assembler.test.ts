@@ -22,7 +22,7 @@ describe('assembler', () => {
             return expect(assembler.parse(fp)).resolves.toEqual({
                 sections: [
                     {startAddr: 0x3000, instructions: [
-                        {kind: 'instr', op: 'halt', operands: []},
+                        {kind: 'instr', line: 2, op: 'halt', operands: []},
                     ]},
                 ],
                 labels: {},
@@ -39,7 +39,7 @@ describe('assembler', () => {
             return expect(assembler.parse(fp)).resolves.toEqual({
                 sections: [
                     {startAddr: 0x3000, instructions: [
-                        {kind: 'instr', op: 'br', operands: [
+                        {kind: 'instr', line: 3, op: 'br', operands: [
                             {kind: 'label', label: 'fun'}
                         ]},
                     ]},
@@ -62,13 +62,13 @@ describe('assembler', () => {
             return expect(assembler.parse(fp)).resolves.toEqual({
                 sections: [
                     {startAddr: 0x3000, instructions: [
-                        {kind: 'instr', op: 'lea', operands: [
+                        {kind: 'instr', line: 2, op: 'lea', operands: [
                             {kind: 'reg',   num: 0},
                             {kind: 'label', label: 'mystring'},
                         ]},
-                        {kind: 'instr', op: 'puts', operands: []},
-                        {kind: 'instr', op: 'halt', operands: []},
-                        {kind: 'pseudoop', op: 'stringz', operand:
+                        {kind: 'instr', line: 3, op: 'puts', operands: []},
+                        {kind: 'instr', line: 4, op: 'halt', operands: []},
+                        {kind: 'pseudoop', line: 7, op: 'stringz', operand:
                             {kind: 'string', contents: "hello world!"},
                         },
                     ]},
@@ -93,15 +93,15 @@ describe('assembler', () => {
             return expect(assembler.parse(fp)).resolves.toEqual({
                 sections: [
                     {startAddr: 0x3000, instructions: [
-                        {kind: 'instr', op: 'halt', operands: []},
+                        {kind: 'instr', line: 2, op: 'halt', operands: []},
                     ]},
                     {startAddr: 0x4000, instructions: [
-                        {kind: 'instr', op: 'and', operands: [
+                        {kind: 'instr', line: 6, op: 'and', operands: [
                             {kind: 'reg', num: 0},
                             {kind: 'reg', num: 0},
                             {kind: 'int', val: -3},
                         ]},
-                        {kind: 'instr', op: 'halt', operands: []},
+                        {kind: 'instr', line: 7, op: 'halt', operands: []},
                     ]},
                 ],
                 labels: {
@@ -122,10 +122,10 @@ describe('assembler', () => {
             return expect(assembler.parse(fp)).resolves.toEqual({
                 sections: [
                     {startAddr: 0x3000, instructions: [
-                        {kind: 'instr', op: 'halt', operands: []},
-                        {kind: 'pseudoop', op: 'blkw', operand:
+                        {kind: 'instr', line: 2, op: 'halt', operands: []},
+                        {kind: 'pseudoop', line: 3, op: 'blkw', operand:
                             {kind: 'int', val: 1}},
-                        {kind: 'pseudoop', op: 'blkw', operand:
+                        {kind: 'pseudoop', line: 4, op: 'blkw', operand:
                             {kind: 'int', val: 1}},
                     ]},
                 ],
@@ -151,17 +151,17 @@ describe('assembler', () => {
             return expect(assembler.parse(fp)).resolves.toEqual({
                 sections: [
                     {startAddr: 0x3000, instructions: [
-                        {kind: 'pseudoop', op: 'fill', operand:
+                        {kind: 'pseudoop', line: 2, op: 'fill', operand:
                             {kind: 'int', val: '\n'.charCodeAt(0)}},
-                        {kind: 'pseudoop', op: 'fill', operand:
+                        {kind: 'pseudoop', line: 3, op: 'fill', operand:
                             {kind: 'int', val: '\r'.charCodeAt(0)}},
-                        {kind: 'pseudoop', op: 'fill', operand:
+                        {kind: 'pseudoop', line: 4, op: 'fill', operand:
                             {kind: 'int', val: '\t'.charCodeAt(0)}},
-                        {kind: 'pseudoop', op: 'fill', operand:
+                        {kind: 'pseudoop', line: 5, op: 'fill', operand:
                             {kind: 'int', val: '\\'.charCodeAt(0)}},
-                        {kind: 'pseudoop', op: 'fill', operand:
+                        {kind: 'pseudoop', line: 6, op: 'fill', operand:
                             {kind: 'int', val: '\''.charCodeAt(0)}},
-                        {kind: 'pseudoop', op: 'fill', operand:
+                        {kind: 'pseudoop', line: 7, op: 'fill', operand:
                             {kind: 'int', val: 'a'.charCodeAt(0)}},
                     ]},
                 ],

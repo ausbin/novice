@@ -53,7 +53,8 @@ class ComplxParser extends AbstractParser<ParseContext, NT> {
 
                 if (isInstr) {
                     ctx.currentSection.instructions.push(
-                        {kind: 'instr', op: this.parseLabel(op).toLowerCase(),
+                        {kind: 'instr', line: line.num,
+                         op: this.parseLabel(op).toLowerCase(),
                          operands: []});
                     this.applyLabels(ctx);
                 } else {
@@ -80,11 +81,12 @@ class ComplxParser extends AbstractParser<ParseContext, NT> {
                 // permits only #2 (that is, the parse trees we receive
                 // will contain only #2), so we need to handle case #1
                 // here.
-                let [instr, instrLabel] = this.handleLabelledSoloInstr(ctx, op);
+                let [instr, instrLabel] =
+                    this.handleLabelledSoloInstr(ctx, line, op);
 
                 if (!instr) {
                     instrLabel = this.parseLineLabel(op);
-                    instr = this.parseInstrLine(op);
+                    instr = this.parseInstrLine(op, line);
                 }
 
                 if (instrLabel) {
@@ -101,7 +103,7 @@ class ComplxParser extends AbstractParser<ParseContext, NT> {
                     this.pushLabel(ctx, pseudoOpLabel, line);
                 }
 
-                const pseudoop = this.parsePseudoOpLine(op);
+                const pseudoop = this.parsePseudoOpLine(op, line);
 
                 // need an .orig
                 if (!ctx.currentSection) {
@@ -166,7 +168,8 @@ class ComplxParser extends AbstractParser<ParseContext, NT> {
         return word.val as string;
     }
 
-    private parsePseudoOpLine(pseudoOpLine: ParseTree<NT, T>): PseudoOp {
+    private parsePseudoOpLine(pseudoOpLine: ParseTree<NT, T>,
+                              line: Line<T>): PseudoOp {
         const pseudoOpCall = pseudoOpLine.children[pseudoOpLine.children.length - 1];
         const op = (pseudoOpCall.children[0].val as string).substring(1).toLowerCase();
         let operand: StringOperand|IntegerOperand|LabelOperand|undefined;
@@ -177,10 +180,11 @@ class ComplxParser extends AbstractParser<ParseContext, NT> {
             operand = (this.parseOperand(pseudoOpCall.children[1]) as StringOperand|IntegerOperand|LabelOperand);
         }
 
-        return {kind: 'pseudoop', op, operand};
+        return {kind: 'pseudoop', line: line.num, op, operand};
     }
 
     private handleLabelledSoloInstr(ctx: ParseContext,
+                                    line: Line<T>,
                                     instrLine: ParseTree<NT, T>):
             [Instruction|null, string|null] {
         // Intended to handle this parse tree:
@@ -202,6 +206,7 @@ class ComplxParser extends AbstractParser<ParseContext, NT> {
             const label = this.parseLabel(instrLine.children[0].children[0]);
             const instr: Instruction = {
                 kind: 'instr',
+                line: line.num,
                 op: this.parseLabel(instrLine.children[0]
                                              .children[1]
                                              .children[0]
@@ -213,8 +218,10 @@ class ComplxParser extends AbstractParser<ParseContext, NT> {
         }
     }
 
-    private parseInstrLine(instrLine: ParseTree<NT, T>): Instruction {
-        const instruction: Instruction = {kind: 'instr', op: '', operands: []};
+    private parseInstrLine(instrLine: ParseTree<NT, T>,
+                           line: Line<T>): Instruction {
+        const instruction: Instruction = {kind: 'instr', line: line.num,
+                                          op: '', operands: []};
         const instr = instrLine.children[instrLine.children.length - 1];
 
         const word = instr.children[0];

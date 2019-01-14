@@ -27,12 +27,14 @@ interface StringOperand {
 
 interface Instruction {
     kind: 'instr';
+    line: number;
     op: string;
     operands: (RegisterOperand|IntegerOperand|LabelOperand)[];
 }
 
 interface PseudoOp {
     kind: 'pseudoop';
+    line: number;
     op: string;
     operand: StringOperand|IntegerOperand|LabelOperand|undefined;
 }

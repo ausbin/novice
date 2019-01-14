@@ -35,7 +35,7 @@ class Parser<NT, T> {
             if (entry === null) {
                 if (token) {
                     throw new Error(`parse error: unexpected token ` +
-                                    `\`${token.val}' at line ${line.num} ` +
+                                    `\`${token.val}' on line ${line.num} ` +
                                     `and column ${token.col}`);
                 } else {
                     throw new Error(`parse error: unexpected end-of-file`);

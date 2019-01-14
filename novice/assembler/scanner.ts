@@ -114,7 +114,7 @@ class Scanner {
                 }
             } else if (this.currentToken !== '') {
                 const err =  new Error(
-                    `scanner error: unexpected character \`${c}' at line ` +
+                    `scanner error: unexpected character \`${c}' on line ` +
                     `${this.lineNum} column ${this.col}`);
                 this.rejectCallback(err);
                 return;

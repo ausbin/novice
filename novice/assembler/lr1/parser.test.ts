@@ -138,7 +138,7 @@ describe('parser', () => {
             const line: Line<T> = {num: 69, tokens: tokens};
 
             expect(() => {parser.parse(line)}).toThrow(
-                "unexpected token `)' at line 69 and column 9");
+                "unexpected token `)' on line 69 and column 9");
         });
     });
 });

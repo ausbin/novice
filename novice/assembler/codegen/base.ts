@@ -64,12 +64,12 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
         }
 
         // Check for overlapping sections
-        let sortedSections = sections.slice(0);
+        const sortedSections = sections.slice(0);
         sortedSections.sort((left, right) => left.startAddr - right.startAddr);
         for (let i = 1; i < sortedSections.length; i++) {
             // TODO: support different addressability
-            let left = sortedSections[i - 1];
-            let right = sortedSections[i];
+            const left = sortedSections[i - 1];
+            const right = sortedSections[i];
             if (right.startAddr >= left.startAddr &&
                     right.startAddr < left.startAddr + left.words.length) {
                 throw new Error(`sections at x${left.startAddr.toString(16)} ` +

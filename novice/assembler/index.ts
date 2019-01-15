@@ -1,4 +1,4 @@
-import { Isa, isas } from '../isa';
+import { getIsa, Isa, isas } from '../isa';
 import { Assembler, AssemblerConfig } from './assembler';
 import { BaseMachineCodeGenerator, MachineCodeGenerator } from './codegen';
 import { configs } from './configs';
@@ -17,14 +17,6 @@ function getParser(parserName: string): Parser {
 function getGenerator(): MachineCodeGenerator {
     // Go ahead and return only this lil fella for now
     return new BaseMachineCodeGenerator();
-}
-
-function getIsa(isaName: string): Isa {
-    if (!isas.hasOwnProperty(isaName)) {
-        throw new Error(`no such isa \`${isaName}'\n`);
-    }
-
-    return isas[isaName];
 }
 
 function getOpSpec(opSpecName: string): PseudoOpSpec {
@@ -59,4 +51,5 @@ function getConfig(configName: string): AssemblerConfig {
     };
 }
 
-export { Assembler, AssemblerConfig, getParser, getGenerator, getIsa, getOpSpec, getSerializer, getConfig };
+export { Assembler, AssemblerConfig, getParser, getGenerator,
+         getOpSpec, getSerializer, getConfig };

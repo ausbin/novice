@@ -1,3 +1,4 @@
+import { IO } from './io';
 import { Fields, Isa } from './isa';
 import { MachineState, MachineStateUpdate } from './state';
 
@@ -31,8 +32,8 @@ const Lc3Isa: Isa = {
         addressability: 16,
     },
     regs: [
-        {kind: 'reg', name: 'cc', bits: 3},
-        {kind: 'reg-range', count: 8, prefix: 'r', bits: 16},
+        {kind: 'reg', name: 'cc', sext: false, bits: 3},
+        {kind: 'reg-range', count: 8, prefix: 'r', sext: true, bits: 16},
     ],
     instructions: [
         {op: 'add', fields: [
@@ -42,7 +43,7 @@ const Lc3Isa: Isa = {
             {kind: 'const', bits: [ 5,  3], val: 0b000},
             {kind: 'reg',   bits: [ 2,  0], prefix: 'r', name: 'sr2'},
          ],
-         sim: (state: MachineState, ir: Fields) => withCcUpdate(
+         sim: (state: MachineState, io: IO, ir: Fields) => withCcUpdate(
              [{kind: 'reg', reg: ir.regs.dr, val: state.reg(ir.regs.sr1) +
                                                   state.reg(ir.regs.sr2)}]),
         },
@@ -55,7 +56,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 4,  0], sext: true, label: false,
              name: 'imm5'},
          ],
-         sim: (state: MachineState, ir: Fields) => withCcUpdate(
+         sim: (state: MachineState, io: IO, ir: Fields) => withCcUpdate(
              [{kind: 'reg', reg: ir.regs.dr, val: state.reg(ir.regs.sr1) +
                                                   ir.imms.imm5}]),
         },
@@ -67,7 +68,7 @@ const Lc3Isa: Isa = {
             {kind: 'const', bits: [ 5,  3], val: 0b000},
             {kind: 'reg',   bits: [ 2,  0], prefix: 'r', name: 'sr2'},
          ],
-         sim: (state: MachineState, ir: Fields) => withCcUpdate(
+         sim: (state: MachineState, io: IO, ir: Fields) => withCcUpdate(
              [{kind: 'reg', reg: ir.regs.dr, val: state.reg(ir.regs.sr1) &
                                                   state.reg(ir.regs.sr2)}]),
         },
@@ -80,7 +81,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 4,  0], sext: true, label: false,
              name: 'imm5'},
          ],
-         sim: (state: MachineState, ir: Fields) => withCcUpdate(
+         sim: (state: MachineState, io: IO, ir: Fields) => withCcUpdate(
              [{kind: 'reg', reg: ir.regs.dr, val: state.reg(ir.regs.sr1) &
                                                   ir.imms.imm5}]),
         },
@@ -88,7 +89,7 @@ const Lc3Isa: Isa = {
         {op: 'nop', fields: [
             {kind: 'const', bits: [15,  0], val: 0x0000},
          ],
-         sim: (state: MachineState, ir: Fields) => [],
+         sim: (state: MachineState, io: IO, ir: Fields) => [],
         },
 
         {op: 'br', fields: [
@@ -96,7 +97,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
-         sim: (state: MachineState, ir: Fields) =>
+         sim: (state: MachineState, io: IO, ir: Fields) =>
              [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}],
         },
 
@@ -105,7 +106,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
-         sim: (state: MachineState, ir: Fields) =>
+         sim: (state: MachineState, io: IO, ir: Fields) =>
              [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}],
         },
 
@@ -114,7 +115,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
-         sim: (state: MachineState, ir: Fields) =>
+         sim: (state: MachineState, io: IO, ir: Fields) =>
              (state.reg('cc') & 0b001)
              ? [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}]
              : [],
@@ -125,7 +126,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
-         sim: (state: MachineState, ir: Fields) =>
+         sim: (state: MachineState, io: IO, ir: Fields) =>
              (state.reg('cc') & 0b010)
              ? [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}]
              : [],
@@ -136,7 +137,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
-         sim: (state: MachineState, ir: Fields) =>
+         sim: (state: MachineState, io: IO, ir: Fields) =>
              (state.reg('cc') & 0b011)
              ? [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}]
              : [],
@@ -147,7 +148,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
-         sim: (state: MachineState, ir: Fields) =>
+         sim: (state: MachineState, io: IO, ir: Fields) =>
              (state.reg('cc') & 0b100)
              ? [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}]
              : [],
@@ -158,7 +159,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
-         sim: (state: MachineState, ir: Fields) =>
+         sim: (state: MachineState, io: IO, ir: Fields) =>
              (state.reg('cc') & 0b101)
              ? [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}]
              : [],
@@ -169,7 +170,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
-         sim: (state: MachineState, ir: Fields) =>
+         sim: (state: MachineState, io: IO, ir: Fields) =>
              (state.reg('cc') & 0b110)
              ? [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}]
              : [],
@@ -180,14 +181,14 @@ const Lc3Isa: Isa = {
             {kind: 'reg',   bits: [ 8,  6], prefix: 'r', name: 'baser'},
             {kind: 'const', bits: [ 5,  0], val: 0b000000},
          ],
-         sim: (state: MachineState, ir: Fields) =>
+         sim: (state: MachineState, io: IO, ir: Fields) =>
              [{kind: 'pc', where: state.reg(ir.regs.baser)}],
         },
 
         {op: 'ret', fields: [
             {kind: 'const', bits: [15,  0], val: 0b1100000111000000},
          ],
-         sim: (state: MachineState, ir: Fields) =>
+         sim: (state: MachineState, io: IO, ir: Fields) =>
              [{kind: 'pc', where: state.reg(['r', 7])}],
         },
 
@@ -196,7 +197,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [10,  0], sext: true, label: true,
              name: 'pcoffset11'},
          ],
-         sim: (state: MachineState, ir: Fields) => withCcUpdate(
+         sim: (state: MachineState, io: IO, ir: Fields) => withCcUpdate(
              [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset11},
               {kind: 'reg', reg: ['r', 7], val: state.pc + 1}]),
         },
@@ -206,7 +207,7 @@ const Lc3Isa: Isa = {
             {kind: 'reg',   bits: [ 8,  6], prefix: 'r', name: 'baser'},
             {kind: 'const', bits: [ 5,  0], val: 0b000000},
          ],
-         sim: (state: MachineState, ir: Fields) => withCcUpdate(
+         sim: (state: MachineState, io: IO, ir: Fields) => withCcUpdate(
              [{kind: 'pc', where: state.reg(ir.regs.baser)},
               {kind: 'reg', reg: ['r', 7], val: state.pc + 1}]),
         },
@@ -217,7 +218,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
-         sim: (state: MachineState, ir: Fields) => withCcUpdate(
+         sim: (state: MachineState, io: IO, ir: Fields) => withCcUpdate(
              [{kind: 'reg', reg: ir.regs.dr,
                val: state.load(state.pc + 1 + ir.imms.pcoffset9)}]),
         },
@@ -228,7 +229,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
-         sim: (state: MachineState, ir: Fields) => withCcUpdate(
+         sim: (state: MachineState, io: IO, ir: Fields) => withCcUpdate(
              [{kind: 'reg', reg: ir.regs.dr,
                val: state.load(state.pc + 1 + ir.imms.pcoffset9)}]),
         },
@@ -240,7 +241,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 5,  0], sext: true, label: false,
              name: 'offset6'},
          ],
-         sim: (state: MachineState, ir: Fields) => withCcUpdate(
+         sim: (state: MachineState, io: IO, ir: Fields) => withCcUpdate(
              [{kind: 'reg', reg: ir.regs.dr,
                val: state.load(state.reg(ir.regs.baser) + 1 +
                                ir.imms.offset6)}]),
@@ -252,7 +253,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
-         sim: (state: MachineState, ir: Fields) => withCcUpdate(
+         sim: (state: MachineState, io: IO, ir: Fields) => withCcUpdate(
              [{kind: 'reg', reg: ir.regs.dr,
                val: state.pc + 1 + ir.imms.pcoffset9}]),
         },
@@ -263,7 +264,7 @@ const Lc3Isa: Isa = {
             {kind: 'reg',   bits: [ 8,  6], prefix: 'r', name: 'sr'},
             {kind: 'const', bits: [ 5,  0], val: 0b111111},
          ],
-         sim: (state: MachineState, ir: Fields) => withCcUpdate(
+         sim: (state: MachineState, io: IO, ir: Fields) => withCcUpdate(
              [{kind: 'reg', reg: ir.regs.dr, val: ~state.reg(ir.regs.sr)}]),
         },
 
@@ -273,7 +274,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
-         sim: (state: MachineState, ir: Fields) =>
+         sim: (state: MachineState, io: IO, ir: Fields) =>
              [{kind: 'mem', addr: state.pc + 1 + ir.imms.pcoffset9,
                val: state.reg(ir.regs.sr)}],
         },
@@ -284,7 +285,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
              name: 'pcoffset9'},
          ],
-         sim: (state: MachineState, ir: Fields) =>
+         sim: (state: MachineState, io: IO, ir: Fields) =>
              [{kind: 'mem',
                addr: state.load(state.pc + 1 + ir.imms.pcoffset9),
                val: state.reg(ir.regs.sr)}],
@@ -297,7 +298,7 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 5,  0], sext: true, label: false,
              name: 'offset6'},
          ],
-         sim: (state: MachineState, ir: Fields) =>
+         sim: (state: MachineState, io: IO, ir: Fields) =>
              [{kind: 'mem',
                addr: state.reg(ir.regs.baser) + ir.imms.offset6,
                val: state.reg(ir.regs.sr)}],
@@ -308,40 +309,56 @@ const Lc3Isa: Isa = {
             {kind: 'imm',   bits: [ 7,  0], sext: false, label: false,
              name: 'trapvect8'},
          ],
-         sim: (state: MachineState, ir: Fields) =>
+         sim: (state: MachineState, io: IO, ir: Fields) =>
              [{kind: 'reg', reg: ['r', 7], val: state.pc + 1},
               {kind: 'pc', where: state.load(ir.imms.trapvect8)}],
         },
 
-        // TODO: implement these
         {op: 'getc', fields: [
             {kind: 'const', bits: [15,  0], val: 0b1111000000100000},
          ],
-         sim: (state: MachineState, ir: Fields) => [],
+         // TODO: don't echo
+         sim: (state: MachineState, io: IO, ir: Fields) =>
+             [{kind: 'reg', reg: ['r', 0], val: io.getc()}],
         },
 
         {op: 'out', fields: [
             {kind: 'const', bits: [15,  0], val: 0b1111000000100001},
          ],
-         sim: (state: MachineState, ir: Fields) => [],
+         sim: (state: MachineState, io: IO, ir: Fields) => {
+             io.putc(state.reg(['r', 0]));
+             return [];
+         },
         },
 
         {op: 'puts', fields: [
             {kind: 'const', bits: [15,  0], val: 0b1111000000100010},
          ],
-         sim: (state: MachineState, ir: Fields) => [],
+         // TODO: stop after X chars if we don't hit a null word
+         sim: (state: MachineState, io: IO, ir: Fields) => {
+             let addr = state.reg(['r', 0]);
+             let c;
+             while (c = state.load(addr++)) {
+                 io.putc(c);
+             }
+             return [];
+         },
         },
 
         {op: 'in', fields: [
             {kind: 'const', bits: [15,  0], val: 0b1111000000100011},
          ],
-         sim: (state: MachineState, ir: Fields) => [],
+         sim: (state: MachineState, io: IO, ir: Fields) => {
+             io.putc('>'.charCodeAt(0));
+             io.putc(' '.charCodeAt(0));
+             return [{kind: 'reg', reg: ['r', 0], val: io.getc()}];
+         },
         },
 
         {op: 'halt', fields: [
             {kind: 'const', bits: [15,  0], val: 0b1111000000100101},
          ],
-         sim: (state: MachineState, ir: Fields) => [],
+         sim: (state: MachineState, io: IO, ir: Fields) => [{kind: 'halt'}],
         },
     ],
 };

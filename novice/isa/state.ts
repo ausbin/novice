@@ -27,8 +27,13 @@ interface MachineStatePcUpdate {
     where: number;
 }
 
+interface MachineStateHaltUpdate {
+    kind: 'halt';
+}
+
 type MachineStateUpdate = MachineStateRegUpdate|
                           MachineStateMemUpdate|
-                          MachineStatePcUpdate;
+                          MachineStatePcUpdate|
+                          MachineStateHaltUpdate;
 
 export { RegIdentifier, MachineState, MachineStateUpdate };

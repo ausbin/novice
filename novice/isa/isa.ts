@@ -1,3 +1,4 @@
+import { IO } from './io';
 import { MachineState, MachineStateUpdate, RegIdentifier } from './state';
 
 interface Pc {
@@ -16,6 +17,7 @@ interface Mem {
 interface RegSolo {
     kind: 'reg';
     name: string;
+    sext: boolean;
     bits: number;
 }
 
@@ -23,6 +25,7 @@ interface RegRange {
     kind: 'reg-range';
     count: number;
     prefix: string;
+    sext: boolean;
     bits: number;
 }
 
@@ -59,7 +62,7 @@ interface Fields  {
 interface Instruction {
     op: string;
     fields: Field[];
-    sim: (state: MachineState, ir: Fields) => MachineStateUpdate[];
+    sim: (state: MachineState, io: IO, ir: Fields) => MachineStateUpdate[];
 }
 
 interface Isa {
@@ -69,4 +72,4 @@ interface Isa {
     instructions: Instruction[];
 }
 
-export { Isa, Fields, Instruction };
+export { Isa, Fields, Instruction, Reg };

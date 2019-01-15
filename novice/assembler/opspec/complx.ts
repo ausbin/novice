@@ -24,7 +24,7 @@ const complxOpSpec: PseudoOpSpec = {
         {name: 'blkw',
          operands: [{kind: 'int', name: 'count'}],
          asm: (ctx: AsmContext, operands: OpOperands) => {
-            // TODO: needs to be randomized
+            // TODO: needs to be randomized/uninitialized
             const result = new Array<number>(operands.ints.count);
             for (let i = 0; i < result.length; i++) {
                 result[i] = 0;

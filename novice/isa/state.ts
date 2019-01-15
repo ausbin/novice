@@ -2,12 +2,12 @@
 type RegIdentifier = string|[string, number];
 
 interface MachineState {
-    // Auto sign-extends and everything
-    reg: (reg: RegIdentifier) => number;
     // Address of current instruction. NOT incremented!
     pc: number;
+    // Auto sign-extends and everything
+    reg(reg: RegIdentifier): number;
     // memory accesses
-    load: (addr: number) => number;
+    load(addr: number): number;
 }
 
 interface MachineStateRegUpdate {

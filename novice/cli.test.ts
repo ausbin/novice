@@ -1,4 +1,5 @@
 import { Readable, Writable } from 'stream';
+import { Buffer } from 'buffer';
 import main from './cli';
 
 // Mocks
@@ -8,11 +9,23 @@ jest.mock('./assembler');
 import { Assembler, AssemblerConfig, getConfig, getParser } from './assembler';
 
 describe('cli', () => {
-    let stdout: Writable, stderr: Writable;
-    let stdoutActual: string, stderrActual: string;
+    let stdin: Readable, stdout: Writable, stderr: Writable;
+    let stdinActual:string, stdoutActual: string, stderrActual: string;
 
     beforeEach(() => {
-        stdoutActual = stderrActual = "";
+        stdinActual = stdoutActual = stderrActual = "";
+        stdin = new Readable({
+            read(n) {
+                n = Math.min(n, stdinActual.length);
+                if (!n) {
+                    return null;
+                } else {
+                    const res = Buffer.from(stdinActual.slice(0, n));
+                    stdinActual = stdinActual.slice(n);
+                    return res;
+                }
+            }
+        });
         stdout = new Writable({
             write(str) {
                 stdoutActual += str;
@@ -86,7 +99,7 @@ describe('cli', () => {
 
         it('parses asm file', () => {
             return main(['asm', '-c', 'bread', 'patrick.asm'],
-                        stdout, stderr).then(exitCode => {
+                        stdin, stdout, stderr).then(exitCode => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['patrick.asm']]);
                 // @ts-ignore
@@ -113,7 +126,7 @@ describe('cli', () => {
             };
 
             return main(['asm', 'sanjay.asm'],
-                        stdout, stderr).then(exitCode => {
+                        stdin, stdout, stderr).then(exitCode => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['sanjay.asm']]);
 
@@ -135,7 +148,7 @@ describe('cli', () => {
             getParser.mockReturnValue(mockParser);
 
             return main(['tablegen', 'farzam'],
-                        stdout, stderr).then(exitCode => {
+                        stdin, stdout, stderr).then(exitCode => {
                 // @ts-ignore
                 expect(getParser.mock.calls).toEqual([['farzam']]);
                 expect(mockGenTable.mock.calls).toEqual([[]]);
@@ -150,7 +163,8 @@ describe('cli', () => {
             // @ts-ignore
             getParser.mockImplementation(() => {throw new Error('excuse me son')});
 
-            return main(['tablegen', 'gucci'], stdout, stderr).then(exitCode => {
+            return main(['tablegen', 'gucci'],
+                        stdin, stdout, stderr).then(exitCode => {
                 // @ts-ignore
                 expect(getParser.mock.calls).toEqual([['gucci']]);
 
@@ -168,7 +182,8 @@ describe('cli', () => {
             // @ts-ignore
             getParser.mockReturnValue(mockParser);
 
-            return main(['tablegen', 'guwop'], stdout, stderr).then(exitCode => {
+            return main(['tablegen', 'guwop'],
+                        stdin, stdout, stderr).then(exitCode => {
                 // @ts-ignore
                 expect(getParser.mock.calls).toEqual([['guwop']]);
 

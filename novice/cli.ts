@@ -1,9 +1,11 @@
 import { ArgumentParser } from 'argparse';
 import * as fs from 'fs';
-import { Writable } from 'stream';
+import { Readable, Writable } from 'stream';
 import { Assembler, getConfig, getParser, getSerializer } from './assembler';
+import { StreamIO } from './isa';
+import { getSimulatorConfig, Simulator } from './simulator';
 
-async function main(argv: string[], stdout: Writable,
+async function main(argv: string[], stdin: Readable, stdout: Writable,
                     stderr: Writable): Promise<number> {
     const parser = new ArgumentParser({ prog: 'novice', description: 'toy assembler' });
     const sub = parser.addSubparsers({ dest: 'subcmd', help: 'subcommand to run' });
@@ -28,6 +30,13 @@ async function main(argv: string[], stdout: Writable,
                                   'the default output format for the ' +
                                   'the selected assembler configuration' });
 
+    const simParser = sub.addParser('sim');
+    simParser.addArgument(['file'], { help: 'file to simulate' });
+    simParser.addArgument(['-c', '--config'],
+                          { defaultValue: 'lc3',
+                            help: 'simulator configuration to use. ' +
+                                  'default: %(defaultValue)s' });
+
     const tablegenParser = sub.addParser('tablegen');
     tablegenParser.addArgument(['parser'],
                                { help: 'parser whose table to generate' });
@@ -36,6 +45,8 @@ async function main(argv: string[], stdout: Writable,
     switch (args.subcmd) {
         case 'asm':
             return await asm(args.config, args.file, args.outputFile, args.outputFormat, stdout, stderr);
+        case 'sim':
+            return await sim(args.config, args.file, stdin, stdout, stderr);
         case 'tablegen':
             return tablegen(args.parser, stdout, stderr);
         default:
@@ -84,6 +95,26 @@ function removeExt(path: string): string {
     const dotIdx = path.lastIndexOf('.');
     const hasExt = dotIdx !== -1 && (slashIdx === -1 || slashIdx < dotIdx);
     return hasExt ? path.substr(0, dotIdx) : path;
+}
+
+async function sim(configName: string, path: string, stdin: Readable,
+                   stdout: Writable, stderr: Writable): Promise<number> {
+    try {
+        const cfg = getSimulatorConfig(configName);
+        const fp = fs.createReadStream(path);
+        await new Promise((resolve, reject) => {
+            fp.on('readable', resolve);
+            fp.on('error', reject);
+        });
+        const io = new StreamIO(stdin, stdout);
+        const simulator = new Simulator(cfg.isa, io);
+        cfg.loader.load(cfg.isa, fp, simulator);
+        simulator.run();
+        return 0;
+    } catch (err) {
+        stderr.write(`sim error: ${err.message}\n`);
+        return 1;
+    }
 }
 
 function tablegen(parserName: string, stdout: Writable,

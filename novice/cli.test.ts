@@ -10,7 +10,7 @@ import { Assembler, AssemblerConfig, getConfig, getParser } from './assembler';
 
 describe('cli', () => {
     let stdin: Readable, stdout: Writable, stderr: Writable;
-    let stdinActual:string, stdoutActual: string, stderrActual: string;
+    let stdinActual: string, stdoutActual: string, stderrActual: string;
 
     beforeEach(() => {
         stdinActual = stdoutActual = stderrActual = "";

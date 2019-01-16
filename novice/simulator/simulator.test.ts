@@ -493,5 +493,12 @@ describe('simulator', () => {
             });
             expect(stdout).toEqual('> ');
         });
+
+        it('errors on invalid instruction', () => {
+            sim.store(0x3000, 0b1101000000000000);
+            expect(() => {
+                sim.run();
+            }).toThrow(/0xD000/i);
+        });
     });
 });

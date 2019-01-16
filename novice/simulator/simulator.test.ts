@@ -341,5 +341,27 @@ describe('simulator', () => {
                 ]},
             });
         });
+
+        it('executes loads', () => {
+            sim.store(0x3000, 0b0010011000000101); // ld r3, nice
+            sim.store(0x3001, 0b1110100000000100); // lea r4, nice
+            sim.store(0x3002, 0b0001100100111110); // add r4, r4, -2
+            sim.store(0x3003, 0b0110101100000010); // ldr r5, r4, 2
+            sim.store(0x3004, 0b1010110000000010); // ldi r6, niceaddr
+            sim.store(0x3005, 0xf025); // halt
+            sim.store(0x3006, 0x0069); // nice .fill x69
+            sim.store(0x3007, 0x3006); // niceaddr .fill nice
+            sim.run();
+
+            expect(sim.halted).toBe(true);
+            expect(sim.pc).toEqual(0x3006);
+            expect(sim.regs).toEqual({
+                solo: {'cc': 0b001},
+                range: {'r': [
+                    0x0000, 0x0000, 0x0000, 0x0069,
+                    0x3004, 0x0069, 0x0069, 0x0000,
+                ]},
+            });
+        });
     });
 });

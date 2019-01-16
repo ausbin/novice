@@ -231,7 +231,7 @@ const Lc3Isa: Isa = {
          ],
          sim: (state: MachineState, io: IO, ir: Fields) => withCcUpdate(
              [{kind: 'reg', reg: ir.regs.dr,
-               val: state.load(state.pc + 1 + ir.imms.pcoffset9)}]),
+               val: state.load(state.load(state.pc + 1 + ir.imms.pcoffset9))}]),
         },
 
         {op: 'ldr', fields: [
@@ -243,8 +243,7 @@ const Lc3Isa: Isa = {
          ],
          sim: (state: MachineState, io: IO, ir: Fields) => withCcUpdate(
              [{kind: 'reg', reg: ir.regs.dr,
-               val: state.load(state.reg(ir.regs.baser) + 1 +
-                               ir.imms.offset6)}]),
+               val: state.load(state.reg(ir.regs.baser) + ir.imms.offset6)}]),
         },
 
         {op: 'lea', fields: [

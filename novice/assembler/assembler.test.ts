@@ -684,6 +684,116 @@ describe('assembler', () => {
 
             return expect(assembler.assemble(fp)).rejects.toThrow('overlap');
         });
+
+        it('errors on bogus pseudoops with no operands', () => {
+            fp.push('.orig x3000\n');
+            fp.push('.bob\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects
+                   .toThrow('.bob with no operand');
+        });
+
+        it('errors on bogus pseudoops with operand', () => {
+            fp.push('.orig x3000\n');
+            fp.push('.bob "hey ya"\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects
+                   .toThrow('.bob with string operand');
+        });
+
+        it('errors on bogus instructions', () => {
+            fp.push('.orig x3000\n');
+            fp.push('steveo r1, r3, r3\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects
+                   .toThrow('steveo with operands reg, reg, reg');
+        });
+
+        it('errors on barely oversized regnos', () => {
+            fp.push('.orig x3000\n');
+            fp.push('add r0, r0, r8\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects
+                   .toThrow(/8 .* on line 2/i);
+        });
+
+        it('errors on oversized regnos', () => {
+            fp.push('.orig x3000\n');
+            fp.push('add r0, r0, r1000\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects
+                   .toThrow(/1000 .* on line 2/i);
+        });
+
+        it('errors on barely negative non-sign-extended immediates', () => {
+            fp.push('.orig x3000\n');
+            fp.push('trap -1\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects
+                   .toThrow('-1');
+        });
+
+        it('errors on negative non-sign-extended immediates', () => {
+            fp.push('.orig x3000\n');
+            fp.push('trap -1000\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects
+                   .toThrow('-1000');
+        });
+
+        it('errors on barely oversized non-sign-extended immediates', () => {
+            fp.push('.orig x3000\n');
+            fp.push('trap 256\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects
+                   .toThrow('256');
+        });
+
+        it('errors on oversized non-sign-extended immediates', () => {
+            fp.push('.orig x3000\n');
+            fp.push('trap 1000\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects
+                   .toThrow('1000');
+        });
+
+        it('errors on too many operands', () => {
+            fp.push('.orig x3000\n');
+            fp.push('add r0, r0, 3, r0\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects
+                   .toThrow('reg, reg, int, reg');
+        });
+
+        it('errors on too few operands', () => {
+            fp.push('.orig x3000\n');
+            fp.push('add r0, r0\n');
+            fp.push('.end\n');
+            fp.push(null);
+
+            return expect(assembler.assemble(fp)).rejects
+                   .toThrow('reg, reg');
+        });
     });
 
     describe('assembleTo(inFp, outFp)', () => {

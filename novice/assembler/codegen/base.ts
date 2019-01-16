@@ -128,8 +128,8 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
             if (!match) {
                 // TODO: include reg prefixes
                 const operands = (instr.operands.length > 0) ?
-                    'operands' + instr.operands.map(operand => operand.kind)
-                                               .join(', ')
+                    'operands ' + instr.operands.map(operand => operand.kind)
+                                                .join(', ')
                     : 'no operands';
 
                 throw new Error(`unknown instruction ${instr.op} with ` +

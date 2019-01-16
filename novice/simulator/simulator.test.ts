@@ -9,7 +9,7 @@ describe('simulator', () => {
     beforeEach(() => {
         const io: IO = {
             getc() {
-                if (stdin) {
+                if (stdin.length > 0) {
                     const c = stdin.charCodeAt(0);
                     stdin = stdin.slice(1);
                     return c;
@@ -362,6 +362,136 @@ describe('simulator', () => {
                     0x3004, 0x0069, 0x0069, 0x0000,
                 ]},
             });
+        });
+
+        it('executes stores', () => {
+            sim.store(0x3000, 0b0101111111100000); // and r7, r7, 0
+            sim.store(0x3001, 0b0001111111101111); // add r7, r7, 15
+            sim.store(0x3002, 0b0001111111101111); // add r7, r7, 15
+            sim.store(0x3003, 0b0001111111101111); // add r7, r7, 15
+            sim.store(0x3004, 0b0001111111101111); // add r7, r7, 15
+            sim.store(0x3005, 0b0001111111101111); // add r7, r7, 15
+            sim.store(0x3006, 0b0001111111101111); // add r7, r7, 15
+            sim.store(0x3007, 0b0001111111101111); // add r7, r7, 15
+
+            sim.store(0x3008, 0b0011111000000101); // st r7, nice
+            sim.store(0x3009, 0b1110100000000111); // lea r4, nice3
+            sim.store(0x300a, 0b0001100100111110); // add r4, r4, -2
+            sim.store(0x300b, 0b0111111100000010); // str r7, r4, 2
+            sim.store(0x300c, 0b1011111000000010); // sti r7, nice2addr
+            sim.store(0x300d, 0xf025); // halt
+            sim.store(0x300e, 0x0420); // nice .fill x0420
+            sim.store(0x300f, 0x3010); // nice2addr .fill nice
+            sim.store(0x3010, 0x0420); // nice2 .fill x0420
+            sim.store(0x3011, 0x0420); // nice3 .fill x0420
+            sim.run();
+
+            expect(sim.halted).toBe(true);
+            expect(sim.pc).toEqual(0x300e);
+            expect(sim.regs).toEqual({
+                solo: {'cc': 0b001},
+                range: {'r': [
+                    0x0000, 0x0000, 0x0000, 0x0000,
+                    0x300f, 0x0000, 0x0000, 0x0069,
+                ]},
+            });
+            expect(sim.load(0x300e)).toEqual(0x0069);
+            expect(sim.load(0x3010)).toEqual(0x0069);
+            expect(sim.load(0x3011)).toEqual(0x0069);
+        });
+
+        it('executes getc', () => {
+            stdin = 'asdf';
+
+            sim.store(0x3000, 0xf020); // getc
+            sim.store(0x3001, 0xf025); // halt
+            sim.run();
+
+            expect(sim.halted).toBe(true);
+            expect(sim.pc).toEqual(0x3002);
+            expect(sim.regs).toEqual({
+                // LC-3 ISA is ambiguous, but does not appear to
+                // update CC
+                solo: {'cc': 0b000},
+                range: {'r': [
+                    0x0061, 0x0000, 0x0000, 0x0000,
+                    0x0000, 0x0000, 0x0000, 0x0000,
+                ]},
+            });
+            // Did not touch stdout
+            expect(stdout).toEqual('');
+        });
+
+        it('executes out', () => {
+            sim.store(0x3000, 0b0101000000100000); // and r0, r0, 0
+            sim.store(0x3001, 0b0001000000101111); // add r0, r0, 15
+            sim.store(0x3002, 0b0001000000101111); // add r0, r0, 15
+            sim.store(0x3003, 0b0001000000100011); // add r0, r0, 3
+            sim.store(0x3004, 0xf021); // out
+            sim.store(0x3005, 0xf025); // halt
+            sim.run();
+
+            expect(sim.halted).toBe(true);
+            expect(sim.pc).toEqual(0x3006);
+            expect(sim.regs).toEqual({
+                solo: {'cc': 0b001},
+                range: {'r': [
+                    0x0021, 0x0000, 0x0000, 0x0000,
+                    0x0000, 0x0000, 0x0000, 0x0000,
+                ]},
+            });
+            expect(stdout).toEqual('!');
+        });
+
+        it('executes out on R0[7:0]', () => {
+            sim.store(0x3000, 0b0101000000100000); // and r0, r0, 0
+            sim.store(0x3001, 0b0001000000100001); // add r0, r0, 1
+            sim.store(0x3002, 0b0001000000000000); // add r0, r0, r0
+            sim.store(0x3003, 0b0001000000000000); // add r0, r0, r0
+            sim.store(0x3004, 0b0001000000000000); // add r0, r0, r0
+            sim.store(0x3005, 0b0001000000000000); // add r0, r0, r0
+            sim.store(0x3006, 0b0001000000000000); // add r0, r0, r0
+            sim.store(0x3007, 0b0001000000000000); // add r0, r0, r0
+            sim.store(0x3008, 0b0001000000000000); // add r0, r0, r0
+            sim.store(0x3009, 0b0001000000000000); // add r0, r0, r0
+            sim.store(0x300a, 0b0001000000101111); // add r0, r0, 15
+            sim.store(0x300b, 0b0001000000101111); // add r0, r0, 15
+            sim.store(0x300c, 0b0001000000100011); // add r0, r0, 3
+            sim.store(0x300d, 0xf021); // out
+            sim.store(0x300e, 0xf025); // halt
+            sim.run();
+
+            expect(sim.halted).toBe(true);
+            expect(sim.pc).toEqual(0x300f);
+            expect(sim.regs).toEqual({
+                solo: {'cc': 0b001},
+                range: {'r': [
+                    0x0121, 0x0000, 0x0000, 0x0000,
+                    0x0000, 0x0000, 0x0000, 0x0000,
+                ]},
+            });
+            expect(stdout).toEqual('!');
+        });
+
+        it('executes in', () => {
+            stdin = 'banana';
+
+            sim.store(0x3000, 0xf023); // out
+            sim.store(0x3001, 0xf025); // halt
+            sim.run();
+
+            expect(sim.halted).toBe(true);
+            expect(sim.pc).toEqual(0x3002);
+            expect(sim.regs).toEqual({
+                // LC-3 ISA is ambiguous, but does not appear to
+                // update CC
+                solo: {'cc': 0b000},
+                range: {'r': [
+                    0x0062, 0x0000, 0x0000, 0x0000,
+                    0x0000, 0x0000, 0x0000, 0x0000,
+                ]},
+            });
+            expect(stdout).toEqual('> ');
         });
     });
 });

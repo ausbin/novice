@@ -1,11 +1,13 @@
 import WordDFA from './word';
 import { feedDFA } from './helpers.test';
 
+type T = 'word';
+
 describe('word DFA', () => {
-    let dfa: WordDFA;
+    let dfa: WordDFA<T>;
 
     beforeEach(() => {
-        dfa = new WordDFA();
+        dfa = new WordDFA<T>({word: 'word'});
     });
 
     it('rejects nonsense', () => {
@@ -24,13 +26,13 @@ describe('word DFA', () => {
         const len = feedDFA(dfa, 'add', ' r0, r0, r1');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(false);
-        expect(dfa.getKind()).toEqual('word');
+        expect(dfa.getT()).toEqual('word');
     });
 
     it('recognizes word with digits', () => {
         const len = feedDFA(dfa, 'mylabel2', ': add r0, r0, r1');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(false);
-        expect(dfa.getKind()).toEqual('word');
+        expect(dfa.getT()).toEqual('word');
     });
 });

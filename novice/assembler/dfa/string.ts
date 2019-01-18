@@ -1,4 +1,4 @@
-import { DFA, Kind } from './dfa';
+import { DFA } from './dfa';
 
 enum State {
     Start,
@@ -9,15 +9,22 @@ enum State {
     CharacterGotten,
 }
 
-export default class StringDFA extends DFA {
+interface StringTs<T> {
+    string: T;
+    char: T;
+}
+
+export default class StringDFA<T> extends DFA<T> {
+    private Ts: StringTs<T>;
     private state!: State;
     private alive!: boolean;
     private length!: number;
     private acceptingLength!: number;
-    private kind!: Kind;
+    private kind!: T;
 
-    public constructor() {
+    public constructor(Ts: StringTs<T>) {
         super();
+        this.Ts = Ts;
         this.reset();
     }
 
@@ -33,11 +40,11 @@ export default class StringDFA extends DFA {
                 switch (c) {
                     case '"':
                         this.state = State.String;
-                        this.kind = 'string';
+                        this.kind = this.Ts.string;
                         break;
                     case "'":
                         this.state = State.Character;
-                        this.kind = 'char';
+                        this.kind = this.Ts.char;
                         break;
                     default:
                         this.alive = false;
@@ -109,7 +116,7 @@ export default class StringDFA extends DFA {
         this.acceptingLength = 0;
     }
 
-    public getKind(): Kind {
+    public getT(): T {
         return this.kind;
     }
 }

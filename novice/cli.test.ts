@@ -1,5 +1,6 @@
 import { Readable, Writable } from 'stream';
 import { Buffer } from 'buffer';
+import { getIsa } from './isa';
 import main from './cli';
 
 // Mocks
@@ -150,7 +151,7 @@ describe('cli', () => {
             return main(['tablegen', 'farzam'],
                         stdin, stdout, stderr).then(exitCode => {
                 // @ts-ignore
-                expect(getParser.mock.calls).toEqual([['farzam']]);
+                expect(getParser.mock.calls).toEqual([['farzam', getIsa('dummy')]]);
                 expect(mockGenTable.mock.calls).toEqual([[]]);
 
                 expect(exitCode).toEqual(0);
@@ -166,7 +167,7 @@ describe('cli', () => {
             return main(['tablegen', 'gucci'],
                         stdin, stdout, stderr).then(exitCode => {
                 // @ts-ignore
-                expect(getParser.mock.calls).toEqual([['gucci']]);
+                expect(getParser.mock.calls).toEqual([['gucci', getIsa('dummy')]]);
 
                 expect(exitCode).toEqual(1);
                 expect(stdoutActual).toEqual('');
@@ -185,7 +186,7 @@ describe('cli', () => {
             return main(['tablegen', 'guwop'],
                         stdin, stdout, stderr).then(exitCode => {
                 // @ts-ignore
-                expect(getParser.mock.calls).toEqual([['guwop']]);
+                expect(getParser.mock.calls).toEqual([['guwop', getIsa('dummy')]]);
 
                 expect(exitCode).toEqual(1);
                 expect(stdoutActual).toEqual('');

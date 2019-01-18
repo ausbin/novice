@@ -1,11 +1,13 @@
 import StringDFA from './string';
 import { feedDFA } from './helpers.test';
 
+type T = 'str'|'chr';
+
 describe('string DFA', () => {
-    let dfa: StringDFA;
+    let dfa: StringDFA<T>;
 
     beforeEach(() => {
-        dfa = new StringDFA();
+        dfa = new StringDFA<T>({string: 'str', char: 'chr'});
     });
 
     it('rejects raw text', () => {
@@ -37,56 +39,56 @@ describe('string DFA', () => {
             const len = feedDFA(dfa, '""', '   ');
             expect(dfa.getAcceptingLength()).toBe(len);
             expect(dfa.isAlive()).toBe(false);
-            expect(dfa.getKind()).toEqual('string');
+            expect(dfa.getT()).toEqual('str');
         });
 
         it('dies at closing quote', () => {
             const len = feedDFA(dfa, '""');
             expect(dfa.getAcceptingLength()).toBe(len);
             expect(dfa.isAlive()).toBe(false);
-            expect(dfa.getKind()).toEqual('string');
+            expect(dfa.getT()).toEqual('str');
         });
 
         it('recognizes nonempty string', () => {
             const len = feedDFA(dfa, '"trevor"', ' ');
             expect(dfa.getAcceptingLength()).toBe(len);
             expect(dfa.isAlive()).toBe(false);
-            expect(dfa.getKind()).toEqual('string');
+            expect(dfa.getT()).toEqual('str');
         });
 
         it('dies at closing quote of nonempty string', () => {
             const len = feedDFA(dfa, '"trevor"');
             expect(dfa.getAcceptingLength()).toBe(len);
             expect(dfa.isAlive()).toBe(false);
-            expect(dfa.getKind()).toEqual('string');
+            expect(dfa.getT()).toEqual('str');
         });
 
         it('recognizes escapes', () => {
             const len = feedDFA(dfa, '"\\n"');
             expect(dfa.getAcceptingLength()).toBe(len);
             expect(dfa.isAlive()).toBe(false);
-            expect(dfa.getKind()).toEqual('string');
+            expect(dfa.getT()).toEqual('str');
         });
 
         it('recognizes intermixed escapes', () => {
             const len = feedDFA(dfa, '"hello\\ni am bob"');
             expect(dfa.getAcceptingLength()).toBe(len);
             expect(dfa.isAlive()).toBe(false);
-            expect(dfa.getKind()).toEqual('string');
+            expect(dfa.getT()).toEqual('str');
         });
 
         it('recognizes escaped double quote', () => {
             const len = feedDFA(dfa, '"hi\\"mom"', ' ');
             expect(dfa.getAcceptingLength()).toBe(len);
             expect(dfa.isAlive()).toBe(false);
-            expect(dfa.getKind()).toEqual('string');
+            expect(dfa.getT()).toEqual('str');
         });
 
         it('recognizes lonely escaped double quote', () => {
             const len = feedDFA(dfa, '"\\""');
             expect(dfa.getAcceptingLength()).toBe(len);
             expect(dfa.isAlive()).toBe(false);
-            expect(dfa.getKind()).toEqual('string');
+            expect(dfa.getT()).toEqual('str');
         });
     });
 
@@ -125,21 +127,21 @@ describe('string DFA', () => {
             const len = feedDFA(dfa, "'a'");
             expect(dfa.getAcceptingLength()).toBe(len);
             expect(dfa.isAlive()).toBe(false);
-            expect(dfa.getKind()).toEqual('char');
+            expect(dfa.getT()).toEqual('chr');
         });
 
         it('recognizes escapes in character literals', () => {
             const len = feedDFA(dfa, "'\\n'");
             expect(dfa.getAcceptingLength()).toBe(len);
             expect(dfa.isAlive()).toBe(false);
-            expect(dfa.getKind()).toEqual('char');
+            expect(dfa.getT()).toEqual('chr');
         });
 
         it('recognizes escaped single quote in character literals', () => {
             const len = feedDFA(dfa, "'\\''");
             expect(dfa.getAcceptingLength()).toBe(len);
             expect(dfa.isAlive()).toBe(false);
-            expect(dfa.getKind()).toEqual('char');
+            expect(dfa.getT()).toEqual('chr');
         });
     });
 });

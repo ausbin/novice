@@ -1,5 +1,5 @@
 import { AbstractParser, Parser } from './parser';
-import { Grammar, T, Ts } from './grammar';
+import { Grammar } from './grammar';
 import { ParseTable, ParseTree } from '../lr1';
 import { Line } from '../scanner';
 
@@ -10,16 +10,20 @@ describe('abstract parser', () => {
     describe('genTable()', () => {
         // Bogus types
         type NT = 'goal';
+        type T = '!';
         interface Context {};
 
         let parser: Parser;
         // @ts-ignore
-        const mockGrammar: Grammar<NT> = {NTs: 'aveni', productions: 'j', goal: 'timothy'};
+        const mockGrammar: Grammar<NT, T> = {NTs: 'aveni', Ts: '1332',
+                                             // @ts-ignore
+                                             productions: 'j', goal: 'timothy',
+                                             getDFAs: () => []};
         // @ts-ignore
         const mockTableGenerated: ParseTable<NT, T> = {table: 'hi dad'};
         const mockGenTable = jest.fn();
 
-        class TestParser extends AbstractParser<Context, NT> {
+        class TestParser extends AbstractParser<Context, NT, T> {
             // @ts-ignore
             protected getTable(): ParseTable<NT, T> { return null; }
             // @ts-ignore
@@ -37,19 +41,19 @@ describe('abstract parser', () => {
             });
             mockGenTable.mockReturnValue(mockTableGenerated);
 
-            parser = new TestParser();
+            parser = new TestParser(null);
         });
 
         afterEach(() => {
             // @ts-ignore
-            //TableGenerator.mockReset();
-            //mockGenTable.mockReset();
+            TableGenerator.mockReset();
+            mockGenTable.mockReset();
         });
 
         it('generates a parse table', () => {
             expect(parser.genTable()).toEqual(mockTableGenerated);
             // @ts-ignore
-            expect(TableGenerator.mock.calls).toEqual([['timothy', 'j', 'aveni', Ts]]);
+            expect(TableGenerator.mock.calls).toEqual([['timothy', 'j', 'aveni', '1332']]);
             expect(mockGenTable.mock.calls).toEqual([[]]);
         });
     });

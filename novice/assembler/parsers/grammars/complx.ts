@@ -1,5 +1,21 @@
+import { Isa, regPrefixes } from '../../../isa';
+import { CommentDFA, IntegerDFA, PseudoOpDFA, RegDFA, StringDFA, SymbolDFA,
+         WhitespaceDFA, WordDFA } from '../../dfa';
 import { Production } from '../../lr1';
-import { Grammar, T } from '../grammar';
+import { Grammar } from '../grammar';
+
+const TsObj = {
+    'int-decimal' : '',
+    'int-hex'     : '',
+    'reg'         : '',
+    'pseudoop'    : '',
+    'string'      : '',
+    'char'        : '',
+    'word'        : '',
+    ','           : '',
+};
+type T = keyof typeof TsObj;
+const Ts = new Set(Object.keys(TsObj) as T[]);
 
 const NTsObj = {
     'line'             : '',
@@ -24,7 +40,6 @@ const productions: Production<NT, T>[] = [
     {lhs: 'instr', rhs: ['word', 'instr-operands']},
     {lhs: 'instr-operands', rhs: ['operand']},
     {lhs: 'instr-operands', rhs: ['instr-operands', ',', 'operand']},
-    {lhs: 'instr-operands', rhs: ['instr-operands', '(', 'operand', ')']},
     {lhs: 'operand', rhs: ['word']},
     {lhs: 'operand', rhs: ['int-decimal']},
     {lhs: 'operand', rhs: ['int-hex']},
@@ -41,6 +56,19 @@ const productions: Production<NT, T>[] = [
 ];
 const goal: NT = 'line';
 
-const grammar: Grammar<NT> = { NTs, productions, goal };
+// Make this a function so we don't create unnecessary instances in
+// memory for unused parsers
+const getDFAs = (isa: Isa) => [
+    new CommentDFA<T>(['#', ';']),
+    new IntegerDFA<T>( {hex: 'int-hex', dec: 'int-decimal'}, true),
+    new PseudoOpDFA<T>({pseudoOp: 'pseudoop'}),
+    new RegDFA<T>({reg: 'reg'}, regPrefixes(isa)),
+    new StringDFA<T>({string: 'string', char: 'char'}),
+    new SymbolDFA<T>([',']),
+    new WhitespaceDFA<T>(),
+    new WordDFA<T>({word: 'word'}),
+];
+
+const grammar: Grammar<NT, T> = { NTs, Ts, productions, goal, getDFAs };
 
 export { NT, T, grammar };

@@ -1,12 +1,20 @@
-import { DFA, Kind } from './dfa';
+import { DFA } from './dfa';
 
-export default class SymbolDFA extends DFA {
+export default class SymbolDFA<T> extends DFA<T> {
+    private Ts: {[s: string]: T};
     private alive!: boolean;
     private acceptingLength!: number;
-    private kind!: Kind;
+    private kind!: T;
 
-    public constructor() {
+    public constructor(symbols: T[]) {
         super();
+
+        this.Ts = {};
+        // Hack to get around the type checker
+        for (const symbol of symbols) {
+            this.Ts[symbol.toString()] = symbol;
+        }
+
         this.reset();
     }
 
@@ -15,16 +23,12 @@ export default class SymbolDFA extends DFA {
             return;
         }
 
-        switch (c) {
-            case '(':
-            case ')':
-            case ',':
-            case ':':
-                this.acceptingLength = 1;
-                this.kind = c;
-            default:
-                this.alive = false;
+        if (c in this.Ts) {
+            this.acceptingLength = 1;
+            this.kind = this.Ts[c];
         }
+
+        this.alive = false;
     }
 
     public isAlive(): boolean {
@@ -40,7 +44,7 @@ export default class SymbolDFA extends DFA {
         this.acceptingLength = 0;
     }
 
-    public getKind(): Kind {
+    public getT(): T {
         return this.kind;
     }
 }

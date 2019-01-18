@@ -72,4 +72,14 @@ interface Isa {
     instructions: Instruction[];
 }
 
-export { Isa, Fields, Instruction, Reg };
+function regPrefixes(isa: Isa): string[] {
+    const result = [];
+    for (const reg of isa.regs) {
+        if (reg.kind === 'reg-range') {
+            result.push(reg.prefix);
+        }
+    }
+    return result;
+}
+
+export { Isa, Fields, Instruction, Reg, regPrefixes };

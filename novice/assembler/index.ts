@@ -6,12 +6,12 @@ import { opSpecs, PseudoOpSpec } from './opspec';
 import { Parser, parsers } from './parsers';
 import { Serializer, serializers } from './serializers';
 
-function getParser(parserName: string): Parser {
+function getParser(parserName: string, isa: Isa): Parser {
     if (!parsers.hasOwnProperty(parserName)) {
         throw new Error(`no such parser \`${parserName}'\n`);
     }
 
-    return new parsers[parserName]();
+    return new parsers[parserName](isa);
 }
 
 function getGenerator(): MachineCodeGenerator {
@@ -41,11 +41,12 @@ function getConfig(configName: string): AssemblerConfig {
     }
 
     const configNames = configs[configName];
+    const isa = getIsa(configNames.isa);
 
     return {
-        parser: getParser(configNames.parser),
+        parser: getParser(configNames.parser, isa),
         generator: getGenerator(),
-        isa: getIsa(configNames.isa),
+        isa,
         opSpec: getOpSpec(configNames.opSpec),
         serializer: getSerializer(configNames.serializer),
     };

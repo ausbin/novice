@@ -3,7 +3,6 @@ import { Isa } from '../isa';
 import { MachineCodeGenerator, MachineCodeSection } from './codegen';
 import { PseudoOpSpec } from './opspec';
 import { ParsedAssembly, Parser } from './parsers';
-import { Scanner } from './scanner';
 import { Serializer } from './serializers';
 
 interface AssemblerConfig {
@@ -15,16 +14,14 @@ interface AssemblerConfig {
 }
 
 class Assembler {
-    private scanner: Scanner;
     private cfg: AssemblerConfig;
 
     public constructor(cfg: AssemblerConfig) {
-        this.scanner = new Scanner();
         this.cfg = cfg;
     }
 
     public async parse(fp: Readable): Promise<ParsedAssembly> {
-        return this.cfg.parser.parse(this.cfg.isa, await this.scanner.scan(fp));
+        return await this.cfg.parser.parse(fp);
     }
 
     public codegen(asm: ParsedAssembly): MachineCodeSection[] {

@@ -1,10 +1,26 @@
 import { Readable } from 'stream';
+import { CommentDFA, IntegerDFA, PseudoOpDFA, RegDFA, StringDFA, SymbolDFA,
+         WhitespaceDFA, WordDFA } from './dfa';
 import { Scanner } from './scanner';
 
+type T = 'decimal'|'hex'|'register'|'pseudo-op'|'str'|'chr'|'word'
+         |'('|')'|','|':';
+
 describe('scanner', () => {
+    let scanner: Scanner<T>;
     let fp: Readable;
 
     beforeEach(() => {
+        scanner = new Scanner<T>([
+            new CommentDFA<T>(['!']),
+            new IntegerDFA<T>({hex: 'hex', dec: 'decimal'}),
+            new PseudoOpDFA<T>({pseudoOp: 'pseudo-op'}),
+            new RegDFA<T>({reg: 'register'}, ['$']),
+            new StringDFA<T>({string: 'str', char: 'chr'}),
+            new SymbolDFA<T>(['(', ')', ',', ':']),
+            new WhitespaceDFA<T>(),
+            new WordDFA<T>({word: 'word'}),
+        ]);
         fp = new Readable();
     });
 
@@ -12,25 +28,25 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner().scan(fp).then(lines => {
+        return scanner.scan(fp).then(lines => {
             expect(lines).toEqual([]);
         });
     });
 
     it('scans instruction', () => {
-        fp.push('   add r0, r0, r1  ');
+        fp.push('   add $0, $0, $1  ');
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner().scan(fp).then(lines => {
+        return scanner.scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
                     {col: 4,  val: 'add', kind: 'word'},
-                    {col: 8,  val: 'r0',  kind: 'reg'},
+                    {col: 8,  val: '$0',  kind: 'register'},
                     {col: 10, val: ',',   kind: ','},
-                    {col: 12, val: 'r0',  kind: 'reg'},
+                    {col: 12, val: '$0',  kind: 'register'},
                     {col: 14, val: ',',   kind: ','},
-                    {col: 16, val: 'r1',  kind: 'reg'},
+                    {col: 16, val: '$1',  kind: 'register'},
                 ]},
             ]);
         });
@@ -41,72 +57,72 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner().scan(fp).then(lines => {
+        return scanner.scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
-                    {col: 1, val: '.fill', kind: 'pseudoop'},
-                    {col: 7, val: '420',   kind: 'int-decimal'},
+                    {col: 1, val: '.fill', kind: 'pseudo-op'},
+                    {col: 7, val: '420',   kind: 'decimal'},
                 ]},
             ]);
         });
     });
 
     it('scans hex', () => {
-        fp.push('trap x69');
+        fp.push('trap 0x69');
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner().scan(fp).then(lines => {
+        return scanner.scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
                     {col: 1, val: 'trap', kind: 'word'},
-                    {col: 6, val: 'x69',  kind: 'int-hex'},
+                    {col: 6, val: '0x69',  kind: 'hex'},
                 ]},
             ]);
         });
     });
 
     it('ignores comment', () => {
-        fp.push('; a comment\n');
-        fp.push('not r0, r0 ; hi kids\n');
+        fp.push('! a comment\n');
+        fp.push('not $0, $0 ! hi kids\n');
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner().scan(fp).then(lines => {
+        return scanner.scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 2, tokens: [
                     {col: 1, val: 'not', kind: 'word'},
-                    {col: 5, val: 'r0',  kind: 'reg'},
+                    {col: 5, val: '$0',  kind: 'register'},
                     {col: 7, val: ',',   kind: ','},
-                    {col: 9, val: 'r0',  kind: 'reg'},
+                    {col: 9, val: '$0',  kind: 'register'},
                 ]},
             ]);
         });
     });
 
     it('scans mini program', () => {
-        fp.push('.orig x3000\r\n');
-        fp.push('add r1, r1, r2\n');
+        fp.push('.orig 0x3000\r\n');
+        fp.push('add $1, $1, $2\n');
         fp.push('.end');
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner().scan(fp).then(lines => {
+        return scanner.scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
-                    {col: 1, val: '.orig', kind: 'pseudoop'},
-                    {col: 7, val: 'x3000', kind: 'int-hex'},
+                    {col: 1, val: '.orig',  kind: 'pseudo-op'},
+                    {col: 7, val: '0x3000', kind: 'hex'},
                 ]},
                 {num: 2, tokens: [
-                    {col: 1,  val: 'add',  kind: 'word'},
-                    {col: 5,  val: 'r1',   kind: 'reg'},
-                    {col: 7,  val: ',',    kind: ','},
-                    {col: 9,  val: 'r1',   kind: 'reg'},
-                    {col: 11, val: ',',    kind: ','},
-                    {col: 13, val: 'r2',   kind: 'reg'},
+                    {col: 1,  val: 'add',   kind: 'word'},
+                    {col: 5,  val: '$1',    kind: 'register'},
+                    {col: 7,  val: ',',     kind: ','},
+                    {col: 9,  val: '$1',    kind: 'register'},
+                    {col: 11, val: ',',     kind: ','},
+                    {col: 13, val: '$2',    kind: 'register'},
                 ]},
                 {num: 3, tokens: [
-                    {col: 1, val: '.end',  kind: 'pseudoop'},
+                    {col: 1, val: '.end',   kind: 'pseudo-op'},
                 ]},
             ]);
         });
@@ -118,7 +134,7 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner().scan(fp).then(lines => {
+        return scanner.scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
                     {col: 1, val: 'bob',  kind: 'word'},
@@ -137,11 +153,11 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner().scan(fp).then(lines => {
+        return scanner.scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
-                    {col: 1,  val: '.stringz', kind: 'pseudoop'},
-                    {col: 10, val: '"hi\\npatrick"', kind: 'string'},
+                    {col: 1,  val: '.stringz', kind: 'pseudo-op'},
+                    {col: 10, val: '"hi\\npatrick"', kind: 'str'},
                 ]},
             ]);
         });
@@ -152,11 +168,11 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner().scan(fp).then(lines => {
+        return scanner.scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
-                    {col: 1, val: '.fill', kind: 'pseudoop'},
-                    {col: 9, val: "'\\n'", kind: 'char'},
+                    {col: 1, val: '.fill', kind: 'pseudo-op'},
+                    {col: 9, val: "'\\n'", kind: 'chr'},
                 ]},
             ]);
         });
@@ -167,23 +183,23 @@ describe('scanner', () => {
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner().scan(fp).then(lines => {
+        return scanner.scan(fp).then(lines => {
             expect(lines).toEqual([
                 {num: 1, tokens: [
-                    {col: 1, val: '.fill', kind: 'pseudoop'},
-                    {col: 7, val: "'\\''", kind: 'char'},
+                    {col: 1, val: '.fill', kind: 'pseudo-op'},
+                    {col: 7, val: "'\\''", kind: 'chr'},
                 ]},
             ]);
         });
     });
 
     it('handles weird chars', () => {
-        fp.push("add r1, r1, r2\n");
+        fp.push("add $1, $1, $2\n");
         fp.push("    ^ banana");
         fp.push(null);
 
         expect.hasAssertions();
-        return new Scanner().scan(fp).catch(err => {
+        return scanner.scan(fp).catch(err => {
             expect(err.message).toContain('line 2');
             expect(err.message).toContain('column 5');
         });

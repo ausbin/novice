@@ -1,11 +1,13 @@
 import PseudoOpDFA from './pseudoop';
 import { feedDFA } from './helpers.test';
 
+type T = 'pseudo-op';
+
 describe('pseudo-op DFA', () => {
-    let dfa: PseudoOpDFA;
+    let dfa: PseudoOpDFA<T>;
 
     beforeEach(() => {
-        dfa = new PseudoOpDFA();
+        dfa = new PseudoOpDFA<T>({pseudoOp: 'pseudo-op'});
     });
 
     it('rejects nonsense', () => {
@@ -24,6 +26,6 @@ describe('pseudo-op DFA', () => {
         const len = feedDFA(dfa, '.fill', ' xBEEF');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(false);
-        expect(dfa.getKind()).toEqual('pseudoop');
+        expect(dfa.getT()).toEqual('pseudo-op');
     });
 });

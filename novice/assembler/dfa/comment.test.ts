@@ -1,11 +1,13 @@
 import CommentDFA from './comment';
 import { feedDFA } from './helpers.test';
 
+type T = 'farzam'|'chen';
+
 describe('comment DFA', () => {
-    let dfa: CommentDFA;
+    let dfa: CommentDFA<T>;
 
     beforeEach(() => {
-        dfa = new CommentDFA();
+        dfa = new CommentDFA<T>(['#', ';']);
     });
 
     it('rejects text without ; or #', () => {
@@ -24,20 +26,20 @@ describe('comment DFA', () => {
         const len = feedDFA(dfa, '; hello');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(true);
-        expect(dfa.getKind()).toBe(null);
+        expect(dfa.getT()).toBe(null);
     });
 
     it('recognizes # comments', () => {
         const len = feedDFA(dfa, '#  end gaming today');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(true);
-        expect(dfa.getKind()).toBe(null);
+        expect(dfa.getT()).toBe(null);
     });
 
     it('recognizes empty comments', () => {
         const len = feedDFA(dfa, ';');
         expect(dfa.getAcceptingLength()).toBe(len);
         expect(dfa.isAlive()).toBe(true);
-        expect(dfa.getKind()).toBe(null);
+        expect(dfa.getT()).toBe(null);
     });
 });

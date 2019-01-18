@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import { DFA, dfas, Kind, kinds } from './dfa';
+import { DFA } from './dfa';
 
 interface Token<T> {
     col: number;
@@ -12,22 +12,23 @@ interface Line<T> {
     tokens: Token<T>[];
 }
 
-class Scanner {
+class Scanner<T> {
     private static readonly EOF = '';
     private currentToken!: string;
-    private lines!: Line<Kind>[];
-    private dfas!: DFA[];
+    private lines!: Line<T>[];
+    private dfas: DFA<T>[];
     private newline!: boolean;
     private lineNum!: number;
     private col!: number;
     private lastChar!: string;
     private rejectCallback!: (err: Error) => void;
 
-    constructor() {
+    constructor(dfas: DFA<T>[]) {
+        this.dfas = dfas;
         this.reset();
     }
 
-    public async scan(fp: Readable): Promise<Line<Kind>[]> {
+    public async scan(fp: Readable): Promise<Line<T>[]> {
         this.reset();
 
         const endPromise = new Promise((resolve, reject) => {
@@ -46,7 +47,7 @@ class Scanner {
     private reset(): void {
         this.currentToken = '';
         this.lines = [];
-        this.dfas = dfas.map(cls => new cls());
+        this.dfas.forEach(dfa => dfa.reset());
         // Need to add a new line for the next token (at the beginning
         // of the file or after a newline)
         this.newline = true;
@@ -84,17 +85,17 @@ class Scanner {
 
             if (best.getAcceptingLength() > 0) {
                 const tokenLen = best.getAcceptingLength();
-                const tokenKind = best.getKind();
+                const tokenT = best.getT();
 
                 // Leave out stuff like whitespace (will be null in that
                 // case)
-                if (tokenKind) {
+                if (tokenT) {
                     if (this.newline) {
                         this.newline = false;
                         this.lines.push({num: this.lineNum, tokens: []});
                     }
                     const newVal = this.currentToken.substring(0, tokenLen);
-                    const newToken = {col: this.col, val: newVal, kind: tokenKind};
+                    const newToken = {col: this.col, val: newVal, kind: tokenT};
                     this.lines[this.lines.length - 1].tokens.push(newToken);
                 }
 
@@ -135,4 +136,4 @@ class Scanner {
     }
 }
 
-export { Line, Token, Kind, kinds, Scanner };
+export { Line, Token, Scanner };

@@ -63,7 +63,7 @@ describe('assembler', () => {
                 sections: [
                     {startAddr: 0x3000, instructions: [
                         {kind: 'instr', line: 2, op: 'lea', operands: [
-                            {kind: 'reg',   num: 0},
+                            {kind: 'reg',   prefix: 'r', num: 0},
                             {kind: 'label', label: 'mystring'},
                         ]},
                         {kind: 'instr', line: 3, op: 'puts', operands: []},
@@ -97,8 +97,8 @@ describe('assembler', () => {
                     ]},
                     {startAddr: 0x4000, instructions: [
                         {kind: 'instr', line: 6, op: 'and', operands: [
-                            {kind: 'reg', num: 0},
-                            {kind: 'reg', num: 0},
+                            {kind: 'reg', prefix: 'r', num: 0},
+                            {kind: 'reg', prefix: 'r', num: 0},
                             {kind: 'int', val: -3},
                         ]},
                         {kind: 'instr', line: 7, op: 'halt', operands: []},

@@ -9,23 +9,22 @@ import { AbstractParser, Instruction, IntegerOperand, LabelOperand, Line,
 import table from './tables/complx';
 
 interface ParseContext {
-    isa: Isa;
     currentSection: Section|null;
     labels: string[];
     assembly: ParsedAssembly;
 }
 
-class ComplxParser extends AbstractParser<ParseContext, NT> {
+class ComplxParser extends AbstractParser<ParseContext, NT, T> {
     protected getTable(): ParseTable<NT, T> {
         return table;
     }
 
-    protected getGrammar(): Grammar<NT> {
+    protected getGrammar(): Grammar<NT, T> {
         return grammar;
     }
 
-    protected initCtx(isa: Isa): ParseContext {
-        return {isa, currentSection: null, labels: [],
+    protected initCtx(): ParseContext {
+        return {currentSection: null, labels: [],
                 assembly: {sections: [], labels: {}}};
     }
 
@@ -150,7 +149,7 @@ class ComplxParser extends AbstractParser<ParseContext, NT> {
 
     private isInstruction(ctx: ParseContext, op: ParseTree<NT, T>) {
         const wordVal = this.parseLabel(op).toLowerCase();
-        return ctx.isa.instructions.some(
+        return this.isa.instructions.some(
             instr => instr.op.toLowerCase() === wordVal);
     }
 
@@ -264,7 +263,8 @@ class ComplxParser extends AbstractParser<ParseContext, NT> {
             case 'string':
                 return {kind: 'string', contents: this.parseString(val.slice(1, -1))};
             case 'reg':
-                return {kind: 'reg', num: parseInt(val.substring(1), 10)};
+                return {kind: 'reg', prefix: val.charAt(0),
+                        num: parseInt(val.substring(1), 10)};
             case 'int-decimal':
                 return {kind: 'int', val: parseInt(val, 10)};
             case 'int-hex':

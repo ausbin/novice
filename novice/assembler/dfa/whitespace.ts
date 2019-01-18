@@ -1,6 +1,6 @@
-import { DFA, Kind } from './dfa';
+import { DFA } from './dfa';
 
-export default class WhitespaceDFA extends DFA {
+export default class WhitespaceDFA<T> extends DFA<T> {
     private alive!: boolean;
     private length!: number;
     private acceptingLength!: number;
@@ -41,7 +41,7 @@ export default class WhitespaceDFA extends DFA {
         this.acceptingLength = 0;
     }
 
-    public getKind(): null {
+    public getT(): null {
         return null;
     }
 }

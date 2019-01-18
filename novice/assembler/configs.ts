@@ -1,4 +1,5 @@
 interface Config {
+    lexSpec: string;
     parser: string;
     isa: string;
     opSpec: string;
@@ -7,6 +8,7 @@ interface Config {
 
 const configs: {[s: string]: Config} = {
     lc3: {
+        lexSpec: 'complx',
         parser: 'complx',
         isa: 'lc3',
         opSpec: 'complx',

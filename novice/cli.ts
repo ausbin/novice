@@ -2,7 +2,7 @@ import { ArgumentParser } from 'argparse';
 import * as fs from 'fs';
 import { Readable, Writable } from 'stream';
 import { Assembler, getConfig, getParser, getSerializer } from './assembler';
-import { StreamIO } from './isa';
+import { getIsa, StreamIO } from './isa';
 import { getSimulatorConfig, Simulator } from './simulator';
 
 async function main(argv: string[], stdin: Readable, stdout: Writable,
@@ -121,7 +121,7 @@ function tablegen(parserName: string, stdout: Writable,
                   stderr: Writable): number {
     let table: object;
     try {
-        const parser = getParser(parserName);
+        const parser = getParser(parserName, getIsa('dummy'));
         table = parser.genTable();
     } catch (err) {
         stderr.write(`error generating LR(1) table: ${err.message}\n`);

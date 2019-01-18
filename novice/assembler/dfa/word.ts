@@ -1,13 +1,19 @@
-import { DFA, Kind } from './dfa';
+import { DFA } from './dfa';
 import { isWordChar } from './lex';
 
-export default class WordDFA extends DFA {
+interface WordTs<T> {
+    word: T;
+}
+
+export default class WordDFA<T> extends DFA<T> {
+    private Ts: WordTs<T>;
     private alive!: boolean;
     private length!: number;
     private acceptingLength!: number;
 
-    public constructor() {
+    public constructor(Ts: WordTs<T>) {
         super();
+        this.Ts = Ts;
         this.reset();
     }
 
@@ -40,7 +46,7 @@ export default class WordDFA extends DFA {
         this.acceptingLength = 0;
     }
 
-    public getKind(): Kind {
-        return 'word';
+    public getT(): T {
+        return this.Ts.word;
     }
 }

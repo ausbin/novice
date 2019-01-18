@@ -1,18 +1,20 @@
-import { DFA, Kind } from './dfa';
+import { DFA } from './dfa';
 
 enum State {
     Start,
     Comment,
 }
 
-export default class CommentDFA extends DFA {
+export default class CommentDFA<T> extends DFA<T> {
+    private commentChars: string[];
     private state!: State;
     private alive!: boolean;
     private length!: number;
     private acceptingLength!: number;
 
-    public constructor() {
+    public constructor(commentChars: string[]) {
         super();
+        this.commentChars = commentChars;
         this.reset();
     }
 
@@ -25,7 +27,7 @@ export default class CommentDFA extends DFA {
 
         switch (this.state) {
             case State.Start:
-                if (c === ';' || c === '#') {
+                if (this.commentChars.indexOf(c) !== -1) {
                     this.state = State.Comment;
                     this.acceptingLength = this.length;
                 } else {
@@ -54,7 +56,7 @@ export default class CommentDFA extends DFA {
         this.acceptingLength = 0;
     }
 
-    public getKind(): null {
+    public getT(): null {
         return null;
     }
 }

@@ -1,25 +1,29 @@
 import { DFA } from './dfa';
-import { isWordChar } from './lex';
+import { isDecimalDigit, isWordChar } from './lex';
 
 enum State {
     Start,
-    GotDot,
+    Regno,
 }
 
-interface PseudoOpTs<T> {
-    pseudoOp: T;
+interface RegTs<T> {
+    reg: T;
 }
 
-export default class PseudoOpDFA<T> extends DFA<T> {
-    private Ts: PseudoOpTs<T>;
+export default class RegDFA<T> extends DFA<T> {
+    private Ts: RegTs<T>;
+    private prefixes: string[];
+    private hasAliases: boolean;
     private state!: State;
     private alive!: boolean;
     private length!: number;
     private acceptingLength!: number;
 
-    public constructor(Ts: PseudoOpTs<T>) {
+    public constructor(Ts: RegTs<T>, prefixes: string[], hasAliases?: boolean) {
         super();
         this.Ts = Ts;
+        this.prefixes = prefixes;
+        this.hasAliases = !!hasAliases;
         this.reset();
     }
 
@@ -30,17 +34,16 @@ export default class PseudoOpDFA<T> extends DFA<T> {
 
         this.length++;
 
-        const isText = isWordChar(c);
         switch (this.state) {
             case State.Start:
-                if (c === '.') {
-                    this.state = State.GotDot;
+                if (this.prefixes.indexOf(c.toLowerCase()) !== -1) {
+                    this.state = State.Regno;
                 } else {
                     this.alive = false;
                 }
                 break;
-            case State.GotDot:
-                if (isText) {
+            case State.Regno:
+                if (isDecimalDigit(c) || this.hasAliases && isWordChar(c)) {
                     this.acceptingLength = this.length;
                 } else {
                     this.alive = false;
@@ -65,6 +68,6 @@ export default class PseudoOpDFA<T> extends DFA<T> {
     }
 
     public getT(): T {
-        return this.Ts.pseudoOp;
+        return this.Ts.reg;
     }
 }

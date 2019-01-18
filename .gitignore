@@ -9,5 +9,6 @@ coverage/
 
 # Test assembly files
 *.asm
+*.s
 *.sym
 *.obj

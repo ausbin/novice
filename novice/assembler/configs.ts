@@ -15,7 +15,7 @@ const configs: {[s: string]: Config} = {
     lc2200: {
         parser: 'lc2200',
         isa: 'lc2200',
-        opSpec: 'complx',
+        opSpec: 'word',
         serializer: 'complx',
     },
 };

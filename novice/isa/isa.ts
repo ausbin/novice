@@ -27,6 +27,7 @@ interface RegRange {
     prefix: string;
     sext: boolean;
     bits: number;
+    aliases?: {[s: string]: number};
 }
 
 type Reg = RegSolo|RegRange;
@@ -82,4 +83,14 @@ function regPrefixes(isa: Isa): string[] {
     return result;
 }
 
-export { Isa, Fields, Instruction, Reg, regPrefixes };
+function getAliases(isa: Isa, prefix: string): {[s: string]: number} {
+    for (const reg of isa.regs) {
+        if (reg.kind === 'reg-range' && reg.prefix === prefix) {
+            return reg.aliases || {};
+        }
+    }
+
+    throw new Error(`no such register prefix ${prefix}`);
+}
+
+export { Isa, Fields, Instruction, Reg, regPrefixes, getAliases };

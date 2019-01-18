@@ -37,6 +37,7 @@ const productions: Production<NT, T>[] = [
     {lhs: 'line', rhs: ['pseudoop-line']},
     {lhs: 'label', rhs: []},
     {lhs: 'label', rhs: ['label', 'word', ':']},
+    {lhs: 'instr', rhs: ['label', 'word']},
     {lhs: 'instr', rhs: ['label', 'word', 'instr-operands']},
     {lhs: 'instr-operands', rhs: ['operand']},
     {lhs: 'instr-operands', rhs: ['instr-operands', ',', 'operand']},

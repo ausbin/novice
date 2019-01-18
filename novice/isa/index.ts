@@ -1,6 +1,6 @@
 import { DummyIsa } from './dummy';
 import { IO, StreamIO } from './io';
-import { Fields, Instruction, Isa, Reg, regPrefixes } from './isa';
+import { Fields, getAliases, Instruction, Isa, Reg, regPrefixes } from './isa';
 import { Lc2200Isa } from './lc2200';
 import { Lc3Isa } from './lc3';
 import { MachineState, MachineStateUpdate, RegIdentifier } from './state';
@@ -20,4 +20,5 @@ function getIsa(isaName: string): Isa {
 }
 
 export { Isa, Instruction, isas, Lc3Isa, MachineState, MachineStateUpdate,
-         RegIdentifier, Fields, Reg, getIsa, IO, StreamIO, regPrefixes };
+         RegIdentifier, Fields, Reg, getIsa, IO, StreamIO, regPrefixes,
+         getAliases };

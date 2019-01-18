@@ -33,7 +33,11 @@ const Lc2200Isa: Isa = {
         addressability: 32,
     },
     regs: [
-        {kind: 'reg-range', count: 16, prefix: '$', sext: true, bits: 32},
+        {kind: 'reg-range', count: 16, prefix: '$', sext: true, bits: 32,
+         aliases: {zero: 0,  at: 1,  v0: 2,  a0: 3,
+                     a1: 4,  a2: 5,  t0: 6,  t1: 7,
+                     t2: 8,  s0: 9,  s1: 10, s2: 11,
+                     k0: 12, sp: 13, fp: 14, ra: 15}},
     ],
     instructions: [
         {op: 'add', fields: [

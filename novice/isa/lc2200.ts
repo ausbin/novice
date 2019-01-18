@@ -41,7 +41,7 @@ const Lc2200Isa: Isa = {
             {kind: 'reg',   bits: [27, 24], prefix: '$', name: 'rx'},
             {kind: 'reg',   bits: [23, 20], prefix: '$', name: 'ry'},
             {kind: 'const', bits: [19,  4], val: 0x0000},
-            {kind: 'reg',   bits: [ 3,  0], prefix: 'r', name: 'rz'},
+            {kind: 'reg',   bits: [ 3,  0], prefix: '$', name: 'rz'},
          ],
          sim: (state: MachineState, io: IO, ir: Fields) => nukeR0Writes(
              [{kind: 'reg', reg: ir.regs.rx, val: state.reg(ir.regs.ry) +
@@ -53,7 +53,7 @@ const Lc2200Isa: Isa = {
             {kind: 'reg',   bits: [27, 24], prefix: '$', name: 'rx'},
             {kind: 'reg',   bits: [23, 20], prefix: '$', name: 'ry'},
             {kind: 'const', bits: [19,  4], val: 0x0000},
-            {kind: 'reg',   bits: [ 3,  0], prefix: 'r', name: 'rz'},
+            {kind: 'reg',   bits: [ 3,  0], prefix: '$', name: 'rz'},
          ],
          sim: (state: MachineState, io: IO, ir: Fields) => nukeR0Writes(
              [{kind: 'reg', reg: ir.regs.rx, val: ~(state.reg(ir.regs.ry) &

@@ -19,7 +19,6 @@ const Ts = new Set(Object.keys(TsObj) as T[]);
 
 const NTsObj = {
     'line'             : '',
-    'label'            : '',
     'instr-line'       : '',
     'instr-operands'   : '',
     'instr'            : '',
@@ -60,7 +59,7 @@ const goal: NT = 'line';
 // memory for unused parsers
 const getDFAs = (isa: Isa) => [
     new CommentDFA<T>(['#', ';']),
-    new IntegerDFA<T>( {hex: 'int-hex', dec: 'int-decimal'}, true),
+    new IntegerDFA<T>({hex: 'int-hex', dec: 'int-decimal'}, true),
     new PseudoOpDFA<T>({pseudoOp: 'pseudoop'}),
     new RegDFA<T>({reg: 'reg'}, regPrefixes(isa)),
     new StringDFA<T>({string: 'string', char: 'char'}),

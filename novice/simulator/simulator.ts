@@ -1,4 +1,4 @@
-import { Fields, Instruction, IO, Isa, Reg, RegIdentifier } from '../isa';
+import { Fields, InstructionSpec, IO, Isa, Reg, RegIdentifier } from '../isa';
 
 class Simulator {
     public pc: number;
@@ -113,7 +113,7 @@ class Simulator {
         throw new Error(`unknown register identifier ${id}`);
     }
 
-    private decode(ir: number): [Instruction, Fields] {
+    private decode(ir: number): [InstructionSpec, Fields] {
         // TODO: ridiculously inefficient. idea for improvement: binary
         //       tree of depth like 8 to cut down on iteration time
         const matches = [];
@@ -150,7 +150,7 @@ class Simulator {
         return [instruction, this.genFields(ir, instruction)];
     }
 
-    private genFields(ir: number, instr: Instruction): Fields {
+    private genFields(ir: number, instr: InstructionSpec): Fields {
         const fields: Fields = {regs: {}, imms: {}};
 
         for (const field of instr.fields) {

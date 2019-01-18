@@ -60,7 +60,7 @@ interface Fields  {
     imms: {[s: string]: number};
 }
 
-interface Instruction {
+interface InstructionSpec {
     op: string;
     fields: Field[];
     sim: (state: MachineState, io: IO, ir: Fields) => MachineStateUpdate[];
@@ -70,7 +70,7 @@ interface Isa {
     pc: Pc;
     mem: Mem;
     regs: Reg[];
-    instructions: Instruction[];
+    instructions: InstructionSpec[];
 }
 
 function regPrefixes(isa: Isa): string[] {
@@ -93,4 +93,4 @@ function getAliases(isa: Isa, prefix: string): {[s: string]: number} {
     throw new Error(`no such register prefix ${prefix}`);
 }
 
-export { Isa, Fields, Instruction, Reg, regPrefixes, getAliases };
+export { Isa, Fields, InstructionSpec, Reg, regPrefixes, getAliases };

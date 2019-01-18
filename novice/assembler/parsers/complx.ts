@@ -1,17 +1,17 @@
 // Parser for complx syntax
-import { Isa } from '../../isa';
+import { Assembly, Instruction, IntegerOperand, Isa,
+         LabelOperand, PseudoOp, RegisterOperand, Section,
+         StringOperand } from '../../isa';
 import { ParseTable, ParseTree } from '../lr1';
 import { Grammar } from './grammar';
 import { grammar, NT, T } from './grammars/complx';
-import { AbstractParser, Instruction, IntegerOperand, LabelOperand, Line,
-         ParsedAssembly, Parser, PseudoOp, RegisterOperand,
-         Section, StringOperand } from './parser';
+import { AbstractParser, Line, Parser } from './parser';
 import table from './tables/complx';
 
 interface ParseContext {
     currentSection: Section|null;
     labels: string[];
-    assembly: ParsedAssembly;
+    assembly: Assembly;
 }
 
 class ComplxParser extends AbstractParser<ParseContext, NT, T> {
@@ -139,7 +139,7 @@ class ComplxParser extends AbstractParser<ParseContext, NT, T> {
         }
     }
 
-    protected finish(ctx: ParseContext) {
+    protected finish(ctx: ParseContext): Assembly {
         if (ctx.currentSection) {
             throw new Error('missing an .end at the end of file');
         }

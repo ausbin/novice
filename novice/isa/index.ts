@@ -1,6 +1,9 @@
+import { Assembly, Instruction, IntegerOperand, LabelOperand, PseudoOp,
+         RegisterOperand, Section, StringOperand } from './assembly';
 import { DummyIsa } from './dummy';
 import { IO, StreamIO } from './io';
-import { Fields, getAliases, Instruction, Isa, Reg, regPrefixes } from './isa';
+import { Fields, getAliases, InstructionSpec, Isa, Reg,
+         regPrefixes } from './isa';
 import { Lc2200Isa } from './lc2200';
 import { Lc3Isa } from './lc3';
 import { MachineState, MachineStateUpdate, RegIdentifier } from './state';
@@ -19,6 +22,13 @@ function getIsa(isaName: string): Isa {
     return isas[isaName];
 }
 
-export { Isa, Instruction, isas, Lc3Isa, MachineState, MachineStateUpdate,
-         RegIdentifier, Fields, Reg, getIsa, IO, StreamIO, regPrefixes,
-         getAliases };
+export { getIsa, isas,
+         // assembly
+         Assembly, Section, Instruction, RegisterOperand, IntegerOperand,
+         LabelOperand, PseudoOp, StringOperand,
+         // io
+         IO, StreamIO,
+         // isa
+         Isa, InstructionSpec, Fields, Reg, regPrefixes, getAliases,
+         // state
+         RegIdentifier, MachineState, MachineStateUpdate };

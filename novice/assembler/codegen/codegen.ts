@@ -1,6 +1,5 @@
-import { Isa } from '../../isa';
+import { Assembly, Isa } from '../../isa';
 import { PseudoOpSpec } from '../opspec';
-import { ParsedAssembly } from '../parsers';
 
 interface MachineCodeSection {
     startAddr: number;
@@ -8,7 +7,7 @@ interface MachineCodeSection {
 }
 
 interface MachineCodeGenerator {
-    gen(isa: Isa, opSpec: PseudoOpSpec, asm: ParsedAssembly): MachineCodeSection[];
+    gen(isa: Isa, opSpec: PseudoOpSpec, asm: Assembly): MachineCodeSection[];
 }
 
 export { MachineCodeSection, MachineCodeGenerator };

@@ -1,6 +1,6 @@
-import { Instruction as IsaInstruction, Isa } from '../../isa';
+import { Assembly, Instruction, InstructionSpec, Isa, PseudoOp,
+         Section } from '../../isa';
 import { AsmContext, OpOperands, OpSpec, PseudoOpSpec } from '../opspec';
-import { Instruction, ParsedAssembly, PseudoOp, Section } from '../parsers';
 import { MachineCodeGenerator, MachineCodeSection } from './codegen';
 
 interface ReassembleVictim {
@@ -13,7 +13,7 @@ interface ReassembleVictim {
 type SymbTable = {[s: string]: number};
 
 class BaseMachineCodeGenerator implements MachineCodeGenerator {
-    public gen(isa: Isa, opSpec: PseudoOpSpec, asm: ParsedAssembly):
+    public gen(isa: Isa, opSpec: PseudoOpSpec, asm: Assembly):
             MachineCodeSection[] {
         const sections: MachineCodeSection[] = [];
         const symbtable: SymbTable = {};
@@ -114,7 +114,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                 return [match.asm(ctx, operands), false];
             }
         } else {
-            let match: IsaInstruction|null = null;
+            let match: InstructionSpec|null = null;
 
             // TODO: Figure out a more efficient way than this. just a
             //       hashmap right?
@@ -168,7 +168,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
         return operands;
     }
 
-    private genInstrBin(instr: Instruction, isaInstr: IsaInstruction,
+    private genInstrBin(instr: Instruction, isaInstr: InstructionSpec,
                         pc: number, symbtable: SymbTable, isa: Isa): number {
         let bin = 0;
         let o = 0;
@@ -286,7 +286,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                 pseudoOp.operand.kind === opSpec.operands[0].kind);
     }
 
-    private instrMatch(instr: Instruction, isaInstr: IsaInstruction): boolean {
+    private instrMatch(instr: Instruction, isaInstr: InstructionSpec): boolean {
         if (instr.op !== isaInstr.op) {
             return false;
         }

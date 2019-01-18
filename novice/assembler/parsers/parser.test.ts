@@ -1,3 +1,4 @@
+import { Assembly } from '../../isa';
 import { AbstractParser, Parser } from './parser';
 import { Grammar } from './grammar';
 import { ParseTable, ParseTree } from '../lr1';
@@ -31,7 +32,7 @@ describe('abstract parser', () => {
             protected initCtx(): Context { return {}; }
             protected parseLine(ctx: Context, parseTree: ParseTree<NT, T>, line: Line<T>): void {}
             // @ts-ignore
-            protected finish(ctx: Context): ParsedAssembly { return null; }
+            protected finish(ctx: Context): Assembly { return null; }
         }
 
         beforeEach(() => {

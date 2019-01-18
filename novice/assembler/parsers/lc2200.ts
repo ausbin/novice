@@ -1,11 +1,10 @@
 // Parser for LC-2200 syntax
-import { getAliases, Isa } from '../../isa';
+import { Assembly, getAliases, Instruction, IntegerOperand, Isa, LabelOperand,
+         PseudoOp, RegisterOperand, Section  } from '../../isa';
 import { ParseTable, ParseTree } from '../lr1';
 import { Grammar } from './grammar';
 import { grammar, NT, T } from './grammars/lc2200';
-import { AbstractParser, Instruction, IntegerOperand, LabelOperand, Line,
-         ParsedAssembly, Parser, PseudoOp, RegisterOperand,
-         Section } from './parser';
+import { AbstractParser, Line, Parser } from './parser';
 import table from './tables/lc2200';
 
 interface ParseContext {
@@ -73,13 +72,14 @@ class Lc2200Parser extends AbstractParser<ParseContext, NT, T> {
         }
     }
 
-    protected finish(ctx: ParseContext): ParsedAssembly {
+    protected finish(ctx: ParseContext): Assembly {
         if (ctx.labelQueue.length > 0) {
             // TODO: line numbers
             throw new Error(`stray label ${ctx.labelQueue[0]} at end of file`);
         }
 
-        const asm: ParsedAssembly = {sections: [{startAddr: 0, instructions: ctx.instrs}], labels: {}};
+        const asm: Assembly = {sections: [{startAddr: 0, instructions: ctx.instrs}],
+                               labels: {}};
         Object.keys(ctx.labels).forEach(
             label => { asm.labels[label] = [0, ctx.labels[label]]; });
         return asm;

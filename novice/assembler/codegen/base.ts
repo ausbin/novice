@@ -303,8 +303,8 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
             } else if (ok = o < instr.operands.length) {
                 const operand = instr.operands[o];
 
-                // TODO: check reg prefixes
-                ok = operand.kind === 'reg' && field.kind === 'reg' ||
+                ok = operand.kind === 'reg' && field.kind === 'reg' &&
+                     operand.prefix === field.prefix ||
                      operand.kind === 'int' && field.kind === 'imm' ||
                      operand.kind === 'label' && field.kind === 'imm'
                                               && field.label;

@@ -1,4 +1,5 @@
 import { Fields, InstructionSpec, IO, Isa, Reg, RegIdentifier } from '../isa';
+import { maskTo, sextTo } from '../util';
 
 class Simulator {
     public pc: number;
@@ -68,7 +69,7 @@ class Simulator {
     }
 
     public store(addr: number, val: number): void {
-        this.mem[addr] = val & ~(-1 << this.isa.mem.word);
+        this.mem[addr] = maskTo(val, this.isa.mem.word);
     }
 
     public reg(id: RegIdentifier): number {
@@ -81,8 +82,8 @@ class Simulator {
             val = this.regs.range[id[0]][id[1]];
         }
 
-        if (reg.sext && (val & (1 << (reg.bits - 1)))) {
-            val |= -1 << reg.bits;
+        if (reg.sext) {
+            val = sextTo(val, reg.bits);
         }
 
         return val;
@@ -90,8 +91,7 @@ class Simulator {
 
     public regSet(id: RegIdentifier, val: number) {
         const reg = this.lookupRegSpec(id);
-
-        val &= ~(-1 << reg.bits);
+        val = maskTo(val, reg.bits);
 
         if (typeof id === 'string') {
             this.regs.solo[id] = val;
@@ -129,7 +129,7 @@ class Simulator {
                 }
 
                 const numBits = field.bits[0] - field.bits[1] + 1;
-                const babymask = ~(-1 << numBits);
+                const babymask = maskTo(-1, numBits);
                 mask |= babymask << field.bits[1];
                 val |= (field.val & babymask) << field.bits[1];
                 totalBits += numBits;
@@ -141,7 +141,8 @@ class Simulator {
         }
 
         if (!matches.length) {
-            throw new Error(`cannot decode instruction 0x${ir.toString(16)}`);
+            throw new Error(`cannot decode instruction ` +
+                            `0x${Math.abs(ir).toString(16)}`);
         }
 
         matches.sort((left, right) => right.bits - left.bits);
@@ -159,14 +160,14 @@ class Simulator {
             }
 
             const numBits = field.bits[0] - field.bits[1] + 1;
-            let val = (ir >> field.bits[1]) & ~(-1 << numBits);
+            let val = maskTo(ir >> field.bits[1], numBits);
 
             if (field.kind === 'reg') {
                 fields.regs[field.name] = [field.prefix, val];
             } else if (field.kind === 'imm') {
                 // TODO: probs should be helper function
-                if (field.sext && (val & (1 << (numBits - 1)))) {
-                    val |= -1 << numBits;
+                if (field.sext) {
+                    val = sextTo(val, numBits);
                 }
                 fields.imms[field.name] = val;
             }

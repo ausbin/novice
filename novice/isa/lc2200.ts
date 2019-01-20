@@ -24,7 +24,7 @@ function nukeR0Writes(updates: MachineStateUpdate[]): MachineStateUpdate[] {
 const Lc2200Isa: Isa = {
     pc: {
         increment: 1,
-        resetVector: 0,
+        resetVector: 0x00000000,
         instrBits: 32,
     },
     mem: {

@@ -1,3 +1,4 @@
+import { Instruction, PseudoOp } from './assembly';
 import { IO } from './io';
 import { MachineState, MachineStateUpdate, RegIdentifier } from './state';
 
@@ -66,11 +67,36 @@ interface InstructionSpec {
     sim: (state: MachineState, io: IO, ir: Fields) => MachineStateUpdate[];
 }
 
+interface AliasOpSpec {
+    kind: 'label'|'reg'|'int';
+    name: string;
+}
+
+interface AliasFields  {
+    regs: {[s: string]: [string, number]};
+    ints: {[s: string]: number};
+    labels: {[s: string]: string};
+}
+
+interface AliasContext {
+    pc: number;
+    line: number;
+    symbtable: {[s: string]: number};
+}
+
+interface AliasSpec {
+    op: string;
+    size: number;
+    operands: AliasOpSpec[];
+    asm: (ctx: AliasContext, fields: AliasFields) => (Instruction|PseudoOp)[];
+}
+
 interface Isa {
     pc: Pc;
     mem: Mem;
     regs: Reg[];
     instructions: InstructionSpec[];
+    aliases: AliasSpec[];
 }
 
 function regPrefixes(isa: Isa): string[] {
@@ -83,7 +109,7 @@ function regPrefixes(isa: Isa): string[] {
     return result;
 }
 
-function getAliases(isa: Isa, prefix: string): {[s: string]: number} {
+function getRegAliases(isa: Isa, prefix: string): {[s: string]: number} {
     for (const reg of isa.regs) {
         if (reg.kind === 'reg-range' && reg.prefix === prefix) {
             return reg.aliases || {};
@@ -93,4 +119,10 @@ function getAliases(isa: Isa, prefix: string): {[s: string]: number} {
     throw new Error(`no such register prefix ${prefix}`);
 }
 
-export { Isa, Fields, InstructionSpec, Reg, regPrefixes, getAliases };
+function isInstruction(isa: Isa, op: string): boolean {
+    return isa.instructions.some(instr => instr.op === op) ||
+           isa.aliases.some(alias => alias.op === op);
+}
+
+export { Isa, Fields, InstructionSpec, Reg, regPrefixes, getRegAliases,
+         isInstruction, AliasContext, AliasFields, AliasSpec };

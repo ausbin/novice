@@ -1,5 +1,5 @@
 import { IO } from './io';
-import { Fields, Isa } from './isa';
+import { AliasContext, AliasFields, Fields, Isa } from './isa';
 import { MachineState, MachineStateUpdate } from './state';
 
 function calcCc(val: number): number {
@@ -92,15 +92,6 @@ const Lc3Isa: Isa = {
          sim: (state: MachineState, io: IO, ir: Fields) => [],
         },
 
-        {op: 'br', fields: [
-            {kind: 'const', bits: [15,  9], val: 0b0000111},
-            {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
-             name: 'pcoffset9'},
-         ],
-         sim: (state: MachineState, io: IO, ir: Fields) =>
-             [{kind: 'pc', where: state.pc + 1 + ir.imms.pcoffset9}],
-        },
-
         {op: 'brnzp', fields: [
             {kind: 'const', bits: [15,  9], val: 0b0000111},
             {kind: 'imm',   bits: [ 8,  0], sext: true, label: true,
@@ -183,13 +174,6 @@ const Lc3Isa: Isa = {
          ],
          sim: (state: MachineState, io: IO, ir: Fields) =>
              [{kind: 'pc', where: state.reg(ir.regs.baser)}],
-        },
-
-        {op: 'ret', fields: [
-            {kind: 'const', bits: [15,  0], val: 0b1100000111000000},
-         ],
-         sim: (state: MachineState, io: IO, ir: Fields) =>
-             [{kind: 'pc', where: state.reg(['r', 7])}],
         },
 
         {op: 'jsr', fields: [
@@ -359,6 +343,34 @@ const Lc3Isa: Isa = {
          ],
          sim: (state: MachineState, io: IO, ir: Fields) => [{kind: 'halt'}],
         },
+    ],
+    aliases: [
+      {op: 'br', operands: [
+          {kind: 'label', name: 'where'},
+       ],
+       size: 1,
+       asm(ctx: AliasContext, fields: AliasFields) {
+          return [{kind: 'instr', line: ctx.line, op: 'brnzp',
+                   operands: [{kind: 'label', label: fields.labels.where}]}];
+       }},
+
+      {op: 'br', operands: [
+          {kind: 'int', name: 'offset'},
+       ],
+       size: 1,
+       asm(ctx: AliasContext, fields: AliasFields) {
+          return [{kind: 'instr', line: ctx.line, op: 'brnzp',
+                   operands: [{kind: 'int', val: fields.ints.offset}]}];
+       }},
+
+      {op: 'ret', operands: [],
+       size: 1,
+       asm(ctx: AliasContext, fields: AliasFields) {
+          return [{kind: 'instr', line: ctx.line, op: 'jmp',
+                   operands: [{kind: 'reg', prefix: 'r', num: 7}]}];
+       }},
+
+      // TODO: move trap aliases here
     ],
 };
 

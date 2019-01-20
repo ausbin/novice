@@ -9,7 +9,6 @@ const TsObj = {
     'int-hex'  : '',
     'reg'      : '',
     'pseudoop' : '',
-    'char'     : '',
     'word'     : '',
     ','        : '',
     '('        : '',
@@ -51,7 +50,6 @@ const productions: Production<NT, T>[] = [
     {lhs: 'pseudoop-operand', rhs: ['word']},
     {lhs: 'pseudoop-operand', rhs: ['int-dec']},
     {lhs: 'pseudoop-operand', rhs: ['int-hex']},
-    {lhs: 'pseudoop-operand', rhs: ['char']},
 ];
 const goal: NT = 'line';
 

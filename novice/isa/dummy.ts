@@ -13,6 +13,7 @@ const DummyIsa: Isa = {
     },
     regs: [],
     instructions: [],
+    aliases: [],
 };
 
 export { DummyIsa };

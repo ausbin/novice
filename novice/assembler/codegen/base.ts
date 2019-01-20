@@ -1,5 +1,5 @@
-import { Assembly, Instruction, InstructionSpec, Isa, PseudoOp,
-         Section } from '../../isa';
+import { AliasFields, AliasSpec, Assembly, Instruction, InstructionSpec,
+         Isa, PseudoOp, Section } from '../../isa';
 import { AsmContext, OpOperands, OpSpec, PseudoOpSpec } from '../opspec';
 import { MachineCodeGenerator, MachineCodeSection } from './codegen';
 
@@ -47,6 +47,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                                      instrIdx: j});
                 }
 
+                // TODO: unnecessary copy?
                 sections[i].words = sections[i].words.concat(words);
             }
         }
@@ -114,6 +115,33 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                 return [match.asm(ctx, operands), false];
             }
         } else {
+            // If it's an alias, expand that mf
+            // TODO: Figure out a more efficient way than this. just a
+            //       hashmap right?
+            for (const alias of isa.aliases) {
+                if (this.aliasMatch(instr, alias)) {
+                    if (!symbtable) {
+                        return [new Array<number>(alias.size), true];
+                    } else {
+                        const instrs = alias.asm(
+                            {pc, line: instr.line, symbtable},
+                            this.genAliasFields(instr, alias));
+                        let allWords: number[] = [];
+
+                        for (const subInstr of instrs) {
+                            const newPc = pc + allWords.length;
+                            const [words, hasLabel] =
+                                this.inflateInstr(isa, opSpec, subInstr, newPc,
+                                                  symbtable);
+                            // TODO: unnecessary copy?
+                            allWords = allWords.concat(words);
+                        }
+
+                        return [allWords, false];
+                    }
+                }
+            }
+
             let match: InstructionSpec|null = null;
 
             // TODO: Figure out a more efficient way than this. just a
@@ -166,6 +194,34 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
         }
 
         return operands;
+    }
+
+    private genAliasFields(instr: Instruction, alias: AliasSpec): AliasFields {
+        const fields: AliasFields = {regs: {}, ints: {}, labels: {}};
+
+        for (let i = 0; i < instr.operands.length; i++) {
+            const operand = instr.operands[i];
+            const name = alias.operands[i].name;
+
+            switch (operand.kind) {
+                case 'reg':
+                    fields.regs[name] = [operand.prefix, operand.num];
+                    break;
+
+                case 'int':
+                    fields.ints[name] = operand.val;
+                    break;
+
+                case 'label':
+                    fields.labels[name] = operand.label;
+                    break;
+
+                default:
+                    const _: never = operand;
+            }
+        }
+
+        return fields;
     }
 
     private genInstrBin(instr: Instruction, isaInstr: InstructionSpec,
@@ -314,6 +370,17 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
         }
 
         ok = ok && o === instr.operands.length && f === isaInstr.fields.length;
+        return ok;
+    }
+
+    private aliasMatch(instr: Instruction, alias: AliasSpec): boolean {
+        let ok = instr.op === alias.op &&
+                 instr.operands.length === alias.operands.length;
+
+        for (let i = 0; ok && i < instr.operands.length; i++) {
+            ok = ok && instr.operands[i].kind === alias.operands[i].kind;
+        }
+
         return ok;
     }
 }

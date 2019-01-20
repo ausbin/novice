@@ -1,5 +1,5 @@
 import { IO } from './io';
-import { Fields, Isa } from './isa';
+import { AliasContext, AliasFields, Fields, Isa } from './isa';
 import { MachineState, MachineStateUpdate, RegIdentifier } from './state';
 
 function regEquals(rx: RegIdentifier, ry: RegIdentifier): boolean {
@@ -79,9 +79,9 @@ const Lc2200Isa: Isa = {
         {op: 'lw', fields: [
             {kind: 'const', bits: [31, 28], val: 0b0011},
             {kind: 'reg',   bits: [27, 24], prefix: '$', name: 'rx'},
-            {kind: 'reg',   bits: [23, 20], prefix: '$', name: 'ry'},
             {kind: 'imm',   bits: [19,  0], sext: true, label: false,
                                                          name: 'imm20'},
+            {kind: 'reg',   bits: [23, 20], prefix: '$', name: 'ry'},
          ],
          sim: (state: MachineState, io: IO, ir: Fields) => nukeR0Writes(
              [{kind: 'reg', reg: ir.regs.rx,
@@ -91,9 +91,9 @@ const Lc2200Isa: Isa = {
         {op: 'sw', fields: [
             {kind: 'const', bits: [31, 28], val: 0b0100},
             {kind: 'reg',   bits: [27, 24], prefix: '$', name: 'rx'},
-            {kind: 'reg',   bits: [23, 20], prefix: '$', name: 'ry'},
             {kind: 'imm',   bits: [19,  0], sext: true, label: false,
                                                          name: 'imm20'},
+            {kind: 'reg',   bits: [23, 20], prefix: '$', name: 'ry'},
          ],
          sim: (state: MachineState, io: IO, ir: Fields) =>
              [{kind: 'mem', addr: state.reg(ir.regs.ry) + ir.imms.imm20,
@@ -140,6 +140,33 @@ const Lc2200Isa: Isa = {
          ],
          sim: (state: MachineState, io: IO, ir: Fields) => [{kind: 'halt'}],
         },
+    ],
+
+    aliases: [
+        {op: 'la', operands: [
+            {kind: 'reg',  name: 'rx'},
+            {kind: 'label', name: 'label'},
+         ],
+         size: 2,
+         asm: (ctx: AliasContext, fields: AliasFields) => {
+            if (!ctx.symbtable.hasOwnProperty(fields.labels.label)) {
+                throw new Error(`unknown label ${fields.labels.label} to ` +
+                                `la on line ${ctx.line}`);
+            }
+
+            return [
+                {kind: 'instr', line: ctx.line, op: 'jalr', operands: [
+                    {kind: 'reg', prefix: '$', num: fields.regs.rx[1]},
+                    {kind: 'reg', prefix: '$', num: fields.regs.rx[1]},
+                ]},
+                {kind: 'instr', line: ctx.line, op: 'addi', operands: [
+                    {kind: 'reg', prefix: '$', num: fields.regs.rx[1]},
+                    {kind: 'reg', prefix: '$', num: 0},
+                    // TODO: complain if does not exist
+                    {kind: 'int', val: ctx.symbtable[fields.labels.label] - ctx.pc - 1},
+                ]},
+            ];
+         }},
     ],
 };
 

@@ -173,6 +173,63 @@ describe('assembler', () => {
                 });
             });
 
+            it('understands annoying # before int operands', () => {
+                fp.push('.orig x3000\n')
+                fp.push('add r0, r0, #xa\n')
+                fp.push('add r0, r0, #3\n')
+                fp.push('.fill #xbeef\n')
+                fp.push('.fill #4\n')
+                fp.push('.end\n')
+                fp.push(null)
+
+                return expect(assembler.parse(fp)).resolves.toEqual({
+                    sections: [
+                        {startAddr: 0x3000, instructions: [
+                            {kind: 'instr', line: 2, op: 'add', operands: [
+                                {kind: 'reg', prefix: 'r', num: 0},
+                                {kind: 'reg', prefix: 'r', num: 0},
+                                {kind: 'int', val: 10},
+                            ]},
+                            {kind: 'instr', line: 3, op: 'add', operands: [
+                                {kind: 'reg', prefix: 'r', num: 0},
+                                {kind: 'reg', prefix: 'r', num: 0},
+                                {kind: 'int', val: 3},
+                            ]},
+                            {kind: 'pseudoop', line: 4, op: 'fill', operand:
+                                {kind: 'int', val: 0xbeef}},
+                            {kind: 'pseudoop', line: 5, op: 'fill', operand:
+                                {kind: 'int', val: 4}},
+                        ]},
+                    ],
+                    labels: {},
+                });
+            });
+
+            it('lowercases screaming code', () => {
+                fp.push('.orig x3000\n')
+                fp.push('ADD R3, R2, #8\n')
+                fp.push('HALT\n')
+                fp.push('.FILL 8\n')
+                fp.push('.end\n')
+                fp.push(null)
+
+                return expect(assembler.parse(fp)).resolves.toEqual({
+                    sections: [
+                        {startAddr: 0x3000, instructions: [
+                            {kind: 'instr', line: 2, op: 'add', operands: [
+                                {kind: 'reg', prefix: 'r', num: 3},
+                                {kind: 'reg', prefix: 'r', num: 2},
+                                {kind: 'int', val: 8},
+                            ]},
+                            {kind: 'instr', line: 3, op: 'halt', operands: []},
+                            {kind: 'pseudoop', line: 4, op: 'fill', operand:
+                                {kind: 'int', val: 8}},
+                        ]},
+                    ],
+                    labels: {},
+                });
+            });
+
             it('errors on duplicate labels', () => {
                 fp.push('.orig x3000\n')
                 fp.push('mylabel .blkw 1\n')

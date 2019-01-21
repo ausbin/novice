@@ -254,7 +254,8 @@ class ComplxParser extends AbstractParser<ParseContext, NT, T> {
     // operand here is either a pseudoop-operand or an operand NT
     private parseOperand(operand: ParseTree<NT, T>):
             RegisterOperand|IntegerOperand|LabelOperand|StringOperand  {
-        const someOperand = operand.children[0];
+        // choose last child to avoid the annoying # before int operands
+        const someOperand = operand.children[operand.children.length - 1];
         const val = someOperand.val as string;
         switch (someOperand.token) {
             case 'char':
@@ -262,7 +263,7 @@ class ComplxParser extends AbstractParser<ParseContext, NT, T> {
             case 'string':
                 return {kind: 'string', contents: this.parseString(val.slice(1, -1))};
             case 'reg':
-                return {kind: 'reg', prefix: val.charAt(0),
+                return {kind: 'reg', prefix: val.charAt(0).toLowerCase(),
                         num: parseInt(val.substring(1), 10)};
             case 'int-decimal':
                 return {kind: 'int', val: parseInt(val, 10)};

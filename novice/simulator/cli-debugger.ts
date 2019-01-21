@@ -5,7 +5,7 @@ import { padStr } from '../util';
 import { Debugger } from './debugger';
 
 interface Command {
-    op: string;
+    op: string[];
     showState: boolean;
     method: () => Promise<void>;
     help: string;
@@ -63,16 +63,16 @@ class CliDebugger extends Debugger {
 
         this.exit = false;
         this.commands = [
-            {op: 'continue', showState: true,  method: this.cont,
+            {op: ['continue', 'run'], showState: true,  method: this.cont,
              help: 'run code until halt or breakpoint'},
 
-            {op: 'step', showState: true,  method: this.step,
+            {op: ['step'], showState: true,  method: this.step,
              help: 'run a single instruction'},
 
-            {op: 'help', showState: false, method: this.printHelp,
+            {op: ['help'], showState: false, method: this.printHelp,
              help: 'show this message'},
 
-            {op: 'quit', showState: false, method: this.quit,
+            {op: ['quit'], showState: false, method: this.quit,
              help: 'escape this foul debugger'},
         ];
     }
@@ -97,7 +97,7 @@ class CliDebugger extends Debugger {
             let cmd: Command|null = null;
 
             for (const cmdSpec of this.commands) {
-                if (cmdSpec.op.startsWith(op)) {
+                if (cmdSpec.op.some(o => o.startsWith(op))) {
                     cmd = cmdSpec;
                     break;
                 }
@@ -127,9 +127,9 @@ class CliDebugger extends Debugger {
         this.stdout.write('novice debugger usage:\n');
         this.stdout.write('\n');
 
-        const padTo = Math.max.apply(Math, this.commands.map(cmd => cmd.op.length + 2));
+        const padTo = Math.max.apply(Math, this.commands.map(cmd => cmd.op[0].length + 2));
         for (const cmd of this.commands) {
-            const padded = padStr(`${cmd.op[0]}[${cmd.op.slice(1)}]`, padTo,
+            const padded = padStr(`${cmd.op[0][0]}[${cmd.op[0].slice(1)}]`, padTo,
                                   ' ', true);
             this.stdout.write(`${padded}  ${cmd.help}\n`);
         }

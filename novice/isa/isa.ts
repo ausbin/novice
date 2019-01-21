@@ -64,7 +64,8 @@ interface Fields  {
 interface InstructionSpec {
     op: string;
     fields: Field[];
-    sim: (state: MachineState, io: IO, ir: Fields) => MachineStateUpdate[];
+    sim: (state: MachineState, io: IO, ir: Fields) =>
+         (MachineStateUpdate[]|Promise<MachineStateUpdate[]>);
 }
 
 interface AliasOpSpec {

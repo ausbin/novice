@@ -301,8 +301,9 @@ const Lc3Isa: Isa = {
             {kind: 'const', bits: [15,  0], val: 0b1111000000100000},
          ],
          // TODO: don't echo
-         sim: (state: MachineState, io: IO, ir: Fields) =>
-             [{kind: 'reg', reg: ['r', 0], val: io.getc()}],
+         sim: async (state: MachineState, io: IO, ir: Fields) =>
+             [{kind: 'reg', reg: ['r', 0],
+               val: await io.getc()}] as MachineStateUpdate[],
         },
 
         {op: 'out', fields: [
@@ -331,10 +332,11 @@ const Lc3Isa: Isa = {
         {op: 'in', fields: [
             {kind: 'const', bits: [15,  0], val: 0b1111000000100011},
          ],
-         sim: (state: MachineState, io: IO, ir: Fields) => {
+         sim: async (state: MachineState, io: IO, ir: Fields) => {
              io.putc('>'.charCodeAt(0));
              io.putc(' '.charCodeAt(0));
-             return [{kind: 'reg', reg: ['r', 0], val: io.getc()}];
+             return [{kind: 'reg', reg: ['r', 0],
+                      val: await io.getc()}] as MachineStateUpdate[];
          },
         },
 

@@ -1,7 +1,7 @@
 import { Readable, Writable } from 'stream';
 
 interface IO {
-    getc(): number;
+    getc(): Promise<number>;
     putc(c: number): void;
 }
 
@@ -14,7 +14,7 @@ class StreamIO {
         this.stdout = stdout;
     }
 
-    public getc(): number {
+    public async getc(): Promise<number> {
         const buf = this.stdin.read(1);
 
         // The in trap provides no way to handle EOFs

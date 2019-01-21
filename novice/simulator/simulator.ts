@@ -1,16 +1,17 @@
-import { Fields, InstructionSpec, IO, Isa, Reg, RegIdentifier } from '../isa';
+import { Fields, InstructionSpec, IO, Isa, MachineStateUpdate, Reg,
+         RegIdentifier } from '../isa';
 import { maskTo, sextTo } from '../util';
 
 class Simulator {
-    public pc: number;
-    public mem: {[addr: number]: number};
-    public regs: {
+    protected pc: number;
+    protected mem: {[addr: number]: number};
+    protected regs: {
         solo: {[name: string]: number};
         range: {[prefix: string]: number[]};
     };
-    public halted: boolean;
-    private isa: Isa;
-    private io: IO;
+    protected halted: boolean;
+    protected isa: Isa;
+    protected io: IO;
 
     public constructor(isa: Isa, io: IO) {
         this.isa = isa;
@@ -26,37 +27,57 @@ class Simulator {
         this.resetRegs();
     }
 
-    public run(): void {
-        while (!this.halted) {
-            const ir = this.load(this.pc);
-            this.pc += this.isa.pc.increment;
+    public getPc(): number { return this.pc; }
 
-            const [instr, fields] = this.decode(ir);
-            // Don't pass the incremented PC
-            const state = {pc: this.pc - this.isa.pc.increment,
-                           reg: this.reg.bind(this),
-                           load: this.load.bind(this)};
-            const updates = instr.sim(state, this.io, fields);
+    public isHalted(): boolean { return this.halted; }
 
-            for (const update of updates) {
-                switch (update.kind) {
-                    case 'reg':
-                        this.regSet(update.reg, update.val);
-                        break;
+    // TODO: make this immutable somehow
+    public getRegs() { return this.regs; }
 
-                    case 'mem':
-                        this.store(update.addr, update.val);
-                        break;
+    public async step(): Promise<void> {
+        // If already halted, do nothing
+        if (this.halted) {
+            return;
+        }
 
-                    case 'pc':
-                        this.pc = update.where;
-                        break;
+        const ir = this.load(this.pc);
+        this.pc += this.isa.pc.increment;
 
-                    case 'halt':
-                        this.halted = true;
-                        break;
-                }
+        const [instr, fields] = this.decode(ir);
+        // Don't pass the incremented PC
+        const state = {pc: this.pc - this.isa.pc.increment,
+                       reg: this.reg.bind(this),
+                       load: this.load.bind(this)};
+        const ret = instr.sim(state, this.io, fields);
+        const updates: MachineStateUpdate[] =
+            (Promise.resolve(ret) === ret)
+            ? await (ret as Promise<MachineStateUpdate[]>)
+            : ret as MachineStateUpdate[];
+
+        for (const update of updates) {
+            switch (update.kind) {
+                case 'reg':
+                    this.regSet(update.reg, update.val);
+                    break;
+
+                case 'mem':
+                    this.store(update.addr, update.val);
+                    break;
+
+                case 'pc':
+                    this.pc = update.where;
+                    break;
+
+                case 'halt':
+                    this.halted = true;
+                    break;
             }
+        }
+    }
+
+    public async run(): Promise<void> {
+        while (!this.halted) {
+            await this.step();
         }
     }
 
@@ -100,20 +121,7 @@ class Simulator {
         }
     }
 
-    private lookupRegSpec(id: RegIdentifier): Reg {
-        for (const reg of this.isa.regs) {
-            if (typeof id === 'string' && reg.kind === 'reg'
-                    && reg.name === id ||
-                typeof id !== 'string' && reg.kind === 'reg-range'
-                    && id[0] === reg.prefix) {
-                return reg;
-            }
-        }
-
-        throw new Error(`unknown register identifier ${id}`);
-    }
-
-    private decode(ir: number): [InstructionSpec, Fields] {
+    public decode(ir: number): [InstructionSpec, Fields] {
         // TODO: ridiculously inefficient. idea for improvement: binary
         //       tree of depth like 8 to cut down on iteration time
         const matches = [];
@@ -149,6 +157,19 @@ class Simulator {
 
         const instruction = matches[0].instr;
         return [instruction, this.genFields(ir, instruction)];
+    }
+
+    private lookupRegSpec(id: RegIdentifier): Reg {
+        for (const reg of this.isa.regs) {
+            if (typeof id === 'string' && reg.kind === 'reg'
+                    && reg.name === id ||
+                typeof id !== 'string' && reg.kind === 'reg-range'
+                    && id[0] === reg.prefix) {
+                return reg;
+            }
+        }
+
+        throw new Error(`unknown register identifier ${id}`);
     }
 
     private genFields(ir: number, instr: InstructionSpec): Fields {

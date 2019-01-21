@@ -36,14 +36,12 @@ describe('StreamIO', () => {
 
     describe('getc()', () => {
         it('handles eof', () => {
-            expect(() => {
-                streamIO.getc();
-            }).toThrow('unexpected EOF');
+            return expect(streamIO.getc()).rejects.toThrow('unexpected EOF');
         });
 
         it('reads char', () => {
             stdin = 'hi';
-            expect(streamIO.getc()).toEqual('h'.charCodeAt(0));
+            return expect(streamIO.getc()).resolves.toEqual('h'.charCodeAt(0));
         });
     });
 

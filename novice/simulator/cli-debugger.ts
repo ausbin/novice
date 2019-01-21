@@ -88,6 +88,7 @@ class CliDebugger extends Debugger {
 
     public async run(): Promise<void> {
         let showState = true;
+        let lastCmd: Command|null = null;
 
         while (!this.exit) {
             if (showState) {
@@ -102,13 +103,20 @@ class CliDebugger extends Debugger {
             const splat = answer.trim().split(/\s+/);
             const op = splat[0];
             const operands = splat.slice(1);
+            let cmd: Command|null;
 
-            let cmd: Command|null = null;
+            if (!op) {
+                // Imitate the gdb behavior of a blank command being 'do
+                // the previous command again'
+                cmd = lastCmd;
+            } else {
+                cmd = null;
 
-            for (const cmdSpec of this.commands) {
-                if (cmdSpec.op.some(o => o.startsWith(op))) {
-                    cmd = cmdSpec;
-                    break;
+                for (const cmdSpec of this.commands) {
+                    if (cmdSpec.op.some(o => o.startsWith(op))) {
+                        cmd = cmdSpec;
+                        break;
+                    }
                 }
             }
 
@@ -120,6 +128,7 @@ class CliDebugger extends Debugger {
                                         `${operands.length}`);
                     }
 
+                    lastCmd = cmd;
                     await cmd.method.bind(this)(operands);
                     showState = cmd.showState;
                 } catch (err) {
@@ -164,6 +173,9 @@ class CliDebugger extends Debugger {
                                   ' ', true);
             this.stdout.write(`${padded}  ${cmd.help}\n`);
         }
+
+        this.stdout.write('\n');
+        this.stdout.write('(an empty command means re-run the last command)\n');
     }
 
     private printSimState(): void {

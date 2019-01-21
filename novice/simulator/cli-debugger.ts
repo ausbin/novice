@@ -1,10 +1,12 @@
 import * as readline from 'readline';
 import { Readable, Writable } from 'stream';
 import { IO, Isa } from '../isa';
+import { padStr } from '../util';
 import { Debugger } from './debugger';
 
 class PromptIO implements IO {
     public rl!: readline.Interface;
+    public stdout!: Writable;
 
     public async getc(): Promise<number> {
         let bad = true;
@@ -12,11 +14,11 @@ class PromptIO implements IO {
 
         while (bad) {
             const answer: string = await new Promise(resolve => {
-                this.rl.question('> ', resolve);
+                this.rl.question('', resolve);
             });
 
             if (bad = answer.length !== 1) {
-                this.rl.write('please type exactly 1 character\n');
+                this.stdout.write('please type exactly 1 character\n');
             } else {
                 c = answer.charCodeAt(0);
             }
@@ -26,7 +28,7 @@ class PromptIO implements IO {
     }
 
     public putc(c: number): void {
-        this.rl.write(String.fromCharCode(c));
+        this.stdout.write(String.fromCharCode(c));
     }
 }
 
@@ -49,6 +51,7 @@ class CliDebugger extends Debugger {
         });
         this.rl.on('SIGINT', this.onInterrupt.bind(this));
         io.rl = this.rl;
+        io.stdout = this.stdout;
 
         this.exit = false;
     }
@@ -81,7 +84,7 @@ class CliDebugger extends Debugger {
                     try {
                         await this.cont();
                     } catch (err) {
-                        this.rl.write(`sim error: ${err.message}\n`);
+                        this.stdout.write(`sim error: ${err.message}\n`);
                     }
                     break;
 
@@ -92,7 +95,7 @@ class CliDebugger extends Debugger {
                     try {
                         await this.step();
                     } catch (err) {
-                        this.rl.write(`sim error: ${err.message}\n`);
+                        this.stdout.write(`sim error: ${err.message}\n`);
                     }
                     break;
 
@@ -102,12 +105,12 @@ class CliDebugger extends Debugger {
                 case 'hel':
                 case 'help':
                     showState = false;
-                    this.rl.write('novice debugger usage:\n');
-                    this.rl.write('\n');
-                    this.rl.write('c[ontinue]    run code until halt or breakpoint\n');
-                    this.rl.write('s[tep]        run a single instruction\n');
-                    this.rl.write('h[elp]        show this message\n');
-                    this.rl.write('q[uit]        escape this foul debugger\n');
+                    this.stdout.write('novice debugger usage:\n');
+                    this.stdout.write('\n');
+                    this.stdout.write('c[ontinue]    run code until halt or breakpoint\n');
+                    this.stdout.write('s[tep]        run a single instruction\n');
+                    this.stdout.write('h[elp]        show this message\n');
+                    this.stdout.write('q[uit]        escape this foul debugger\n');
                     break;
 
                 case 'q':
@@ -119,16 +122,54 @@ class CliDebugger extends Debugger {
 
                 default:
                     showState = false;
-                    this.rl.write(`unknown command \`${answer}'. run ` +
+                    this.stdout.write(`unknown command \`${answer}'. run ` +
                                   `\`help' for a list of commands\n`);
             }
         }
+    }
 
+    public close(): void {
         this.rl.close();
     }
 
     private printSimState(): void {
-        this.rl.write(`pc: 0x${this.pc.toString(16)}\n`);
+        // Print registers
+        // This looks really awful, but it's just tedious string
+        // formatting code
+        for (const reg of this.isa.regs) {
+            if (reg.kind === 'reg-range') {
+                const nibbles = Math.ceil(reg.bits / 4);
+                const rowSize = Math.ceil(16 / nibbles);
+                const maxLen = Math.floor(Math.log10(reg.count)) + 2;
+                const base = (reg.bits <= 4) ? 2 : 16;
+                const prefix = (reg.bits === 1) ? '' : (base === 2) ? '0b' : '0x';
+
+                for (let i = 0; i < reg.count; i++) {
+                    // TODO: aliases
+                    const regname = padStr(`${reg.prefix}${i}`, maxLen, ' ');
+                    const regval = Math.abs(this.regs.range[reg.prefix][i]);
+                    const padded = padStr(regval.toString(base),
+                                          (base === 2) ? reg.bits : nibbles, '0');
+                    const after = ((i + 1) % rowSize && i < reg.count - 1) ? ' ' : '\n';
+                    this.stdout.write(`${regname}: ${prefix}${padded}${after}`);
+                }
+            } else if (reg.kind === 'reg') {
+                const nibbles = Math.ceil(reg.bits / 4);
+                const base = (reg.bits <= 4) ? 2 : 16;
+                const prefix = (reg.bits === 1) ? '' : (base === 2) ? '0b' : '0x';
+                const regval = Math.abs(this.regs.solo[reg.name]);
+                const padded = padStr(regval.toString(base),
+                                      (base === 2) ? reg.bits : nibbles, '0');
+                this.stdout.write(`${reg.name}: ${prefix}${padded}\n`);
+            } else {
+                const _: never = reg;
+            }
+        }
+
+        // Be a little dishonest: to avoid confusing users, get 'stuck'
+        // on halts
+        const pc = this.halted ? this.pc - this.isa.pc.increment : this.pc;
+        this.stdout.write(`\n==> 0x${pc.toString(16)}: ${this.disassembleAt(pc)}\n`);
     }
 
     // Interrupt execution (e.g. infinite loop)

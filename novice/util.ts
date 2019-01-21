@@ -8,4 +8,12 @@ function sextTo(val: number, bits: number): number {
            : val | (-1 << bits);
 }
 
-export { maskTo, sextTo };
+function padStr(str: string, to: number, withChar: string) {
+    const need = to - str.length;
+    for (let i = 0; i < need; i++) {
+        str = withChar + str;
+    }
+    return str;
+}
+
+export { maskTo, sextTo, padStr };

@@ -1,4 +1,4 @@
-import { IO, Isa } from '../isa';
+import { Fields, InstructionSpec, IO, Isa } from '../isa';
 import { maskTo } from '../util';
 import { Simulator } from './simulator';
 
@@ -42,6 +42,52 @@ class Debugger extends Simulator {
         }
 
         this.breakpoints[addr] = this.nextBreakpoint++;
+    }
+
+    public disassembleAt(pc: number): string {
+        return this.disassemble(this.load(pc));
+    }
+
+    public disassemble(ir: number): string {
+        let spec: InstructionSpec|null;
+        let fields: Fields|null;
+
+        try {
+            [spec, fields] = this.decode(ir);
+        } catch (err) {
+            spec = fields = null;
+        }
+
+        if (!spec || !fields) {
+            // Cannot disassemble
+            // TODO: include some kind of message?
+            return `0x${ir.toString(16)} (?)`;
+        }
+
+        const operands: string[] = [];
+
+        for (const field of spec.fields) {
+            switch (field.kind) {
+                case 'const':
+                    // Not provided in assembly code, so skip
+                    break;
+
+                case 'imm':
+                    // TODO: labels
+                    operands.push(fields.imms[field.name].toString());
+                    break;
+
+                case 'reg':
+                    // TODO: use reg aliases if available
+                    const regid = fields.regs[field.name];
+                    const str = (typeof regid === 'string')
+                              ? regid
+                              : regid.join('');
+                    operands.push(str);
+            }
+        }
+
+        return `${spec.op} ${operands.join(', ')}`;
     }
 }
 

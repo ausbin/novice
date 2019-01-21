@@ -128,18 +128,29 @@ async function sim(configName: string, path: string, stdin: Readable,
 
 async function dbg(configName: string, path: string, stdin: Readable,
                    stdout: Writable, stderr: Writable): Promise<number> {
+    let cfg;
+    let fp: Readable;
     try {
-        const cfg = getSimulatorConfig(configName);
-        const fp = fs.createReadStream(path);
+        cfg = getSimulatorConfig(configName);
+        fp = fs.createReadStream(path);
         await new Promise((resolve, reject) => {
             fp.on('readable', resolve);
             fp.on('error', reject);
         });
-        const debug = new CliDebugger(cfg.isa, stdin, stdout);
+    } catch (err) {
+        stderr.write(`dbg: setup error: ${err.message}\n`);
+        return 1;
+    }
+
+    const debug = new CliDebugger(cfg.isa, stdin, stdout);
+
+    try {
         cfg.loader.load(cfg.isa, fp, debug);
         await debug.run();
+        debug.close();
         return 0;
     } catch (err) {
+        debug.close();
         stderr.write(`dbg error: ${err.message}\n`);
         return 1;
     }

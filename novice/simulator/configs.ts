@@ -11,6 +11,10 @@ const configs: {[s: string]: Config} = {
         isa: 'lc3',
         loader: 'complx',
     },
+    lc2200: {
+        isa: 'lc2200',
+        loader: 'complx',
+    },
 };
 
 interface SimulatorConfig {

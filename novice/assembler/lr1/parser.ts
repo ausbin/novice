@@ -38,7 +38,8 @@ class Parser<NT, T> {
                                     `\`${token.val}' on line ${line.num} ` +
                                     `and column ${token.col}`);
                 } else {
-                    throw new Error(`parse error: unexpected end-of-file`);
+                    throw new Error(`parse error: unexpected end-of-line on ` +
+                                    `line ${line.num}`);
                 }
             }
             switch (entry.action) {

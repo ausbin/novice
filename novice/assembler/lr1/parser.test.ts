@@ -113,7 +113,7 @@ describe('parser', () => {
 
         it('blows up for empty line', () => {
             const line: Line<T> = {num: 1207, tokens: []};
-            expect(() => {parser.parse(line)}).toThrow('unexpected end-of-file');
+            expect(() => {parser.parse(line)}).toThrow('unexpected end-of-line');
         });
 
         it('blows up for early eof', () => {
@@ -124,7 +124,7 @@ describe('parser', () => {
             ];
             const line: Line<T> = {num: 420, tokens: tokens};
 
-            expect(() => {parser.parse(line)}).toThrow('unexpected end-of-file');
+            expect(() => {parser.parse(line)}).toThrow('unexpected end-of-line');
         });
 
         it('blows up for unexpected token', () => {

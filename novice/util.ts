@@ -8,10 +8,10 @@ function sextTo(val: number, bits: number): number {
            : val | (-1 << bits);
 }
 
-function padStr(str: string, to: number, withChar: string) {
+function padStr(str: string, to: number, withChar: string, right?: boolean) {
     const need = to - str.length;
     for (let i = 0; i < need; i++) {
-        str = withChar + str;
+        str = right ? str + withChar : withChar + str;
     }
     return str;
 }

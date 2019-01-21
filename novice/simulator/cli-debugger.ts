@@ -4,6 +4,13 @@ import { IO, Isa } from '../isa';
 import { padStr } from '../util';
 import { Debugger } from './debugger';
 
+interface Command {
+    op: string;
+    showState: boolean;
+    method: () => Promise<void>;
+    help: string;
+}
+
 class PromptIO implements IO {
     public rl!: readline.Interface;
     public stdout!: Writable;
@@ -37,6 +44,7 @@ class CliDebugger extends Debugger {
     private stdout: Writable;
     private rl: readline.Interface;
     private exit: boolean;
+    private commands: Command[];
 
     public constructor(isa: Isa, stdin: Readable, stdout: Writable) {
         const io = new PromptIO();
@@ -54,6 +62,19 @@ class CliDebugger extends Debugger {
         io.stdout = this.stdout;
 
         this.exit = false;
+        this.commands = [
+            {op: 'continue', showState: true,  method: this.cont,
+             help: 'run code until halt or breakpoint'},
+
+            {op: 'step', showState: true,  method: this.step,
+             help: 'run a single instruction'},
+
+            {op: 'help', showState: false, method: this.printHelp,
+             help: 'show this message'},
+
+            {op: 'quit', showState: false, method: this.quit,
+             help: 'escape this foul debugger'},
+        ];
     }
 
     public async run(): Promise<void> {
@@ -65,71 +86,53 @@ class CliDebugger extends Debugger {
             }
             showState = true;
 
-            const answer = await new Promise(resolve => {
+            const answer: string = await new Promise(resolve => {
                 this.rl.question('(novice) ', resolve);
             });
 
-            switch (answer) {
-                case 'c':
-                case 'co':
-                case 'con':
-                case 'cont':
-                case 'conti':
-                case 'contin':
-                case 'continu':
-                case 'continue':
-                case 'r':
-                case 'ru':
-                case 'run':
-                    try {
-                        await this.cont();
-                    } catch (err) {
-                        this.stdout.write(`sim error: ${err.message}\n`);
-                    }
-                    break;
+            const splat = answer.split(/\s+/);
+            const op = splat[0];
+            const operands = splat.slice(1);
 
-                case 's':
-                case 'st':
-                case 'ste':
-                case 'step':
-                    try {
-                        await this.step();
-                    } catch (err) {
-                        this.stdout.write(`sim error: ${err.message}\n`);
-                    }
-                    break;
+            let cmd: Command|null = null;
 
-                case '?':
-                case 'h':
-                case 'he':
-                case 'hel':
-                case 'help':
+            for (const cmdSpec of this.commands) {
+                if (cmdSpec.op.startsWith(op)) {
+                    cmd = cmdSpec;
+                    break;
+                }
+            }
+
+            if (cmd) {
+                try {
+                    await cmd.method.bind(this)();
+                    showState = cmd.showState;
+                } catch (err) {
+                    this.stdout.write(`error: ${err.message}`);
                     showState = false;
-                    this.stdout.write('novice debugger usage:\n');
-                    this.stdout.write('\n');
-                    this.stdout.write('c[ontinue]    run code until halt or breakpoint\n');
-                    this.stdout.write('s[tep]        run a single instruction\n');
-                    this.stdout.write('h[elp]        show this message\n');
-                    this.stdout.write('q[uit]        escape this foul debugger\n');
-                    break;
-
-                case 'q':
-                case 'qu':
-                case 'qui':
-                case 'quit':
-                    this.exit = true;
-                    break;
-
-                default:
-                    showState = false;
-                    this.stdout.write(`unknown command \`${answer}'. run ` +
+                }
+            } else {
+                this.stdout.write(`unknown command \`${answer}'. run ` +
                                   `\`help' for a list of commands\n`);
+                showState = false;
             }
         }
     }
 
     public close(): void {
         this.rl.close();
+    }
+
+    private async printHelp(): Promise<void> {
+        this.stdout.write('novice debugger usage:\n');
+        this.stdout.write('\n');
+
+        const padTo = Math.max.apply(Math, this.commands.map(cmd => cmd.op.length + 2));
+        for (const cmd of this.commands) {
+            const padded = padStr(`${cmd.op[0]}[${cmd.op.slice(1)}]`, padTo,
+                                  ' ', true);
+            this.stdout.write(`${padded}  ${cmd.help}\n`);
+        }
     }
 
     private printSimState(): void {
@@ -175,6 +178,10 @@ class CliDebugger extends Debugger {
     // Interrupt execution (e.g. infinite loop)
     private onInterrupt(): void {
         this.interrupt = true;
+    }
+
+    private async quit(): Promise<void> {
+        this.exit = true;
     }
 }
 

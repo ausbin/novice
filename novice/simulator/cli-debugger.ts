@@ -6,8 +6,9 @@ import { Debugger } from './debugger';
 
 interface Command {
     op: string[];
+    operands: number;
     showState: boolean;
-    method: () => Promise<void>;
+    method: (operands: string[]) => Promise<void>;
     help: string;
 }
 
@@ -63,16 +64,24 @@ class CliDebugger extends Debugger {
 
         this.exit = false;
         this.commands = [
-            {op: ['continue', 'run'], showState: true,  method: this.cont,
+            {op: ['continue', 'run'], operands: 0,
+             showState: true, method: this.cont,
              help: 'run code until halt or breakpoint'},
 
-            {op: ['step'], showState: true,  method: this.step,
+            {op: ['break'], operands: 1,
+             showState: false, method: this.breakCmd,
+             help: 'set a breakpoint'},
+
+            {op: ['step'], operands: 0,
+             showState: true, method: this.step,
              help: 'run a single instruction'},
 
-            {op: ['help'], showState: false, method: this.printHelp,
+            {op: ['help'], operands: 0,
+             showState: false, method: this.printHelp,
              help: 'show this message'},
 
-            {op: ['quit'], showState: false, method: this.quit,
+            {op: ['quit'], operands: 0,
+             showState: false, method: this.quit,
              help: 'escape this foul debugger'},
         ];
     }
@@ -90,7 +99,7 @@ class CliDebugger extends Debugger {
                 this.rl.question('(novice) ', resolve);
             });
 
-            const splat = answer.split(/\s+/);
+            const splat = answer.trim().split(/\s+/);
             const op = splat[0];
             const operands = splat.slice(1);
 
@@ -105,10 +114,16 @@ class CliDebugger extends Debugger {
 
             if (cmd) {
                 try {
-                    await cmd.method.bind(this)();
+                    if (operands.length != cmd.operands) {
+                        throw new Error(`command ${cmd.op[0]} expects ` +
+                                        `${cmd.operands} operands but got ` +
+                                        `${operands.length}`);
+                    }
+
+                    await cmd.method.bind(this)(operands);
                     showState = cmd.showState;
                 } catch (err) {
-                    this.stdout.write(`error: ${err.message}`);
+                    this.stdout.write(`error: ${err.message}\n`);
                     showState = false;
                 }
             } else {
@@ -121,6 +136,22 @@ class CliDebugger extends Debugger {
 
     public close(): void {
         this.rl.close();
+    }
+
+    private async breakCmd(operands: string[]): Promise<void> {
+        const [operand] = operands;
+        const base = operand.toLowerCase().startsWith('0x')? 16 :
+                     /\d+/.test(operand)? 10 : -1;
+
+        let addr: number;
+        if (base === -1) {
+            throw new Error('labels not yet implemented sorry');
+        } else {
+            addr = parseInt(operand, base);
+        }
+
+        this.addBreakpoint(addr);
+        this.stdout.write(`breakpoint set at 0x${addr.toString(16)}\n`);
     }
 
     private async printHelp(): Promise<void> {

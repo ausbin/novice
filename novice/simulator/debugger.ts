@@ -18,8 +18,14 @@ class Debugger extends Simulator {
 
     // continue
     public async cont(): Promise<void> {
-        while (!this.breakpoints.hasOwnProperty(this.pc)
+        // Ignore breakpoints the first time through the loop
+        // This way, if you've stopped at a breakpoint and press
+        // "continue" it actually will
+        let first = true;
+
+        while ((first || !this.breakpoints.hasOwnProperty(this.pc))
                && !this.halted && !this.interrupt) {
+            first = false;
             await this.step();
         }
 

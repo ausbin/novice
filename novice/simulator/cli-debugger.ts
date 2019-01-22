@@ -70,11 +70,15 @@ class CliDebugger extends Debugger {
 
             {op: ['break'], operands: 1,
              showState: false, method: this.breakCmd,
-             help: 'set a breakpoint'},
+             help: 'set a breakpoint, ex: 0x3069'},
 
             {op: ['step'], operands: 0,
              showState: true, method: this.step,
              help: 'run a single instruction'},
+
+            {op: ['print'], operands: 1,
+             showState: false, method: this.printCmd,
+             help: 'print an address range, ex: 0xef00-0xf000'},
 
             {op: ['help'], operands: 0,
              showState: false, method: this.printHelp,
@@ -88,7 +92,7 @@ class CliDebugger extends Debugger {
 
     public async run(): Promise<void> {
         let showState = true;
-        let lastCmd: Command|null = null;
+        let last: [Command|null, string[]] = [null, []];
 
         while (!this.exit) {
             if (showState) {
@@ -102,13 +106,13 @@ class CliDebugger extends Debugger {
 
             const splat = answer.trim().split(/\s+/);
             const op = splat[0];
-            const operands = splat.slice(1);
+            let operands = splat.slice(1);
             let cmd: Command|null;
 
             if (!op) {
                 // Imitate the gdb behavior of a blank command being 'do
                 // the previous command again'
-                cmd = lastCmd;
+                [cmd, operands] = last;
             } else {
                 cmd = null;
 
@@ -122,13 +126,13 @@ class CliDebugger extends Debugger {
 
             if (cmd) {
                 try {
-                    if (operands.length != cmd.operands) {
+                    if (operands.length !== cmd.operands) {
                         throw new Error(`command ${cmd.op[0]} expects ` +
                                         `${cmd.operands} operands but got ` +
                                         `${operands.length}`);
                     }
 
-                    lastCmd = cmd;
+                    last = [cmd, operands];
                     await cmd.method.bind(this)(operands);
                     showState = cmd.showState;
                 } catch (err) {
@@ -147,20 +151,64 @@ class CliDebugger extends Debugger {
         this.rl.close();
     }
 
-    private async breakCmd(operands: string[]): Promise<void> {
-        const [operand] = operands;
-        const base = operand.toLowerCase().startsWith('0x')? 16 :
-                     /\d+/.test(operand)? 10 : -1;
-
+    private parseAddr(operand: string): number {
+        const base = operand.toLowerCase().startsWith('0x') ? 16 :
+                     /\d+/.test(operand) ? 10 : -1;
         let addr: number;
         if (base === -1) {
             throw new Error('labels not yet implemented sorry');
         } else {
             addr = parseInt(operand, base);
         }
+        return addr;
+    }
 
+    private parseAddrRange(operand: string): [number, number] {
+        const splat = operand.split('-');
+        let lo: number;
+        let hi: number;
+        if (splat.length === 1) {
+            lo = hi = this.parseAddr(splat[0]);
+        } else if (splat.length === 2) {
+            [lo, hi] = splat.map(o => this.parseAddr(o));
+        } else {
+            throw new Error(`expected range like 0x100-0x200 but got ` +
+                            `\`${operand}'`);
+        }
+
+        return [lo, hi];
+    }
+
+    private fmtHex(val: number, bits: number): string {
+        return '0x' + padStr(Math.abs(val).toString(16),
+                             Math.ceil(bits / 4), '0');
+    }
+
+    private fmtAddr(addr: number): string {
+        return this.fmtHex(addr, this.isa.mem.addressability);
+    }
+
+    private fmtWord(word: number): string {
+        return this.fmtHex(word, this.isa.mem.word);
+    }
+
+    private async breakCmd(operands: string[]): Promise<void> {
+        const addr = this.parseAddr(operands[0]);
         this.addBreakpoint(addr);
         this.stdout.write(`breakpoint set at 0x${addr.toString(16)}\n`);
+    }
+
+    private async printCmd(operands: string[]): Promise<void> {
+        const range = this.parseAddrRange(operands[0]);
+        const padDecTo = Math.floor(Math.log10(Math.pow(2, this.isa.mem.word - 1) - 1)) + 2;
+
+        for (const spot of this.disassembleRegion(...range)) {
+            const [pc, word, sext, disassembled] = spot;
+            this.stdout.write(`${this.fmtAddr(pc)}:  ` +
+                              `${this.fmtWord(word)}  ` +
+                              `${padStr(sext.toString(10), padDecTo, ' ', true)}  ` +
+                              `${disassembled || ''}\n`);
+        }
     }
 
     private async printHelp(): Promise<void> {
@@ -215,7 +263,9 @@ class CliDebugger extends Debugger {
         // Be a little dishonest: to avoid confusing users, get 'stuck'
         // on halts
         const pc = this.halted ? this.pc - this.isa.pc.increment : this.pc;
-        this.stdout.write(`\n==> 0x${pc.toString(16)}: ${this.disassembleAt(pc)}\n`);
+        const ir = this.load(pc);
+        const disassembled = this.disassemble(ir) || `${this.fmtWord(ir)} (?)`;
+        this.stdout.write(`\n==> ${this.fmtAddr(pc)}: ${disassembled}\n`);
     }
 
     // Interrupt execution (e.g. infinite loop)

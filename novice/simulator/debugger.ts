@@ -1,5 +1,5 @@
 import { Fields, InstructionSpec, IO, Isa } from '../isa';
-import { maskTo } from '../util';
+import { maskTo, sextTo } from '../util';
 import { Simulator } from './simulator';
 
 class Debugger extends Simulator {
@@ -33,14 +33,7 @@ class Debugger extends Simulator {
     }
 
     public addBreakpoint(addr: number): void {
-        if (addr < 0) {
-            throw new Error('cannot set breakpoint for negative address ' +
-                            addr);
-        }
-
-        if (addr > Math.abs(maskTo(-1, this.isa.mem.space))) {
-            throw new Error(`address ${addr.toString(16)} is too large`);
-        }
+        this.validateAddr(addr);
 
         if (this.breakpoints.hasOwnProperty(addr)) {
             throw new Error(`address 0x${addr.toString(16)} is already a ` +
@@ -50,11 +43,11 @@ class Debugger extends Simulator {
         this.breakpoints[addr] = this.nextBreakpoint++;
     }
 
-    public disassembleAt(pc: number): string {
+    public disassembleAt(pc: number): string|null {
         return this.disassemble(this.load(pc));
     }
 
-    public disassemble(ir: number): string {
+    public disassemble(ir: number): string|null {
         let spec: InstructionSpec|null;
         let fields: Fields|null;
 
@@ -65,9 +58,7 @@ class Debugger extends Simulator {
         }
 
         if (!spec || !fields) {
-            // Cannot disassemble
-            // TODO: include some kind of message?
-            return `0x${ir.toString(16)} (?)`;
+            return null;
         }
 
         const operands: string[] = [];
@@ -94,6 +85,39 @@ class Debugger extends Simulator {
         }
 
         return `${spec.op} ${operands.join(', ')}`;
+    }
+
+    public disassembleRegion(fromPc: number, toPc: number):
+            [number, number, number, string|null][] {
+        this.validateAddr(fromPc);
+        this.validateAddr(toPc);
+
+        if (fromPc > toPc) {
+            [fromPc, toPc] = [toPc, fromPc];
+        }
+
+        const result: [number, number, number, string|null][] = [];
+
+        for (let pc = fromPc; pc <= toPc; pc += this.isa.pc.increment) {
+            const word = this.load(pc);
+            const sext = sextTo(word, this.isa.mem.word);
+            result.push([pc, word, sext, this.disassemble(word)]);
+        }
+
+        return result;
+    }
+
+    private validateAddr(addr: number): void {
+        // TODO: check if NaN or infinity or whatever
+
+        if (addr < 0) {
+            throw new Error('cannot set breakpoint for negative address ' +
+                            addr);
+        }
+
+        if (addr > Math.abs(maskTo(-1, this.isa.mem.space))) {
+            throw new Error(`address ${addr.toString(16)} is too large`);
+        }
     }
 }
 

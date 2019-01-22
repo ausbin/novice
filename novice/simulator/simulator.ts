@@ -1,5 +1,5 @@
-import { Fields, InstructionSpec, IO, Isa, MachineStateUpdate, Reg,
-         RegIdentifier } from '../isa';
+import { Fields, InstructionSpec, IO, Isa, MachineStateLogEntry, MachineStateUpdate,
+         Reg, RegIdentifier } from '../isa';
 import { maskTo, sextTo } from '../util';
 
 class Simulator {
@@ -12,6 +12,7 @@ class Simulator {
     protected halted: boolean;
     protected isa: Isa;
     protected io: IO;
+    protected log: MachineStateLogEntry[];
 
     public constructor(isa: Isa, io: IO) {
         this.isa = isa;
@@ -23,6 +24,7 @@ class Simulator {
             range: {},
         };
         this.halted = false;
+        this.log = [];
 
         this.resetRegs();
     }
@@ -53,8 +55,47 @@ class Simulator {
             (Promise.resolve(ret) === ret)
             ? await (ret as Promise<MachineStateUpdate[]>)
             : ret as MachineStateUpdate[];
+        const logEntry: MachineStateLogEntry = {instr, fields, deltas: []};
 
         for (const update of updates) {
+            const delta = {update, old: 0};
+
+            switch (update.kind) {
+                case 'reg':
+                    delta.old = this.reg(update.reg);
+                    break;
+
+                case 'mem':
+                    delta.old = this.load(update.addr);
+                    break;
+
+                case 'pc':
+                    delta.old = this.pc;
+                    break;
+
+                case 'halt':
+                    // Nothing to back up
+                    break;
+
+                default:
+                    const _: never = update;
+            }
+
+            logEntry.deltas.push(delta);
+        }
+
+        this.pushLogEntry(logEntry);
+    }
+
+    public async run(): Promise<void> {
+        while (!this.halted) {
+            await this.step();
+        }
+    }
+
+    public pushLogEntry(logEntry: MachineStateLogEntry) {
+        for (const delta of logEntry.deltas) {
+            const update = delta.update;
             switch (update.kind) {
                 case 'reg':
                     this.regSet(update.reg, update.val);
@@ -71,14 +112,48 @@ class Simulator {
                 case 'halt':
                     this.halted = true;
                     break;
+
+                default:
+                    const _: never = update;
             }
         }
+
+        this.log.push(logEntry);
     }
 
-    public async run(): Promise<void> {
-        while (!this.halted) {
-            await this.step();
+    public popLogEntry(): MachineStateLogEntry {
+        const logEntry = this.log.pop();
+
+        if (!logEntry) {
+            throw new Error('log is empty');
         }
+
+        for (let i = logEntry.deltas.length - 1; i >= 0; i--) {
+            const delta = logEntry.deltas[i];
+            const update = delta.update;
+            switch (update.kind) {
+                case 'reg':
+                    this.regSet(update.reg, delta.old);
+                    break;
+
+                case 'mem':
+                    this.store(update.addr, delta.old);
+                    break;
+
+                case 'pc':
+                    this.pc = delta.old;
+                    break;
+
+                case 'halt':
+                    this.halted = false;
+                    break;
+
+                default:
+                    const _: never = update;
+            }
+        }
+
+        return logEntry;
     }
 
     public load(addr: number): number {

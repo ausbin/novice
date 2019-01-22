@@ -6,6 +6,7 @@ import { AliasContext, AliasFields, AliasSpec, Fields, getRegAliases,
          InstructionSpec, Isa, isInstruction, Reg, regPrefixes } from './isa';
 import { Lc2200Isa } from './lc2200';
 import { Lc3Isa } from './lc3';
+import { MachineStateDelta, MachineStateLogEntry } from './log';
 import { MachineState, MachineStateUpdate, RegIdentifier } from './state';
 
 const isas: {[s: string]: Isa} = {
@@ -32,4 +33,6 @@ export { getIsa, isas,
          Isa, InstructionSpec, Fields, Reg, regPrefixes, getRegAliases,
          isInstruction, AliasContext, AliasFields, AliasSpec,
          // state
-         RegIdentifier, MachineState, MachineStateUpdate };
+         RegIdentifier, MachineState, MachineStateUpdate,
+         // log
+         MachineStateDelta, MachineStateLogEntry };

@@ -61,6 +61,10 @@ class Debugger extends Simulator {
             return null;
         }
 
+        return this.reassemble(spec, fields);
+    }
+
+    public reassemble(spec: InstructionSpec, fields: Fields): string {
         const operands: string[] = [];
 
         for (const field of spec.fields) {

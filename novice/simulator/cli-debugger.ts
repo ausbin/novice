@@ -76,6 +76,10 @@ class CliDebugger extends Debugger {
              showState: true, method: this.step,
              help: 'run a single instruction'},
 
+            {op: ['unstep', 'undo'], operands: 0,
+             showState: true, method: this.unstepCmd,
+             help: 'undo the last instruction'},
+
             {op: ['print'], operands: 1,
              showState: false, method: this.printCmd,
              help: 'print an address range, ex: 0xef00-0xf000'},
@@ -190,6 +194,10 @@ class CliDebugger extends Debugger {
 
     private fmtWord(word: number): string {
         return this.fmtHex(word, this.isa.mem.word);
+    }
+
+    private async unstepCmd(): Promise<void> {
+        this.unstep();
     }
 
     private async breakCmd(operands: string[]): Promise<void> {

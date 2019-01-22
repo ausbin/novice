@@ -121,6 +121,11 @@ class Simulator {
         this.log.push(logEntry);
     }
 
+    public unstep(): void {
+        this.popLogEntry();
+        this.pc -= this.isa.pc.increment;
+    }
+
     public popLogEntry(): MachineStateLogEntry {
         const logEntry = this.log.pop();
 

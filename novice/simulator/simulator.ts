@@ -130,7 +130,7 @@ class Simulator {
         const logEntry = this.log.pop();
 
         if (!logEntry) {
-            throw new Error('log is empty');
+            throw new Error('already at the beginning of time');
         }
 
         for (let i = logEntry.deltas.length - 1; i >= 0; i--) {

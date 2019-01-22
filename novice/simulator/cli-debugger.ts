@@ -207,12 +207,17 @@ class CliDebugger extends Debugger {
     }
 
     private async printCmd(operands: string[]): Promise<void> {
-        const range = this.parseAddrRange(operands[0]);
-        const padDecTo = Math.floor(Math.log10(Math.pow(2, this.isa.mem.word - 1) - 1)) + 2;
+        this.printMemRegion(this.pc, ...this.parseAddrRange(operands[0]));
+    }
 
-        for (const spot of this.disassembleRegion(...range)) {
+    private printMemRegion(actualPc: number, fromPc: number, toPc: number): void {
+        const padDecTo = Math.floor(Math.log10(Math.pow(2, this.isa.mem.word - 1) - 1)) + 2;
+        const hasPc = fromPc <= actualPc && actualPc <= toPc;
+
+        for (const spot of this.disassembleRegion(fromPc, toPc)) {
             const [pc, word, sext, disassembled] = spot;
-            this.stdout.write(`${this.fmtAddr(pc)}:  ` +
+            this.stdout.write(`${!hasPc ? '' : pc === actualPc ? '==> ' : '    '}` +
+                              `${this.fmtAddr(pc)}:  ` +
                               `${this.fmtWord(word)}  ` +
                               `${padStr(sext.toString(10), padDecTo, ' ', true)}  ` +
                               `${disassembled || ''}\n`);
@@ -268,12 +273,14 @@ class CliDebugger extends Debugger {
             }
         }
 
+        this.stdout.write('\n');
+
         // Be a little dishonest: to avoid confusing users, get 'stuck'
         // on halts
         const pc = this.halted ? this.pc - this.isa.pc.increment : this.pc;
-        const ir = this.load(pc);
-        const disassembled = this.disassemble(ir) || `${this.fmtWord(ir)} (?)`;
-        this.stdout.write(`\n==> ${this.fmtAddr(pc)}: ${disassembled}\n`);
+        const fromPc = Math.max(0, pc - 4);
+        const toPc = Math.min(Math.pow(2, this.isa.mem.space) - 1, pc + 4);
+        this.printMemRegion(pc, fromPc, toPc);
     }
 
     // Interrupt execution (e.g. infinite loop)

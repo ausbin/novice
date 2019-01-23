@@ -8,7 +8,7 @@ Getting Started
 
     $ npm install --dev
     $ npm run build
-    $ node novice/main.js --help
+    $ ./novice.js --help
 
 Useful stuff:
 

@@ -8,9 +8,12 @@ import { CliDebugger, getSimulatorConfig, Simulator } from './simulator';
 async function main(argv: string[], stdin: Readable, stdout: Writable,
                     stderr: Writable): Promise<number> {
     const parser = new ArgumentParser({ prog: 'novice', description: 'toy assembler' });
-    const sub = parser.addSubparsers({ dest: 'subcmd', help: 'subcommand to run' });
+    const sub = parser.addSubparsers({ dest: 'subcmd',
+                                       help: 'subcommand to run. try ' +
+                                             '`novice subcmd --help\' for more info' });
 
-    const asmParser = sub.addParser('asm');
+    const asmParser = sub.addParser('asm', { description:
+                                             'assemble to an object file' });
     asmParser.addArgument(['file'], { help: 'file to assemble' });
     asmParser.addArgument(['-c', '--config'],
                           { defaultValue: 'lc3',
@@ -30,14 +33,16 @@ async function main(argv: string[], stdin: Readable, stdout: Writable,
                                   'the default output format for the ' +
                                   'the selected assembler configuration' });
 
-    const simParser = sub.addParser('sim');
+    const simParser = sub.addParser('sim', { description:
+                                             'simulate an object file' });
     simParser.addArgument(['file'], { help: 'object file to simulate' });
     simParser.addArgument(['-c', '--config'],
                           { defaultValue: 'lc3',
                             help: 'simulator configuration to use. ' +
                                   'default: %(defaultValue)s' });
 
-    const dbgParser = sub.addParser('dbg');
+    const dbgParser = sub.addParser('dbg', { description:
+                                             'interactively debug an object file'});
     dbgParser.addArgument(['file'], { help: 'object file to debug' });
     dbgParser.addArgument(['-c', '--config'],
                           { defaultValue: 'lc3',

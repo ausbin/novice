@@ -121,6 +121,12 @@ class Simulator {
         this.log.push(logEntry);
     }
 
+    public rewind(): void {
+        while (this.log.length) {
+            this.unstep();
+        }
+    }
+
     public unstep(): void {
         this.popLogEntry();
         this.pc -= this.isa.pc.increment;

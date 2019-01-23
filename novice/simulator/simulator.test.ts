@@ -1,56 +1,72 @@
 import { Simulator } from '.';
 import { IO, getIsa } from '../isa';
+import { FakeIO } from './helpers.test';
 
 describe('simulator', () => {
-    let stdin: string;
-    let stdout: string;
-    let io: IO;
+    let io.stdin: string;
+    let io.stdout: string;
+    let io: FakeIO;
     let sim: Simulator;
 
-    beforeAll(() => {
-        io = {
-            async getc() {
-                if (stdin.length > 0) {
-                    const c = stdin.charCodeAt(0);
-                    stdin = stdin.slice(1);
-                    return c;
-                } else {
-                    throw new Error('unexpected EOF on stdin');
-                }
-            },
-            putc(c: number) {
-                stdout += String.fromCharCode(c);
-            },
-        };
-    });
-
     beforeEach(() => {
-        stdin = stdout = "";
+        io = new FakeIO();
     });
 
-    describe('lc-3', () => {
+    describe('lc-3 programs', () => {
         beforeEach(() => {
             sim = new Simulator(getIsa('lc3'), io);
         });
 
-        describe('run()', () => {
-            it('executes a halt', () => {
+        describe('halt', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0xf025); // halt
+            });
 
+            it('unstep() at beginning of time', () => {
+                expect(() => {
+                    sim.unstep();
+                }).toThrow('beginning of time');
+            });
+
+            it('explodes reg() on invalid reg range', () => {
+                expect(() => {
+                    sim.reg(['x', 69]);
+                }).toThrow('x');
+            });
+
+            it('explodes reg() on invalid solo reg', () => {
+                expect(() => {
+                    sim.reg('lmao');
+                }).toThrow('lmao');
+            });
+
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x3001);
                 });
             });
 
-            it('adds two numbers', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                });
+            });
+        });
+
+        describe('adding two numbers', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0b0101001001100000); // and r1, r1, 0
                 sim.store(0x3001, 0b0101010010100000); // and r2, r2, 0
                 sim.store(0x3002, 0b0001001001101111); // add r1, r1, 15
                 sim.store(0x3003, 0b0001010010100011); // add r2, r2, 3
                 sim.store(0x3004, 0b0001111001000010); // add r7, r1, r2
                 sim.store(0x3005, 0xf025); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x3006);
@@ -64,7 +80,24 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes hello world', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('printing hello world', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0b1110000000000010); // lea r0, 2
                 sim.store(0x3001, 0xf022); // puts
                 sim.store(0x3002, 0xf025); // halt
@@ -82,7 +115,9 @@ describe('simulator', () => {
                 sim.store(0x300e, '!'.charCodeAt(0));
                 sim.store(0x300f, '\n'.charCodeAt(0));
                 sim.store(0x3010, 0);
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x3003);
@@ -93,15 +128,34 @@ describe('simulator', () => {
                             0x0000, 0x0000, 0x0000, 0x0000,
                         ]},
                     });
-                    expect(stdout).toEqual("hello world!\n");
+                    expect(io.stdout).toEqual("hello world!\n");
                 });
             });
 
-            it('executes code which sets CC=n', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('setting CC=n', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0b0101001001100000); // and r1, r1, 0
                 sim.store(0x3001, 0b0001001001111110); // add r1, r1, -2
                 sim.store(0x3002, 0xf025); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x3003);
@@ -115,10 +169,29 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes code which sets CC=z', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('setting CC=z', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0b0101001001100000); // and r1, r1, 0
                 sim.store(0x3001, 0xf025); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x3002);
@@ -132,11 +205,30 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes code which sets CC=p', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('setting CC=p', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0b0101001001100000); // and r1, r1, 0
                 sim.store(0x3001, 0b0001001001100010); // add r1, r1, 2
                 sim.store(0x3002, 0xf025); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x3003);
@@ -150,14 +242,33 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes arithmetic instructions', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('arithmetic', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0b0101000000100000); // and r0, r0, 0
                 sim.store(0x3001, 0b0001010000101100); // add r2, r0, 12
                 sim.store(0x3002, 0b1001011010111111); // not r3, r2
                 sim.store(0x3003, 0b1001100000111111); // not r4, r0
                 sim.store(0x3004, 0b0101101011000100); // and r5, r3, r4
                 sim.store(0x3005, 0xf025); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x3006);
@@ -171,7 +282,24 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes unconditional branch instructions', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('unconditional branching', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0b0101000000100000); // and r0, r0, 0
                 sim.store(0x3001, 0b0000111000000001); // br label0
                 sim.store(0x3002, 0b0001001000100001); // add r1, r0, 1
@@ -184,7 +312,9 @@ describe('simulator', () => {
                 sim.store(0x3009, 0b1100000101000000); // jmp r5
                 sim.store(0x300a, 0b0001100000100001); // add r4, r0, 1
                 sim.store(0x300c, 0xf025); // label3 halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x300d);
@@ -198,7 +328,24 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes true traps', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('true traps', () => {
+            beforeEach(() => {
                 sim.store(0x00f0, 0x2000); // trap table
 
                 sim.store(0x2000, 0b0001010000000001); // add r2, r0, r1
@@ -209,7 +356,9 @@ describe('simulator', () => {
                 sim.store(0x3002, 0b0001000000101101); // add r0, r0, 13
                 sim.store(0x3003, 0xf0f0); // trap xf0
                 sim.store(0x3004, 0xf025); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x3005);
@@ -223,7 +372,24 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes conditional branch instructions with cc=n', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('conditional branching with cc=n', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0b0101000000100000); // and r0, r0, 0
                 sim.store(0x3001, 0b1001111000111111); // not r7, r0
 
@@ -255,7 +421,9 @@ describe('simulator', () => {
                 sim.store(0x3015, 0b0000111000000001); // brnzp 1 ; TAKEN
                 sim.store(0x3016, 0b0001111000100001); // add r7, r0, 1
                 sim.store(0x3017, 0xf025); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x3018);
@@ -269,7 +437,24 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes conditional branch instructions with cc=z', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('conditional branching with cc=z', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0b0101000000100000); // and r0, r0, 0
                 sim.store(0x3001, 0b0001111000100000); // add r7, r0, 0
 
@@ -301,7 +486,9 @@ describe('simulator', () => {
                 sim.store(0x3015, 0b0000111000000001); // brnzp 1 ; TAKEN
                 sim.store(0x3016, 0b0001111000100001); // add r7, r0, 1
                 sim.store(0x3017, 0xf025); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x3018);
@@ -315,7 +502,24 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes conditional branch instructions with cc=p', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('executes conditional branch instructions with cc=p', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0b0101000000100000); // and r0, r0, 0
                 sim.store(0x3001, 0b0001111000101111); // add r7, r0, 15
 
@@ -347,7 +551,9 @@ describe('simulator', () => {
                 sim.store(0x3015, 0b0000111000000001); // brnzp 1 ; TAKEN
                 sim.store(0x3016, 0b0001111000100001); // add r7, r0, 1
                 sim.store(0x3017, 0xf025); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x3018);
@@ -361,7 +567,24 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes loads', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('loading', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0b0010011000000101); // ld r3, nice
                 sim.store(0x3001, 0b1110100000000100); // lea r4, nice
                 sim.store(0x3002, 0b0001100100111110); // add r4, r4, -2
@@ -370,7 +593,9 @@ describe('simulator', () => {
                 sim.store(0x3005, 0xf025); // halt
                 sim.store(0x3006, 0x0069); // nice .fill x69
                 sim.store(0x3007, 0x3006); // niceaddr .fill nice
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x3006);
@@ -384,7 +609,24 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes stores', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('storing', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0b0101111111100000); // and r7, r7, 0
                 sim.store(0x3001, 0b0001111111101111); // add r7, r7, 15
                 sim.store(0x3002, 0b0001111111101111); // add r7, r7, 15
@@ -404,7 +646,9 @@ describe('simulator', () => {
                 sim.store(0x300f, 0x3010); // nice2addr .fill nice
                 sim.store(0x3010, 0x0420); // nice2 .fill x0420
                 sim.store(0x3011, 0x0420); // nice3 .fill x0420
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x300e);
@@ -421,12 +665,31 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes getc', () => {
-                stdin = 'asdf';
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('getc', () => {
+            beforeEach(() => {
+                io.stdin = 'asdf';
 
                 sim.store(0x3000, 0xf020); // getc
                 sim.store(0x3001, 0xf025); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x3002);
@@ -439,19 +702,38 @@ describe('simulator', () => {
                             0x0000, 0x0000, 0x0000, 0x0000,
                         ]},
                     });
-                    // Did not touch stdout
-                    expect(stdout).toEqual('');
+                    // Did not touch io.stdout
+                    expect(io.stdout).toEqual('');
                 });
             });
 
-            it('executes out', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('out', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0b0101000000100000); // and r0, r0, 0
                 sim.store(0x3001, 0b0001000000101111); // add r0, r0, 15
                 sim.store(0x3002, 0b0001000000101111); // add r0, r0, 15
                 sim.store(0x3003, 0b0001000000100011); // add r0, r0, 3
                 sim.store(0x3004, 0xf021); // out
                 sim.store(0x3005, 0xf025); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x3006);
@@ -462,11 +744,28 @@ describe('simulator', () => {
                             0x0000, 0x0000, 0x0000, 0x0000,
                         ]},
                     });
-                    expect(stdout).toEqual('!');
+                    expect(io.stdout).toEqual('!');
                 });
             });
 
-            it('executes out on R0[7:0]', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('out on R0[7:0]', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0b0101000000100000); // and r0, r0, 0
                 sim.store(0x3001, 0b0001000000100001); // add r0, r0, 1
                 sim.store(0x3002, 0b0001000000000000); // add r0, r0, r0
@@ -482,7 +781,9 @@ describe('simulator', () => {
                 sim.store(0x300c, 0b0001000000100011); // add r0, r0, 3
                 sim.store(0x300d, 0xf021); // out
                 sim.store(0x300e, 0xf025); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x300f);
@@ -493,16 +794,36 @@ describe('simulator', () => {
                             0x0000, 0x0000, 0x0000, 0x0000,
                         ]},
                     });
-                    expect(stdout).toEqual('!');
+                    expect(io.stdout).toEqual('!');
                 });
             });
 
-            it('executes in', () => {
-                stdin = 'banana';
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+
+        describe('in', () => {
+            beforeEach(() => {
+                io.stdin = 'banana';
 
                 sim.store(0x3000, 0xf023); // out
                 sim.store(0x3001, 0xf025); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x3002);
@@ -515,21 +836,43 @@ describe('simulator', () => {
                             0x0000, 0x0000, 0x0000, 0x0000,
                         ]},
                     });
-                    expect(stdout).toEqual('> ');
+                    expect(io.stdout).toEqual('> ');
                 });
             });
 
-            it('errors on invalid instruction', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x3000);
+                    expect(sim.getRegs()).toEqual({
+                        solo: {'cc': 0b000},
+                        range: {'r': [
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                            0x0000, 0x0000, 0x0000, 0x0000,
+                        ]},
+                    });
+                });
+            });
+        });
+
+        describe('errors on invalid instruction', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0b1101000000000000);
+            });
+
+            it('run()', () => {
                 return expect(sim.run()).rejects.toThrow(/0xD000/i);
             });
         });
 
-        describe('step()', () => {
-            it('does not step on halts', () => {
+        describe('adding after halt', () => {
+            beforeEach(() => {
                 sim.store(0x3000, 0xf025); // halt
                 sim.store(0x3001, 0b0001000000100001); // add r0, r0, 1
+            });
 
+            it('step() should not double step', () => {
                 sim.step();
                 expect(sim.isHalted()).toBe(true);
                 expect(sim.getPc()).toEqual(0x3001);
@@ -557,28 +900,48 @@ describe('simulator', () => {
         });
     });
 
-    describe('lc-2200', () => {
+    describe('lc-2200 programs', () => {
         beforeEach(() => {
             sim = new Simulator(getIsa('lc2200'), io);
         });
 
-        describe('run()', () => {
-            it('executes a halt', () => {
+        describe('halt', () => {
+            beforeEach(() => {
                 sim.store(0x00, 0x70000000); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x01);
                 });
             });
 
-            it('adds two numbers', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('adding two numbers', () => {
+            beforeEach(() => {
                 sim.store(0x00, 0x2100000f); // addi $1, $0, 15
                 sim.store(0x01, 0x22000003); // addi $2, $0, 3
                 sim.store(0x02, 0x03100002); // add $3, $1, $2
                 sim.store(0x03, 0x05300002); // add $5, $3, $2
                 sim.store(0x04, 0x70000000); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x05);
@@ -591,7 +954,23 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes arithmetic instructions', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('arithmetic', () => {
+            beforeEach(() => {
                 sim.store(0x00, 0x2a000045); // add $10, $0, 69
                 sim.store(0x01, 0x17a0000a); // nand $7, $10, $10
                 sim.store(0x02, 0x25700003); // addi $5, $7, 3
@@ -599,7 +978,9 @@ describe('simulator', () => {
                 sim.store(0x04, 0x227ffffe); // addi $2, $7, -2
                 sim.store(0x05, 0x0f200005); // add $15, $2, $5
                 sim.store(0x06, 0x70000000); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x07);
@@ -612,7 +993,23 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes conditional branch instructions', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('conditional branching', () => {
+            beforeEach(() => {
                 sim.store(0x00, 0x2d000001); // addi $13, $0, 1
                 sim.store(0x01, 0x2e000002); // addi $14, $0, 2
                 sim.store(0x02, 0x2f000002); // addi $15, $0, 2
@@ -623,7 +1020,9 @@ describe('simulator', () => {
                 sim.store(0x07, 0x5de00001); // beq $14, $13, 1 ! NOT TAKEN
                 sim.store(0x08, 0x23000001); // addi $3, $0, 1
                 sim.store(0x09, 0x70000000); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x0a);
@@ -636,14 +1035,32 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes unconditional branch instructions', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('executes unconditional branch instructions', () => {
+            beforeEach(() => {
                 sim.store(0x00, 0x50000001); // beq $0, $0, 1
                 sim.store(0x01, 0x21000001); // addi $1, $0, 1
                 sim.store(0x02, 0x2f000005); // addi $15, 0, 0x05
                 sim.store(0x03, 0x6fe00000); // jalr $15, $14
                 sim.store(0x04, 0x22000001); // addi $2, $0, 1
                 sim.store(0x05, 0x70000000); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x06);
@@ -656,12 +1073,30 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes jalr $x, $x', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('jalr $x, $x', () => {
+            beforeEach(() => {
                 sim.store(0x00, 0x2f000003); // addi $15, $0, 0x03
                 sim.store(0x01, 0x6ff00000); // jalr $15, $15
                 sim.store(0x02, 0x21000001); // addi $1, $0, 1
                 sim.store(0x03, 0x70000000); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x04);
@@ -674,7 +1109,23 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes loads', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('loading', () => {
+            beforeEach(() => {
                 sim.store(0x00, 0x21000006); // addi $1, $0, 0x06
                 sim.store(0x01, 0x341fffff); // lw $4, -1($1)
                 sim.store(0x02, 0x35100000); // lw $5, 0($1)
@@ -683,7 +1134,9 @@ describe('simulator', () => {
                 sim.store(0x05, 0x00000069); // .word 0x69
                 sim.store(0x06, 0x00000420); // .word 0x420
                 sim.store(0x07, 0xfffffffe); // .word -2
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x05);
@@ -696,7 +1149,23 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes stores', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('executes stores', () => {
+            beforeEach(() => {
                 sim.store(0x00, 0x21000008); // addi $1, $0, 0x08
                 sim.store(0x01, 0x220ffffe); // addi $2, $0, -2
                 sim.store(0x02, 0x23000420); // addi $3, $0, 0x420
@@ -707,7 +1176,9 @@ describe('simulator', () => {
                 sim.store(0x07, 0x22222222);
                 sim.store(0x08, 0x22222222);
                 sim.store(0x09, 0x22222222);
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x07);
@@ -723,10 +1194,28 @@ describe('simulator', () => {
                 });
             });
 
-            it('executes writes to $0 as noops', () => {
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('executes writes to $0 as noops', () => {
+            beforeEach(() => {
                 sim.store(0x00, 0x20000001); // addi $0, $0, 1
                 sim.store(0x01, 0x70000000); // halt
+            });
 
+            it('run()', () => {
                 return sim.run().then(() => {
                     expect(sim.isHalted()).toBe(true);
                     expect(sim.getPc()).toEqual(0x02);
@@ -739,9 +1228,27 @@ describe('simulator', () => {
                 });
             });
 
-            it('errors on invalid instruction', () => {
-                sim.store(0x00, 0x80000000);
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
 
+        describe('errors on invalid instruction', () => {
+            beforeEach(() => {
+                sim.store(0x00, 0x80000000);
+            });
+
+            it('run()', () => {
                 return expect(sim.run()).rejects.toThrow(/0x80000000/i);
             });
         });

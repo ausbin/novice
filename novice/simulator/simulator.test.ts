@@ -524,6 +524,37 @@ describe('simulator', () => {
                 return expect(sim.run()).rejects.toThrow(/0xD000/i);
             });
         });
+
+        describe('step()', () => {
+            it('does not step on halts', () => {
+                sim.store(0x3000, 0xf025); // halt
+                sim.store(0x3001, 0b0001000000100001); // add r0, r0, 1
+
+                sim.step();
+                expect(sim.isHalted()).toBe(true);
+                expect(sim.getPc()).toEqual(0x3001);
+                expect(sim.getRegs()).toEqual({
+                    solo: {'cc': 0b000},
+                    range: {'r': [
+                        0x0000, 0x0000, 0x0000, 0x0000,
+                        0x0000, 0x0000, 0x0000, 0x0000,
+                    ]},
+                });
+
+                sim.step();
+                // Stepping should not change state (because should not execute
+                // the add)
+                expect(sim.isHalted()).toBe(true);
+                expect(sim.getPc()).toEqual(0x3001);
+                expect(sim.getRegs()).toEqual({
+                    solo: {'cc': 0b000},
+                    range: {'r': [
+                        0x0000, 0x0000, 0x0000, 0x0000,
+                        0x0000, 0x0000, 0x0000, 0x0000,
+                    ]},
+                });
+            });
+        });
     });
 
     describe('lc-2200', () => {

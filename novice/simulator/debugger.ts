@@ -88,7 +88,9 @@ class Debugger extends Simulator {
             }
         }
 
-        return `${spec.op} ${operands.join(', ')}`;
+        const ops = operands.join(', ');
+
+        return ops ? `${spec.op} ${ops}` : spec.op;
     }
 
     public disassembleRegion(fromPc: number, toPc: number):

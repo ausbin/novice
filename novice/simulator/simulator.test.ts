@@ -1,5 +1,5 @@
 import { Simulator } from '.';
-import { IO, getIsa } from '../isa';
+import { getIsa } from '../isa';
 import { FakeIO } from './helpers.test';
 
 describe('simulator', () => {

@@ -28,13 +28,15 @@ describe('cli', () => {
             }
         });
         stdout = new Writable({
-            write(str) {
+            write(str, encoding, callback) {
                 stdoutActual += str;
+                if (callback) callback();
             }
         });
         stderr = new Writable({
-            write(str) {
+            write(str, encoding, callback) {
                 stderrActual += str;
+                if (callback) callback();
             }
         });
 

@@ -52,5 +52,5 @@ function getConfig(configName: string): AssemblerConfig {
     };
 }
 
-export { Assembler, AssemblerConfig, getParser, getGenerator,
+export { Assembler, AssemblerConfig, Serializer, getParser, getGenerator,
          getOpSpec, getSerializer, getConfig };

@@ -15,6 +15,11 @@ interface Command {
 class PromptIO implements IO {
     public rl!: readline.Interface;
     public stdout!: Writable;
+    public buf: string;
+
+    public constructor() {
+        this.buf = '';
+    }
 
     public async getc(): Promise<number> {
         let bad = true;
@@ -36,7 +41,9 @@ class PromptIO implements IO {
     }
 
     public putc(c: number): void {
-        this.stdout.write(String.fromCharCode(c));
+        const character = String.fromCharCode(c);
+        this.buf += character;
+        this.stdout.write(character);
     }
 }
 
@@ -44,6 +51,7 @@ class CliDebugger extends Debugger {
     private stdin: Readable;
     private stdout: Writable;
     private rl: readline.Interface;
+    private promptIo: PromptIO;
     private exit: boolean;
     private commands: Command[];
 
@@ -59,8 +67,9 @@ class CliDebugger extends Debugger {
             output: this.stdout,
         });
         this.rl.on('SIGINT', this.onInterrupt.bind(this));
-        io.rl = this.rl;
-        io.stdout = this.stdout;
+        this.promptIo = io;
+        this.promptIo.rl = this.rl;
+        this.promptIo.stdout = this.stdout;
 
         this.exit = false;
         this.commands = [
@@ -136,9 +145,17 @@ class CliDebugger extends Debugger {
                                         `${operands.length}`);
                     }
 
-                    last = [cmd, operands];
+                    this.promptIo.buf = '';
+
                     await cmd.method.bind(this)(operands);
                     showState = cmd.showState;
+                    last = [cmd, operands];
+
+                    // To avoid breaking the prompt
+                    if (this.promptIo.buf &&
+                            this.promptIo.buf[this.promptIo.buf.length - 1] != '\n') {
+                        this.stdout.write('↲\n');
+                    }
                 } catch (err) {
                     this.stdout.write(`error: ${err.message}\n`);
                     showState = false;

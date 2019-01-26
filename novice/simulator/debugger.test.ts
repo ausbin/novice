@@ -3,7 +3,7 @@ import { getIsa } from '../isa';
 import { FakeIO } from './helpers.test';
 
 // for programs with ONE section, generate store() calls with
-// storify() { ./novice.js asm "$1"; xxd -p "${1%.asm}.obj" | awk '{ print substr($1,9) }' | sed 's/\(.\{4\}\)/\1\n/g' | head -n -1 | awk '{ printf "dbg.store(0x%04x, 0x%s);\n", 0x3000 + NR - 1, $1 }'; }; storify meme.asm
+// storify() { ./novice.js asm "$1"; xxd -p "${1%.asm}.obj" | tr -d '\n' | awk '{ print substr($1,9) }' | sed 's/\(.\{4\}\)/\1\n/g' | head -n -1 | awk '{ printf "dbg.store(0x%04x, 0x%s);\n", 0x3000 + NR - 1, $1 }'; }; storify meme.asm
 
 describe('debugger', () => {
     let io: FakeIO;

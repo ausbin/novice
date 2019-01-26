@@ -21,6 +21,7 @@ async function main(argv: string[], stdin: Readable, stdout: Writable,
                                   'default: %(defaultValue)s' });
     asmParser.addArgument(['-o', '--output-file'],
                           { metavar: 'PATH',
+                            dest: 'outputFile',
                             defaultValue: null,
                             help: 'path to output file. default: ' +
                                   'for input file X.asm, output to X.EXT, ' +
@@ -28,6 +29,7 @@ async function main(argv: string[], stdin: Readable, stdout: Writable,
                                   'the selected output format' });
     asmParser.addArgument(['-f', '--output-format'],
                           { metavar: 'FMT',
+                            dest: 'outputFormat',
                             defaultValue: null,
                             help: 'desired output format. default: ' +
                                   'the default output format for the ' +

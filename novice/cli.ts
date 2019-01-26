@@ -120,7 +120,7 @@ async function sim(configName: string, path: string, stdin: Readable,
             f => new Promise((resolve, reject) => {
                 f.on('readable', resolve);
                 f.on('error', reject);
-            })
+            }),
         ));
         const io = new StreamIO(stdin, stdout);
         const simulator = new Simulator(cfg.isa, io);

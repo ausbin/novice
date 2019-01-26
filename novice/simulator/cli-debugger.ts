@@ -153,7 +153,7 @@ class CliDebugger extends Debugger {
 
                     // To avoid breaking the prompt
                     if (this.promptIo.buf &&
-                            this.promptIo.buf[this.promptIo.buf.length - 1] != '\n') {
+                            this.promptIo.buf[this.promptIo.buf.length - 1] !== '\n') {
                         this.stdout.write('↲\n');
                     }
                 } catch (err) {

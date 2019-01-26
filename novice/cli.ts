@@ -116,10 +116,12 @@ async function sim(configName: string, path: string, stdin: Readable,
     try {
         const cfg = getSimulatorConfig(configName);
         const fp = fs.createReadStream(path);
-        await new Promise((resolve, reject) => {
-            fp.on('readable', resolve);
-            fp.on('error', reject);
-        });
+        await Promise.all([fp, stdin].map(
+            f => new Promise((resolve, reject) => {
+                f.on('readable', resolve);
+                f.on('error', reject);
+            })
+        ));
         const io = new StreamIO(stdin, stdout);
         const simulator = new Simulator(cfg.isa, io);
         cfg.loader.load(cfg.isa, fp, simulator);

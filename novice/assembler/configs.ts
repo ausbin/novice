@@ -18,6 +18,12 @@ const configs: {[s: string]: Config} = {
         opSpec: 'word',
         serializer: 'complx',
     },
+    rama2200: {
+        parser: 'lc2200',
+        isa: 'rama2200',
+        opSpec: 'word',
+        serializer: 'complx',
+    },
 };
 
 export { configs };

@@ -15,6 +15,10 @@ const configs: {[s: string]: Config} = {
         isa: 'lc2200',
         loader: 'complx',
     },
+    rama2200: {
+        isa: 'rama2200',
+        loader: 'complx',
+    },
 };
 
 interface SimulatorConfig {

@@ -1,7 +1,7 @@
 import * as readline from 'readline';
 import { Readable, Writable } from 'stream';
 import { IO, Isa } from '../isa';
-import { padStr } from '../util';
+import { forceUnsigned, maxUnsignedVal, padStr } from '../util';
 import { Debugger } from './debugger';
 
 interface Command {
@@ -201,12 +201,12 @@ class CliDebugger extends Debugger {
     }
 
     private fmtHex(val: number, bits: number): string {
-        return '0x' + padStr(Math.abs(val).toString(16),
+        return '0x' + padStr(forceUnsigned(val, bits).toString(16),
                              Math.ceil(bits / 4), '0');
     }
 
     private fmtAddr(addr: number): string {
-        return this.fmtHex(addr, this.isa.mem.addressability);
+        return this.fmtHex(addr, this.isa.mem.space);
     }
 
     private fmtWord(word: number): string {
@@ -271,7 +271,8 @@ class CliDebugger extends Debugger {
                 for (let i = 0; i < reg.count; i++) {
                     // TODO: aliases
                     const regname = padStr(`${reg.prefix}${i}`, maxLen, ' ');
-                    const regval = Math.abs(this.regs.range[reg.prefix][i]);
+                    const regval = forceUnsigned(this.regs.range[reg.prefix][i],
+                                                 this.isa.mem.word);
                     const padded = padStr(regval.toString(base),
                                           (base === 2) ? reg.bits : nibbles, '0');
                     const after = ((i + 1) % rowSize && i < reg.count - 1) ? ' ' : '\n';
@@ -281,7 +282,8 @@ class CliDebugger extends Debugger {
                 const nibbles = Math.ceil(reg.bits / 4);
                 const base = (reg.bits <= 4) ? 2 : 16;
                 const prefix = (reg.bits === 1) ? '' : (base === 2) ? '0b' : '0x';
-                const regval = Math.abs(this.regs.solo[reg.name]);
+                const regval = forceUnsigned(this.regs.solo[reg.name],
+                                             this.isa.mem.word);
                 const padded = padStr(regval.toString(base),
                                       (base === 2) ? reg.bits : nibbles, '0');
                 this.stdout.write(`${reg.name}: ${prefix}${padded}\n`);
@@ -296,7 +298,7 @@ class CliDebugger extends Debugger {
         // on halts
         const pc = this.halted ? this.pc - this.isa.pc.increment : this.pc;
         const fromPc = Math.max(0, pc - 4);
-        const toPc = Math.min(Math.pow(2, this.isa.mem.space) - 1, pc + 4);
+        const toPc = Math.min(maxUnsignedVal(this.isa.mem.space), pc + 4);
         this.printMemRegion(pc, fromPc, toPc);
     }
 

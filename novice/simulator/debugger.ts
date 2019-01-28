@@ -1,5 +1,5 @@
 import { Fields, InstructionSpec, IO, Isa } from '../isa';
-import { maskTo, sextTo } from '../util';
+import { maskTo, maxUnsignedVal, sextTo } from '../util';
 import { Simulator } from './simulator';
 
 class Debugger extends Simulator {
@@ -121,8 +121,8 @@ class Debugger extends Simulator {
                             addr);
         }
 
-        if (addr > Math.abs(maskTo(-1, this.isa.mem.space))) {
-            throw new Error(`address ${addr.toString(16)} is too large`);
+        if (addr > maxUnsignedVal(this.isa.mem.space)) {
+            throw new Error(`address 0x${addr.toString(16)} is too large`);
         }
     }
 }

@@ -1,6 +1,6 @@
 import { Fields, InstructionSpec, IO, Isa, MachineStateLogEntry, MachineStateUpdate,
          Reg, RegIdentifier } from '../isa';
-import { maskTo, sextTo } from '../util';
+import { forceUnsigned, maskTo, sextTo } from '../util';
 
 class Simulator {
     protected pc: number;
@@ -235,8 +235,9 @@ class Simulator {
         }
 
         if (!matches.length) {
+            const unsigned = forceUnsigned(ir, this.isa.pc.instrBits);
             throw new Error(`cannot decode instruction ` +
-                            `0x${Math.abs(ir).toString(16)}`);
+                            `0x${unsigned.toString(16)}`);
         }
 
         matches.sort((left, right) => right.bits - left.bits);

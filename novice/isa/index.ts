@@ -3,7 +3,8 @@ import { Assembly, Instruction, IntegerOperand, LabelOperand, PseudoOp,
 import { DummyIsa } from './dummy';
 import { IO, StreamIO } from './io';
 import { AliasContext, AliasFields, AliasSpec, Fields, getRegAliases,
-         InstructionSpec, Isa, isInstruction, Reg, regPrefixes } from './isa';
+         InstructionSpec, Isa, isInstruction, Reg, regPrefixes,
+         SymbTable } from './isa';
 import { Lc2200Isa } from './lc2200';
 import { Lc3Isa } from './lc3';
 import { MachineStateDelta, MachineStateLogEntry } from './log';
@@ -31,7 +32,7 @@ export { getIsa, isas,
          IO, StreamIO,
          // isa
          Isa, InstructionSpec, Fields, Reg, regPrefixes, getRegAliases,
-         isInstruction, AliasContext, AliasFields, AliasSpec,
+         isInstruction, AliasContext, AliasFields, AliasSpec, SymbTable,
          // state
          RegIdentifier, MachineState, MachineStateUpdate,
          // log

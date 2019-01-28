@@ -1,5 +1,5 @@
 import { Writable } from 'stream';
-import { Isa } from '../../isa';
+import { Isa, SymbTable } from '../../isa';
 import { MachineCodeSection } from '../codegen';
 import { Serializer } from './serializer';
 
@@ -14,6 +14,18 @@ class ComplxObjectFileSerializer implements Serializer {
             for (const word of section.words) {
                 this.writeWord(isa, word, fp);
             }
+        }
+    }
+
+    public symbFileExt(): string { return 'sym'; }
+
+    public serializeSymb(symbtable: SymbTable, fp: Writable) {
+        const symbols = Object.keys(symbtable);
+        symbols.sort((leftSymb, rightSymb) =>
+            symbtable[leftSymb] - symbtable[rightSymb]);
+
+        for (const symb of symbols) {
+            fp.write(`${symbtable[symb].toString(16)}\t${symb}\n`);
         }
     }
 

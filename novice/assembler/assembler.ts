@@ -1,5 +1,5 @@
 import { Readable, Writable } from 'stream';
-import { Assembly, Isa } from '../isa';
+import { Assembly, Isa, SymbTable } from '../isa';
 import { MachineCodeGenerator, MachineCodeSection } from './codegen';
 import { PseudoOpSpec } from './opspec';
 import { Parser } from './parsers';
@@ -24,17 +24,20 @@ class Assembler {
         return await this.cfg.parser.parse(fp);
     }
 
-    public codegen(asm: Assembly): MachineCodeSection[] {
+    public codegen(asm: Assembly): [SymbTable, MachineCodeSection[]] {
         return this.cfg.generator.gen(this.cfg.isa, this.cfg.opSpec, asm);
     }
 
-    public async assemble(fp: Readable): Promise<MachineCodeSection[]> {
+    public async assemble(fp: Readable):
+            Promise<[SymbTable, MachineCodeSection[]]> {
         return this.codegen(await this.parse(fp));
     }
 
-    public async assembleTo(inFp: Readable, outFp: Writable): Promise<void> {
-        this.cfg.serializer.serialize(
-            this.cfg.isa, await this.assemble(inFp), outFp);
+    public async assembleTo(inFp: Readable, outFp: Writable,
+                            symbFp: Writable): Promise<void> {
+        const [symbtable, code] = await this.assemble(inFp);
+        this.cfg.serializer.serialize(this.cfg.isa, code, outFp);
+        this.cfg.serializer.serializeSymb(symbtable, symbFp);
     }
 }
 

@@ -62,6 +62,7 @@ describe('cli', () => {
     describe('asm subcommand', () => {
         let mockInFp: Readable;
         let mockOutFp: Writable;
+        let mockSymbFp: Writable;
         let mockAssembleTo: (inFp: Readable, outFp: Writable) => Promise<void>;
         let mockConfig: AssemblerConfig;
         let mockSerializer: Serializer;
@@ -81,15 +82,28 @@ describe('cli', () => {
 
             // @ts-ignore
             mockOutFp = {
+                // @ts-ignore
+                whoami: 'out',
                 cork: () => {},
                 uncork: () => {},
                 end: () => {},
             };
             // @ts-ignore
-            fs.createWriteStream.mockReturnValue(mockOutFp);
+            fs.createWriteStream.mockReturnValueOnce(mockOutFp);
 
             // @ts-ignore
-            mockAssembleTo = jest.fn((inFp: Readable, outFp: Writable) => Promise.resolve());
+            mockSymbFp = {
+                // @ts-ignore
+                whoami: 'symb',
+                cork: () => {},
+                uncork: () => {},
+                end: () => {},
+            };
+            // @ts-ignore
+            fs.createWriteStream.mockReturnValueOnce(mockSymbFp);
+
+            // @ts-ignore
+            mockAssembleTo = jest.fn((inFp: Readable, outFp: Writable, symbFp: Writable) => Promise.resolve());
             // @ts-ignore
             Assembler.mockImplementation((cfg: AssemblerConfig) => {
                 return { assembleTo: mockAssembleTo };
@@ -99,13 +113,17 @@ describe('cli', () => {
                 // @ts-ignore
                 serializer: {
                     fileExt: () => 'star',
+                    symbFileExt: () => 'squidward',
                 },
             };
             // @ts-ignore
             getConfig.mockReturnValue(mockConfig);
 
             // @ts-ignore
-            mockSerializer = {fileExt: () => 'tl6'};
+            mockSerializer = {
+                fileExt: () => 'tl6',
+                symbFileExt: () => 'anime'
+            };
             // @ts-ignore
             getSerializer.mockReturnValue(mockSerializer);
         });
@@ -116,7 +134,7 @@ describe('cli', () => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['patrick.asm']]);
                 // @ts-ignore
-                expect(fs.createWriteStream.mock.calls).toEqual([['patrick.star']]);
+                expect(fs.createWriteStream.mock.calls).toEqual([['patrick.star'], ['patrick.squidward']]);
                 // @ts-ignore
                 expect(getConfig.mock.calls).toEqual([['bread']]);
                 // @ts-ignore
@@ -124,7 +142,7 @@ describe('cli', () => {
                 // @ts-ignore
                 expect(Assembler.mock.calls).toEqual([[mockConfig]]);
                 // @ts-ignore
-                expect(mockAssembleTo.mock.calls).toEqual([[mockInFp, mockOutFp]]);
+                expect(mockAssembleTo.mock.calls).toEqual([[mockInFp, mockOutFp, mockSymbFp]]);
 
                 expect(exitCode).toEqual(0);
                 expect(stdoutActual).toEqual('');
@@ -138,7 +156,7 @@ describe('cli', () => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['chickenworld']]);
                 // @ts-ignore
-                expect(fs.createWriteStream.mock.calls).toEqual([['chickenworld.star']]);
+                expect(fs.createWriteStream.mock.calls).toEqual([['chickenworld.star'], ['chickenworld.squidward']]);
                 // @ts-ignore
                 expect(getConfig.mock.calls).toEqual([['bread']]);
                 // @ts-ignore
@@ -146,7 +164,7 @@ describe('cli', () => {
                 // @ts-ignore
                 expect(Assembler.mock.calls).toEqual([[mockConfig]]);
                 // @ts-ignore
-                expect(mockAssembleTo.mock.calls).toEqual([[mockInFp, mockOutFp]]);
+                expect(mockAssembleTo.mock.calls).toEqual([[mockInFp, mockOutFp, mockSymbFp]]);
 
                 expect(exitCode).toEqual(0);
                 expect(stdoutActual).toEqual('');
@@ -160,7 +178,7 @@ describe('cli', () => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['/home/travis.adams/chickenworld']]);
                 // @ts-ignore
-                expect(fs.createWriteStream.mock.calls).toEqual([['/home/travis.adams/chickenworld.star']]);
+                expect(fs.createWriteStream.mock.calls).toEqual([['/home/travis.adams/chickenworld.star'], ['/home/travis.adams/chickenworld.squidward']]);
                 // @ts-ignore
                 expect(getConfig.mock.calls).toEqual([['bread']]);
                 // @ts-ignore
@@ -168,7 +186,7 @@ describe('cli', () => {
                 // @ts-ignore
                 expect(Assembler.mock.calls).toEqual([[mockConfig]]);
                 // @ts-ignore
-                expect(mockAssembleTo.mock.calls).toEqual([[mockInFp, mockOutFp]]);
+                expect(mockAssembleTo.mock.calls).toEqual([[mockInFp, mockOutFp, mockSymbFp]]);
 
                 expect(exitCode).toEqual(0);
                 expect(stdoutActual).toEqual('');
@@ -182,7 +200,7 @@ describe('cli', () => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['chickenworld.asm']]);
                 // @ts-ignore
-                expect(fs.createWriteStream.mock.calls).toEqual([['jeff']]);
+                expect(fs.createWriteStream.mock.calls).toEqual([['jeff'], ['jeff.squidward']]);
                 // @ts-ignore
                 expect(getConfig.mock.calls).toEqual([['bread']]);
                 // @ts-ignore
@@ -190,7 +208,7 @@ describe('cli', () => {
                 // @ts-ignore
                 expect(Assembler.mock.calls).toEqual([[mockConfig]]);
                 // @ts-ignore
-                expect(mockAssembleTo.mock.calls).toEqual([[mockInFp, mockOutFp]]);
+                expect(mockAssembleTo.mock.calls).toEqual([[mockInFp, mockOutFp, mockSymbFp]]);
 
                 expect(exitCode).toEqual(0);
                 expect(stdoutActual).toEqual('');
@@ -204,7 +222,7 @@ describe('cli', () => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['chickenworld.asm']]);
                 // @ts-ignore
-                expect(fs.createWriteStream.mock.calls).toEqual([['chickenworld.star']]);
+                expect(fs.createWriteStream.mock.calls).toEqual([['chickenworld.star'], ['chickenworld.squidward']]);
                 // @ts-ignore
                 expect(getConfig.mock.calls).toEqual([['lc3']]);
                 // @ts-ignore
@@ -212,7 +230,7 @@ describe('cli', () => {
                 // @ts-ignore
                 expect(Assembler.mock.calls).toEqual([[mockConfig]]);
                 // @ts-ignore
-                expect(mockAssembleTo.mock.calls).toEqual([[mockInFp, mockOutFp]]);
+                expect(mockAssembleTo.mock.calls).toEqual([[mockInFp, mockOutFp, mockSymbFp]]);
 
                 expect(exitCode).toEqual(0);
                 expect(stdoutActual).toEqual('');
@@ -226,7 +244,7 @@ describe('cli', () => {
                 // @ts-ignore
                 expect(fs.createReadStream.mock.calls).toEqual([['chickenworld.asm']]);
                 // @ts-ignore
-                expect(fs.createWriteStream.mock.calls).toEqual([['chickenworld.tl6']]);
+                expect(fs.createWriteStream.mock.calls).toEqual([['chickenworld.tl6'], ['chickenworld.anime']]);
                 // @ts-ignore
                 expect(getConfig.mock.calls).toEqual([['lc3']]);
                 // @ts-ignore
@@ -234,7 +252,7 @@ describe('cli', () => {
                 // @ts-ignore
                 expect(Assembler.mock.calls).toEqual([[mockConfig]]);
                 // @ts-ignore
-                expect(mockAssembleTo.mock.calls).toEqual([[mockInFp, mockOutFp]]);
+                expect(mockAssembleTo.mock.calls).toEqual([[mockInFp, mockOutFp, mockSymbFp]]);
 
                 expect(mockConfig.serializer).toBe(mockSerializer);
 

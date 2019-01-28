@@ -84,6 +84,7 @@ async function asm(configName: string, inPath: string,
         if (!outPath) {
             outPath = removeExt(inPath) + '.' + cfg.serializer.fileExt();
         }
+        const symbPath = removeExt(outPath) + '.' + cfg.serializer.symbFileExt();
 
         const inFp = fs.createReadStream(inPath);
         await new Promise((resolve, reject) => {
@@ -91,12 +92,15 @@ async function asm(configName: string, inPath: string,
             inFp.on('error', reject);
         });
         const outFp = fs.createWriteStream(outPath);
+        const symbFp = fs.createWriteStream(symbPath);
         const assembler = new Assembler(cfg);
 
         // Buffer so we don't make 1,000,000 syscalls
         outFp.cork();
-        await assembler.assembleTo(inFp, outFp);
+        symbFp.cork();
+        await assembler.assembleTo(inFp, outFp, symbFp);
         outFp.uncork();
+        symbFp.uncork();
         outFp.end();
 
         return 0;

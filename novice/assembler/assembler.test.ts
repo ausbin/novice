@@ -333,12 +333,15 @@ describe('assembler', () => {
                 fp.push(null)
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
-                    {
-                        startAddr: 0x3000,
-                        words: [
-                            0xf025,
-                        ],
-                    },
+                    {},
+                    [
+                        {
+                            startAddr: 0x3000,
+                            words: [
+                                0xf025,
+                            ],
+                        },
+                    ]
                 ]);
             });
 
@@ -351,11 +354,16 @@ describe('assembler', () => {
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
                     {
-                        startAddr: 0x3000,
-                        words: [
-                            0b0000111111111111,
-                        ],
+                        fun: 0x3000,
                     },
+                    [
+                        {
+                            startAddr: 0x3000,
+                            words: [
+                                0b0000111111111111,
+                            ],
+                        },
+                    ]
                 ]);
             });
 
@@ -372,26 +380,31 @@ describe('assembler', () => {
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
                     {
-                        startAddr: 0x3000,
-                        words: [
-                            0b1110000000000010,
-                            0xf022,
-                            0xf025,
-                            'h'.charCodeAt(0),
-                            'e'.charCodeAt(0),
-                            'l'.charCodeAt(0),
-                            'l'.charCodeAt(0),
-                            'o'.charCodeAt(0),
-                            ' '.charCodeAt(0),
-                            'w'.charCodeAt(0),
-                            'o'.charCodeAt(0),
-                            'r'.charCodeAt(0),
-                            'l'.charCodeAt(0),
-                            'd'.charCodeAt(0),
-                            '!'.charCodeAt(0),
-                            0,
-                        ],
+                        mystring: 0x3003,
                     },
+                    [
+                        {
+                            startAddr: 0x3000,
+                            words: [
+                                0b1110000000000010,
+                                0xf022,
+                                0xf025,
+                                'h'.charCodeAt(0),
+                                'e'.charCodeAt(0),
+                                'l'.charCodeAt(0),
+                                'l'.charCodeAt(0),
+                                'o'.charCodeAt(0),
+                                ' '.charCodeAt(0),
+                                'w'.charCodeAt(0),
+                                'o'.charCodeAt(0),
+                                'r'.charCodeAt(0),
+                                'l'.charCodeAt(0),
+                                'd'.charCodeAt(0),
+                                '!'.charCodeAt(0),
+                                0,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -408,18 +421,24 @@ describe('assembler', () => {
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
                     {
-                        startAddr: 0x3000,
-                        words: [
-                            0xf025,
-                        ],
+                        haltme: 0x3000,
+                        halt2: 0x4001,
                     },
-                    {
-                        startAddr: 0x4000,
-                        words: [
-                            0b0101001010111101,
-                            0xf025,
-                        ],
-                    },
+                    [
+                        {
+                            startAddr: 0x3000,
+                            words: [
+                                0xf025,
+                            ],
+                        },
+                        {
+                            startAddr: 0x4000,
+                            words: [
+                                0b0101001010111101,
+                                0xf025,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -435,15 +454,20 @@ describe('assembler', () => {
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
                     {
-                        startAddr: 0x3000,
-                        words: [
-                            0b0001100101000011,
-                            0b0001100101100011,
-                            0b0101110011000010,
-                            0b0101110011100010,
-                            0b1001011100111111,
-                        ],
+                        asdf: 0x3004,
                     },
+                    [
+                        {
+                            startAddr: 0x3000,
+                            words: [
+                                0b0001100101000011,
+                                0b0001100101100011,
+                                0b0101110011000010,
+                                0b0101110011100010,
+                                0b1001011100111111,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -471,31 +495,44 @@ describe('assembler', () => {
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
                     {
-                        startAddr: 0x3000,
-                        words: [
-                            // nop
-                            0b0000000000000000,
-
-                            // br
-                            0b0000001111111111,
-                            0b0000010111111111,
-                            0b0000011111111111,
-                            0b0000100111111111,
-                            0b0000101111111111,
-                            0b0000110111111111,
-                            0b0000111111111111,
-                            0b0000111111111111,
-
-                            // jmp/jsr/ret
-                            0b1100000011000000,
-                            0b0100111111111110,
-                            0b0100000101000000,
-                            0b1100000111000000,
-
-                            // trap
-                            0b1111000001101001,
-                        ],
+                        asdf0: 0x3001,
+                        asdf1: 0x3002,
+                        asdf2: 0x3003,
+                        asdf3: 0x3004,
+                        asdf4: 0x3005,
+                        asdf5: 0x3006,
+                        asdf6: 0x3007,
+                        asdf7: 0x3008,
+                        subr:  0x3009,
                     },
+                    [
+                        {
+                            startAddr: 0x3000,
+                            words: [
+                                // nop
+                                0b0000000000000000,
+
+                                // br
+                                0b0000001111111111,
+                                0b0000010111111111,
+                                0b0000011111111111,
+                                0b0000100111111111,
+                                0b0000101111111111,
+                                0b0000110111111111,
+                                0b0000111111111111,
+                                0b0000111111111111,
+
+                                // jmp/jsr/ret
+                                0b1100000011000000,
+                                0b0100111111111110,
+                                0b0100000101000000,
+                                0b1100000111000000,
+
+                                // trap
+                                0b1111000001101001,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -514,20 +551,29 @@ describe('assembler', () => {
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
                     {
-                        startAddr: 0x3000,
-                        words: [
-                            // loads
-                            0b0010011111111111,
-                            0b1010100111111111,
-                            0b1110010111111111,
-                            0b0110001101111100,
-
-                            // stores
-                            0b0011011111111111,
-                            0b1011100111111111,
-                            0b0111001101111100,
-                        ],
+                        asdf0: 0x3000,
+                        asdf1: 0x3001,
+                        asdf2: 0x3002,
+                        asdf3: 0x3004,
+                        asdf4: 0x3005,
                     },
+                    [
+                        {
+                            startAddr: 0x3000,
+                            words: [
+                                // loads
+                                0b0010011111111111,
+                                0b1010100111111111,
+                                0b1110010111111111,
+                                0b0110001101111100,
+
+                                // stores
+                                0b0011011111111111,
+                                0b1011100111111111,
+                                0b0111001101111100,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -542,16 +588,19 @@ describe('assembler', () => {
                 fp.push(null)
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
-                    {
-                        startAddr: 0x3000,
-                        words: [
-                            0xf020,
-                            0xf021,
-                            0xf022,
-                            0xf023,
-                            0xf025,
-                        ],
-                    },
+                    {},
+                    [
+                        {
+                            startAddr: 0x3000,
+                            words: [
+                                0xf020,
+                                0xf021,
+                                0xf022,
+                                0xf023,
+                                0xf025,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -569,21 +618,26 @@ describe('assembler', () => {
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
                     {
-                        startAddr: 0x5000,
-                        words: [
-                            0x0,
-                            0x0,
-                            0x0,
-                            0x1337,
-                            0x0,
-                            0xfffe,
-                            0x5006,
-                            0x0,
-                            'h'.charCodeAt(0),
-                            'i'.charCodeAt(0),
-                            0x0,
-                        ],
+                        label: 0x5006,
                     },
+                    [
+                        {
+                            startAddr: 0x5000,
+                            words: [
+                                0x0,
+                                0x0,
+                                0x0,
+                                0x1337,
+                                0x0,
+                                0xfffe,
+                                0x5006,
+                                0x0,
+                                'h'.charCodeAt(0),
+                                'i'.charCodeAt(0),
+                                0x0,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -622,12 +676,15 @@ describe('assembler', () => {
                 fp.push(null);
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
-                    {
-                        startAddr: 0x3000,
-                        words: [
-                            0b0001000000110000,
-                        ],
-                    },
+                    {},
+                    [
+                        {
+                            startAddr: 0x3000,
+                            words: [
+                                0b0001000000110000,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -656,12 +713,15 @@ describe('assembler', () => {
                 fp.push(null);
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
-                    {
-                        startAddr: 0x3000,
-                        words: [
-                            0b0001000000101111,
-                        ],
-                    },
+                    {},
+                    [
+                        {
+                            startAddr: 0x3000,
+                            words: [
+                                0b0001000000101111,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -719,18 +779,21 @@ describe('assembler', () => {
                 fp.push(null);
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
-                    {
-                        startAddr: 0x4001,
-                        words: [
-                            0x0,
-                        ],
-                    },
-                    {
-                        startAddr: 0x4000,
-                        words: [
-                            0x0,
-                        ],
-                    },
+                    {},
+                    [
+                        {
+                            startAddr: 0x4001,
+                            words: [
+                                0x0,
+                            ],
+                        },
+                        {
+                            startAddr: 0x4000,
+                            words: [
+                                0x0,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -858,25 +921,38 @@ describe('assembler', () => {
         });
 
         describe('assembleTo(inFp, outFp)', () => {
-            let outFp: Writable;
-            let outActual: Buffer;
-            let outActualLen: number;
+            interface Buf {
+                buf: Uint8Array;
+                len: number;
+            }
 
-            beforeEach(() => {
-                outActualLen = 0;
-                outActual = Buffer.alloc(1024);
-                outFp = new Writable({
+            let outFp: Writable;
+            let outBuf: Buf;
+            let symFp: Writable;
+            let symBuf: Buf;
+
+            const encode = (s: string) => new Uint8Array(s.split('').map(c => c.charCodeAt(0)));
+
+            function mockFp(): [Writable, Buf] {
+                const buf: Buf = {len: 0, buf: new Uint8Array(1024)};
+                const writable = new Writable({
                     write(arr, encoding, callback) {
                         for (let i = 0; i < arr.length; i++) {
-                            if (outActualLen === outActual.length) {
+                            if (buf.len === buf.buf.length) {
                                 throw new Error('object file too big');
                             }
 
-                            outActual[outActualLen++] = arr[i];
+                            buf.buf[buf.len++] = arr[i];
                         }
                         callback();
                     },
                 });
+                return [writable, buf];
+            }
+
+            beforeEach(() => {
+                [outFp, outBuf] = mockFp();
+                [symFp, symBuf] = mockFp();
             });
 
             it('generates object file for minimal program', () => {
@@ -885,14 +961,18 @@ describe('assembler', () => {
                 fp.push('.end\n');
                 fp.push(null);
 
-                return assembler.assembleTo(fp, outFp).then(() => {
+                return assembler.assembleTo(fp, outFp, symFp).then(() => {
                     let exp = new Uint8Array([
                         0x30,0x00,
                         0x00,0x01,
                         0xf0,0x25,
                     ]);
-                    expect(outActualLen).toEqual(exp.length);
-                    expect(outActual.slice(0, outActualLen).equals(exp)).toBe(true);
+                    expect(outBuf.len).toEqual(exp.length);
+                    expect(outBuf.buf.slice(0, outBuf.len)).toEqual(exp);
+
+                    let expSym = new Uint8Array();
+                    expect(symBuf.len).toEqual(expSym.length);
+                    expect(symBuf.buf.slice(0, symBuf.len)).toEqual(expSym);
                 });
             });
 
@@ -907,7 +987,7 @@ describe('assembler', () => {
                 fp.push('.end\n')
                 fp.push(null)
 
-                return assembler.assembleTo(fp, outFp).then(() => {
+                return assembler.assembleTo(fp, outFp, symFp).then(() => {
                     let exp = new Uint8Array([
                         0x30,0x00,
                         0x00,0x10,
@@ -928,8 +1008,12 @@ describe('assembler', () => {
                         0x00,'!'.charCodeAt(0),
                         0x00,0x00,
                     ]);
-                    expect(outActualLen).toEqual(exp.length);
-                    expect(outActual.slice(0, outActualLen).equals(exp)).toBe(true);
+                    expect(outBuf.len).toEqual(exp.length);
+                    expect(outBuf.buf.slice(0, outBuf.len)).toEqual(exp);
+
+                    let expSym = encode("3003\tmystring\n");
+                    expect(symBuf.len).toEqual(expSym.length);
+                    expect(symBuf.buf.slice(0, symBuf.len)).toEqual(expSym);
                 });
             });
 
@@ -943,16 +1027,16 @@ describe('assembler', () => {
                 fp.push('.fill 0\n');
                 fp.push('.end\n');
                 fp.push('.orig x3000\n');
-                fp.push('halt\n');
+                fp.push('dinkleberg halt\n');
                 fp.push('.end\n');
                 fp.push('.orig x5000\n');
                 fp.push('and r0, r0, 0\n');
-                fp.push('add r0, r0, 1\n');
+                fp.push('tuba add r0, r0, 1\n');
                 fp.push('halt\n');
                 fp.push('.end\n');
                 fp.push(null);
 
-                return assembler.assembleTo(fp, outFp).then(() => {
+                return assembler.assembleTo(fp, outFp, symFp).then(() => {
                     let exp = new Uint8Array([
                         0x80,0x00,
                         0x00,0x06,
@@ -973,8 +1057,14 @@ describe('assembler', () => {
                         0x10,0x21,
                         0xf0,0x25,
                     ]);
-                    expect(outActualLen).toEqual(exp.length);
-                    expect(outActual.slice(0, outActualLen).equals(exp)).toBe(true);
+                    expect(outBuf.len).toEqual(exp.length);
+                    expect(outBuf.buf.slice(0, outBuf.len)).toEqual(exp);
+
+                    let expSym = encode("3000\tdinkleberg\n" +
+                                        "5001\ttuba\n" +
+                                        "8003\thi\n");
+                    expect(symBuf.len).toEqual(expSym.length);
+                    expect(symBuf.buf.slice(0, symBuf.len)).toEqual(expSym);
                 });
             });
         });
@@ -1071,12 +1161,15 @@ describe('assembler', () => {
                 fp.push(null)
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
-                    {
-                        startAddr: 0x0,
-                        words: [
-                            0x70000000,
-                        ],
-                    },
+                    {},
+                    [
+                        {
+                            startAddr: 0x0,
+                            words: [
+                                0x70000000,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -1087,11 +1180,16 @@ describe('assembler', () => {
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
                     {
-                        startAddr: 0x0,
-                        words: [
-                            0x500fffff,
-                        ],
+                        fun: 0x00,
                     },
+                    [
+                        {
+                            startAddr: 0x0,
+                            words: [
+                                0x500fffff,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -1104,14 +1202,19 @@ describe('assembler', () => {
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
                     {
-                        startAddr: 0x0,
-                        words: [
-                            0x00000000,
-                            0x06900003,
-                            0x2b700025,
-                            0x12a00001,
-                        ],
+                        asdf: 0x03,
                     },
+                    [
+                        {
+                            startAddr: 0x0,
+                            words: [
+                                0x00000000,
+                                0x06900003,
+                                0x2b700025,
+                                0x12a00001,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -1122,12 +1225,17 @@ describe('assembler', () => {
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
                     {
-                        startAddr: 0x0,
-                        words: [
-                            0x526fffff,
-                            0x61f00000,
-                        ],
+                        asdf0: 0x00,
                     },
+                    [
+                        {
+                            startAddr: 0x0,
+                            words: [
+                                0x526fffff,
+                                0x61f00000,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -1137,13 +1245,16 @@ describe('assembler', () => {
                 fp.push(null)
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
-                    {
-                        startAddr: 0x0,
-                        words: [
-                            0x36200021,
-                            0x498ffffb,
-                        ],
-                    },
+                    {},
+                    [
+                        {
+                            startAddr: 0x0,
+                            words: [
+                                0x36200021,
+                                0x498ffffb,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -1156,15 +1267,20 @@ describe('assembler', () => {
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
                     {
-                        startAddr: 0x0,
-                        words: [
-                            // Sign extends
-                            0xf0006969 & -1,
-                            0xfffffffe & -1,
-                            0x00000420,
-                            0x00000001,
-                        ],
+                        xd: 0x01,
                     },
+                    [
+                        {
+                            startAddr: 0x0,
+                            words: [
+                                // Sign extends
+                                0xf0006969 & -1,
+                                0xfffffffe & -1,
+                                0x00000420,
+                                0x00000001,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -1179,17 +1295,22 @@ describe('assembler', () => {
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
                     {
-                        startAddr: 0x0,
-                        words: [
-                            0x66600000,
-                            0x26000005,
-                            0x00000000,
-                            0x00000000,
-                            0x00000000,
-                            0x00000000,
-                            0x00000069,
-                        ],
+                        trevor: 0x06,
                     },
+                    [
+                        {
+                            startAddr: 0x0,
+                            words: [
+                                0x66600000,
+                                0x26000005,
+                                0x00000000,
+                                0x00000000,
+                                0x00000000,
+                                0x00000000,
+                                0x00000069,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -1228,12 +1349,15 @@ describe('assembler', () => {
                 fp.push(null);
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
-                    {
-                        startAddr: 0x0,
-                        words: [
-                            0x20080000,
-                        ],
-                    },
+                    {},
+                    [
+                        {
+                            startAddr: 0x0,
+                            words: [
+                                0x20080000,
+                            ],
+                        },
+                    ],
                 ]);
             });
 
@@ -1256,12 +1380,15 @@ describe('assembler', () => {
                 fp.push(null);
 
                 return expect(assembler.assemble(fp)).resolves.toEqual([
-                    {
-                        startAddr: 0x0,
-                        words: [
-                            0x2007ffff,
-                        ],
-                    },
+                    {},
+                    [
+                        {
+                            startAddr: 0x0,
+                            words: [
+                                0x2007ffff,
+                            ],
+                        },
+                    ],
                 ]);
             });
 

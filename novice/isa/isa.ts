@@ -79,10 +79,12 @@ interface AliasFields  {
     labels: {[s: string]: string};
 }
 
+type SymbTable = {[s: string]: number};
+
 interface AliasContext {
     pc: number;
     line: number;
-    symbtable: {[s: string]: number};
+    symbtable: SymbTable;
 }
 
 interface AliasSpec {
@@ -126,4 +128,4 @@ function isInstruction(isa: Isa, op: string): boolean {
 }
 
 export { Isa, Fields, InstructionSpec, Reg, regPrefixes, getRegAliases,
-         isInstruction, AliasContext, AliasFields, AliasSpec };
+         isInstruction, AliasContext, AliasFields, AliasSpec, SymbTable };

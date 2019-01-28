@@ -1,5 +1,5 @@
 import { AliasFields, AliasSpec, Assembly, Instruction, InstructionSpec,
-         Isa, PseudoOp, Section } from '../../isa';
+         Isa, PseudoOp, Section, SymbTable } from '../../isa';
 import { AsmContext, OpOperands, OpSpec, PseudoOpSpec } from '../opspec';
 import { MachineCodeGenerator, MachineCodeSection } from './codegen';
 
@@ -10,11 +10,9 @@ interface ReassembleVictim {
     instrIdx: number;
 }
 
-type SymbTable = {[s: string]: number};
-
 class BaseMachineCodeGenerator implements MachineCodeGenerator {
     public gen(isa: Isa, opSpec: PseudoOpSpec, asm: Assembly):
-            MachineCodeSection[] {
+            [SymbTable, MachineCodeSection[]] {
         const sections: MachineCodeSection[] = [];
         const symbtable: SymbTable = {};
         const reassemble: ReassembleVictim[] = [];
@@ -78,7 +76,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
             }
         }
 
-        return sections;
+        return [symbtable, sections];
     }
 
     private inflateInstr(isa: Isa,

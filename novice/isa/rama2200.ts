@@ -141,7 +141,7 @@ const Rama2200Isa: Isa = {
          sim: (state: MachineState, io: IO, ir: Fields) => [{kind: 'halt'}],
         },
 
-        {op: 'beq', fields: [
+        {op: 'blt', fields: [
             {kind: 'const', bits: [31, 28], val: 0b0101},
             {kind: 'reg',   bits: [27, 24], prefix: '$', name: 'rx'},
             {kind: 'reg',   bits: [23, 20], prefix: '$', name: 'ry'},

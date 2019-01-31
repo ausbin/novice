@@ -12,7 +12,7 @@ jest.mock('./simulator');
 import { CliDebugger, getSimulatorConfig, Simulator,
          SimulatorConfig } from './simulator';
 jest.mock('./isa');
-import { getIsa, StreamIO } from './isa';
+import { getIsa, StreamIO, SymbTable } from './isa';
 
 describe('cli', () => {
     let stdin: Readable, stdout: Writable, stderr: Writable;
@@ -292,6 +292,8 @@ describe('cli', () => {
                 isa: {donkey: 'horse apple'},
                 loader: {
                     load: jest.fn(),
+                    symbFileExt: () => 'lemonade',
+                    loadSymb: jest.fn(),
                 },
             };
             // @ts-ignore
@@ -318,6 +320,8 @@ describe('cli', () => {
             fs.createReadStream.mockReset();
             // @ts-ignore
             mockSimConfig.loader.load.mockReset();
+            // @ts-ignore
+            mockSimConfig.loader.loadSymb.mockReset();
         });
 
         describe('sim subcommand', () => {
@@ -361,6 +365,10 @@ describe('cli', () => {
             it('simulates', () => {
                 return main(['sim', 'farzam.obj'],
                             mockStdin, stdout, stderr).then(exitCode => {
+                    expect(stdoutActual).toEqual('');
+                    expect(stderrActual).toEqual('');
+                    expect(exitCode).toEqual(0);
+
                     // @ts-ignore
                     expect(getSimulatorConfig.mock.calls).toEqual([['lc3']]);
                     // @ts-ignore
@@ -371,10 +379,6 @@ describe('cli', () => {
                     expect(Simulator.mock.calls).toEqual([[mockSimConfig.isa, mockIo]]);
                     // @ts-ignore
                     expect(mockSim.run.mock.calls).toEqual([[]]);
-
-                    expect(exitCode).toEqual(0);
-                    expect(stdoutActual).toEqual('');
-                    expect(stderrActual).toEqual('');
                 });
             });
 
@@ -405,11 +409,14 @@ describe('cli', () => {
 
         describe('dbg subcommand', () => {
             let mockDbg: CliDebugger;
+            // @ts-ignore
+            let mockSymbTable: SymbTable = {bob: 'larry'};
 
             beforeAll(() => {
                 // @ts-ignore
                 mockDbg = {
                     run: jest.fn(),
+                    getSymbTable: jest.fn(),
                     close: jest.fn(),
                 };
             });
@@ -417,6 +424,8 @@ describe('cli', () => {
             beforeEach(() => {
                 // @ts-ignore
                 CliDebugger.mockImplementation(() => mockDbg);
+                // @ts-ignore
+                mockDbg.getSymbTable.mockReturnValue(mockSymbTable);
             });
 
             afterEach(() => {
@@ -425,26 +434,72 @@ describe('cli', () => {
                 // @ts-ignore
                 mockDbg.run.mockReset();
                 // @ts-ignore
+                mockDbg.getSymbTable.mockReset();
+                // @ts-ignore
                 mockDbg.close.mockReset();
             });
 
-            it('launches debugger', () => {
+            it('launches debugger with debug symbols', () => {
                 return main(['dbg', 'brickell.obj'],
                             stdin, stdout, stderr).then(exitCode => {
+                    expect(stdoutActual).toEqual('');
+                    expect(stderrActual).toEqual('');
+                    expect(exitCode).toEqual(0);
+
                     // @ts-ignore
                     expect(getSimulatorConfig.mock.calls).toEqual([['lc3']]);
                     // @ts-ignore
-                    expect(fs.createReadStream.mock.calls).toEqual([['brickell.obj']]);
+                    expect(fs.createReadStream.mock.calls).toEqual([['brickell.obj'], ['brickell.lemonade']]);
+                    // @ts-ignore
+                    expect(mockSimConfig.loader.load.mock.calls).toEqual([[mockSimConfig.isa, mockFp, mockDbg]]);
+                    // @ts-ignore
+                    expect(mockSimConfig.loader.loadSymb.mock.calls).toEqual([[mockFp, mockSymbTable]]);
                     // @ts-ignore
                     expect(CliDebugger.mock.calls).toEqual([[mockSimConfig.isa, stdin, stdout]]);
+                    // @ts-ignore
+                    expect(mockDbg.getSymbTable.mock.calls).toEqual([[]]);
                     // @ts-ignore
                     expect(mockDbg.run.mock.calls).toEqual([[]]);
                     // @ts-ignore
                     expect(mockDbg.close.mock.calls).toEqual([[]]);
+                });
+            });
 
-                    expect(exitCode).toEqual(0);
+            it('launches debugger without debug symbols', () => {
+                // @ts-ignore
+                fs.createReadStream.mockReset();
+                // @ts-ignore
+                fs.createReadStream.mockReturnValueOnce(mockFp);
+                // @ts-ignore
+                fs.createReadStream.mockReturnValueOnce({
+                    // @ts-ignore
+                    on(ev, cb) {
+                        if (ev === 'error') cb(new Error('ENOENT'));
+                    }
+                });
+
+                return main(['dbg', 'brickell.obj'],
+                            stdin, stdout, stderr).then(exitCode => {
                     expect(stdoutActual).toEqual('');
-                    expect(stderrActual).toEqual('');
+                    expect(stderrActual).toMatch(/warning:.*ENOENT/);
+                    expect(exitCode).toEqual(0);
+
+                    // @ts-ignore
+                    expect(getSimulatorConfig.mock.calls).toEqual([['lc3']]);
+                    // @ts-ignore
+                    expect(fs.createReadStream.mock.calls).toEqual([['brickell.obj'], ['brickell.lemonade']]);
+                    // @ts-ignore
+                    expect(mockSimConfig.loader.load.mock.calls).toEqual([[mockSimConfig.isa, mockFp, mockDbg]]);
+                    // @ts-ignore
+                    expect(mockSimConfig.loader.loadSymb.mock.calls).toEqual([]);
+                    // @ts-ignore
+                    expect(CliDebugger.mock.calls).toEqual([[mockSimConfig.isa, stdin, stdout]]);
+                    // @ts-ignore
+                    expect(mockDbg.getSymbTable.mock.calls).toEqual([]);
+                    // @ts-ignore
+                    expect(mockDbg.run.mock.calls).toEqual([[]]);
+                    // @ts-ignore
+                    expect(mockDbg.close.mock.calls).toEqual([[]]);
                 });
             });
 
@@ -461,14 +516,14 @@ describe('cli', () => {
 
                 return main(['dbg', 'brickell.obj'],
                             stdin, stdout, stderr).then(exitCode => {
+                    expect(stdoutActual).toEqual('');
+                    expect(stderrActual).toMatch(/setup error.+oops i did it again/);
+                    expect(exitCode).toEqual(1);
+
                     // @ts-ignore
                     expect(fs.createReadStream.mock.calls).toEqual([['brickell.obj']]);
                     // @ts-ignore
                     expect(CliDebugger.mock.calls).toEqual([]);
-
-                    expect(exitCode).toEqual(1);
-                    expect(stdoutActual).toEqual('');
-                    expect(stderrActual).toMatch(/setup error.+oops i did it again/);
                 });
             });
 
@@ -482,20 +537,26 @@ describe('cli', () => {
 
                 return main(['dbg', 'daisy.obj'],
                             stdin, stdout, stderr).then(exitCode => {
+                    expect(stdoutActual).toEqual('');
+                    expect(stderrActual).toMatch('error: unexpected end-of-file');
+                    expect(exitCode).toEqual(1);
+
                     // @ts-ignore
                     expect(getSimulatorConfig.mock.calls).toEqual([['lc3']]);
                     // @ts-ignore
-                    expect(fs.createReadStream.mock.calls).toEqual([['daisy.obj']]);
+                    expect(fs.createReadStream.mock.calls).toEqual([['daisy.obj'], ['daisy.lemonade']]);
+                    // @ts-ignore
+                    expect(mockSimConfig.loader.load.mock.calls).toEqual([[mockSimConfig.isa, mockFp, mockDbg]]);
+                    // @ts-ignore
+                    expect(mockSimConfig.loader.loadSymb.mock.calls).toEqual([[mockFp, mockSymbTable]]);
                     // @ts-ignore
                     expect(CliDebugger.mock.calls).toEqual([[mockSimConfig.isa, stdin, stdout]]);
+                    // @ts-ignore
+                    expect(mockDbg.getSymbTable.mock.calls).toEqual([[]]);
                     // @ts-ignore
                     expect(mockDbg.run.mock.calls).toEqual([[]]);
                     // @ts-ignore
                     expect(mockDbg.close.mock.calls).toEqual([[]]);
-
-                    expect(exitCode).toEqual(1);
-                    expect(stdoutActual).toEqual('');
-                    expect(stderrActual).toMatch('error: unexpected end-of-file');
                 });
             });
         });

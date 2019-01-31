@@ -1,4 +1,4 @@
-import { Fields, InstructionSpec, IO, Isa } from '../isa';
+import { Fields, InstructionSpec, IO, Isa, SymbTable } from '../isa';
 import { maskTo, maxUnsignedVal, sextTo } from '../util';
 import { Simulator } from './simulator';
 
@@ -7,6 +7,7 @@ class Debugger extends Simulator {
     // Map of address -> breakpoint number
     protected breakpoints: {[addr: number]: number};
     protected interrupt: boolean;
+    protected symbTable: SymbTable;
 
     public constructor(isa: Isa, io: IO) {
         super(isa, io);
@@ -14,6 +15,11 @@ class Debugger extends Simulator {
         this.nextBreakpoint = 0;
         this.breakpoints = {};
         this.interrupt = false;
+        this.symbTable = {};
+    }
+
+    public getSymbTable(): SymbTable {
+        return this.symbTable;
     }
 
     // continue

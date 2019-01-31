@@ -130,7 +130,7 @@ async function sim(configName: string, path: string, stdin: Readable,
         ));
         const io = new StreamIO(stdin, stdout);
         const simulator = new Simulator(cfg.isa, io);
-        cfg.loader.load(cfg.isa, fp, simulator);
+        await cfg.loader.load(cfg.isa, fp, simulator);
         await simulator.run();
         return 0;
     } catch (err) {
@@ -143,12 +143,29 @@ async function dbg(configName: string, path: string, stdin: Readable,
                    stdout: Writable, stderr: Writable): Promise<number> {
     let cfg;
     let fp: Readable;
+    let symbFp: Readable;
+    let parseSymbTable = true;
     try {
         cfg = getSimulatorConfig(configName);
         fp = fs.createReadStream(path);
+
         await new Promise((resolve, reject) => {
             fp.on('readable', resolve);
             fp.on('error', reject);
+        });
+
+        const symbPath = `${removeExt(path)}.${cfg.loader.symbFileExt()}`;
+        symbFp = fs.createReadStream(symbPath);
+
+        await new Promise((resolve, reject) => {
+            symbFp.on('readable', resolve);
+            symbFp.on('error', err => {
+                stderr.write(`warning: could not open symbol file ` +
+                             `\`${symbPath}'. reason: \`${err.message}'. ` +
+                             `proceeding without debug symbols...\n`);
+                parseSymbTable = false;
+                resolve();
+            });
         });
     } catch (err) {
         stderr.write(`dbg: setup error: ${err.message}\n`);
@@ -158,7 +175,15 @@ async function dbg(configName: string, path: string, stdin: Readable,
     const debug = new CliDebugger(cfg.isa, stdin, stdout);
 
     try {
-        cfg.loader.load(cfg.isa, fp, debug);
+        const loadPromise = cfg.loader.load(cfg.isa, fp, debug);
+        if (parseSymbTable) {
+            await Promise.all([
+                loadPromise,
+                cfg.loader.loadSymb(symbFp, debug.getSymbTable()),
+            ]);
+        } else {
+            await loadPromise;
+        }
         await debug.run();
         debug.close();
         return 0;

@@ -142,7 +142,7 @@ const Rama2200Isa: Isa = {
         },
 
         {op: 'blt', fields: [
-            {kind: 'const', bits: [31, 28], val: 0b0101},
+            {kind: 'const', bits: [31, 28], val: 0b1000},
             {kind: 'reg',   bits: [27, 24], prefix: '$', name: 'rx'},
             {kind: 'reg',   bits: [23, 20], prefix: '$', name: 'ry'},
             {kind: 'imm',   bits: [19,  0], sext: true, label: true,
@@ -155,14 +155,14 @@ const Rama2200Isa: Isa = {
         },
 
         {op: 'lea', fields: [
-            {kind: 'const', bits: [31, 28], val: 0b1000},
+            {kind: 'const', bits: [31, 28], val: 0b1001},
             {kind: 'reg',   bits: [27, 24], prefix: '$', name: 'rx'},
             {kind: 'const', bits: [23, 20], val: 0b0000},
             {kind: 'imm',   bits: [19,  0], sext: true, label: true,
                                                          name: 'imm20'},
          ],
-         sim: (state: MachineState, io: IO, ir: Fields) =>
-                 [{kind: 'reg', reg: ir.regs.rx, val: state.pc + 1 + ir.imms.imm20}],
+         sim: (state: MachineState, io: IO, ir: Fields) => nukeR0Writes(
+                 [{kind: 'reg', reg: ir.regs.rx, val: state.pc + 1 + ir.imms.imm20}]),
         },
     ],
 

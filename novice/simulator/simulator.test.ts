@@ -3,8 +3,6 @@ import { getIsa } from '../isa';
 import { FakeIO } from './helpers.test';
 
 describe('simulator', () => {
-    let io.stdin: string;
-    let io.stdout: string;
     let io: FakeIO;
     let sim: Simulator;
 
@@ -1250,6 +1248,377 @@ describe('simulator', () => {
 
             it('run()', () => {
                 return expect(sim.run()).rejects.toThrow(/0x80000000/i);
+            });
+        });
+    });
+
+    describe('rama-2200 programs', () => {
+        beforeEach(() => {
+            sim = new Simulator(getIsa('rama2200'), io);
+        });
+
+        describe('halt', () => {
+            beforeEach(() => {
+                sim.store(0x00, 0x70000000); // halt
+            });
+
+            it('run()', () => {
+                return sim.run().then(() => {
+                    expect(sim.isHalted()).toBe(true);
+                    expect(sim.getPc()).toEqual(0x01);
+                });
+            });
+
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('adding two numbers', () => {
+            beforeEach(() => {
+                sim.store(0x00, 0x2100000f); // addi $1, $0, 15
+                sim.store(0x01, 0x22000003); // addi $2, $0, 3
+                sim.store(0x02, 0x03100002); // add $3, $1, $2
+                sim.store(0x03, 0x05300002); // add $5, $3, $2
+                sim.store(0x04, 0x70000000); // halt
+            });
+
+            it('run()', () => {
+                return sim.run().then(() => {
+                    expect(sim.isHalted()).toBe(true);
+                    expect(sim.getPc()).toEqual(0x05);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x0000000f, 0x00000003, 0x00000012,
+                        0x00000000, 0x00000015, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('arithmetic', () => {
+            beforeEach(() => {
+                sim.store(0x00, 0x2a000045); // add $10, $0, 69
+                sim.store(0x01, 0x17a0000a); // nand $7, $10, $10
+                sim.store(0x02, 0x25700003); // addi $5, $7, 3
+                sim.store(0x03, 0x00000000); // nop
+                sim.store(0x04, 0x227ffffe); // addi $2, $7, -2
+                sim.store(0x05, 0x0f200005); // add $15, $2, $5
+                sim.store(0x06, 0x70000000); // halt
+            });
+
+            it('run()', () => {
+                return sim.run().then(() => {
+                    expect(sim.isHalted()).toBe(true);
+                    expect(sim.getPc()).toEqual(0x07);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0xffffffb8 & -1, 0x00000000,
+                        0x00000000, 0xffffffbd & -1, 0x00000000, 0xffffffba & -1,
+                        0x00000000, 0x00000000, 0x00000045, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0xffffff75 & -1,
+                    ]}});
+                });
+            });
+
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('conditional branching', () => {
+            beforeEach(() => {
+                sim.store(0x00, 0x2d0fffff); // addi $12, $0, -1
+                sim.store(0x01, 0x2d000001); // addi $13, $0, 1
+                sim.store(0x02, 0x2e000002); // addi $14, $0, 2
+                sim.store(0x03, 0x2f000002); // addi $15, $0, 2
+                // beq
+                sim.store(0x04, 0x5ee00001); // beq $14, $14, 1 ! TAKEN
+                sim.store(0x05, 0x21000001); // addi $1, $0, 1
+                sim.store(0x06, 0x5ef00001); // beq $14, $15, 1 ! TAKEN
+                sim.store(0x07, 0x22000001); // addi $2, $0, 1
+                sim.store(0x08, 0x5de00001); // beq $14, $13, 1 ! NOT TAKEN
+                sim.store(0x09, 0x23000001); // addi $3, $0, 1
+                // blt
+                sim.store(0x0a, 0x8ee00001); // blt $14, $14, 1 ! NOT TAKEN
+                sim.store(0x0b, 0x24000001); // addi $4, $0, 1
+                sim.store(0x0c, 0x8ef00001); // blt $14, $15, 1 ! NOT TAKEN
+                sim.store(0x0d, 0x25000001); // addi $5, $0, 1
+                sim.store(0x0e, 0x8ed00001); // blt $14, $13, 1 ! NOT TAKEN
+                sim.store(0x0f, 0x26000001); // addi $6, $0, 1
+                sim.store(0x10, 0x8de00001); // blt $13, $14, 1 ! TAKEN
+                sim.store(0x11, 0x27000001); // addi $7, $0, 1
+                sim.store(0x12, 0x8cd00001); // blt $12, $13, 1 ! TAKEN
+                sim.store(0x13, 0x28000001); // addi $8, $0, 1
+                sim.store(0x14, 0x8dc00001); // blt $13, $12, 1 ! NOT TAKEN
+                sim.store(0x15, 0x29000001); // addi $9, $0, 1
+                sim.store(0x16, 0x70000000); // halt
+            });
+
+            it('run()', () => {
+                return sim.run().then(() => {
+                    expect(sim.isHalted()).toBe(true);
+                    expect(sim.getPc()).toEqual(0x17);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000001,
+                        0x00000001, 0x00000001, 0x00000001, 0x00000000,
+                        0x00000000, 0x00000001, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000001, 0x00000002, 0x00000002,
+                    ]}});
+                });
+            });
+
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('executes unconditional branch instructions', () => {
+            beforeEach(() => {
+                sim.store(0x00, 0x50000001); // beq $0, $0, 1
+                sim.store(0x01, 0x21000001); // addi $1, $0, 1
+                sim.store(0x02, 0x2f000005); // addi $15, 0, 0x05
+                sim.store(0x03, 0x6fe00000); // jalr $15, $14
+                sim.store(0x04, 0x22000001); // addi $2, $0, 1
+                sim.store(0x05, 0x70000000); // halt
+            });
+
+            it('run()', () => {
+                return sim.run().then(() => {
+                    expect(sim.isHalted()).toBe(true);
+                    expect(sim.getPc()).toEqual(0x06);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000004, 0x00000005,
+                    ]}});
+                });
+            });
+
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('jalr $x, $x', () => {
+            beforeEach(() => {
+                sim.store(0x00, 0x2f000003); // addi $15, $0, 0x03
+                sim.store(0x01, 0x6ff00000); // jalr $15, $15
+                sim.store(0x02, 0x21000001); // addi $1, $0, 1
+                sim.store(0x03, 0x70000000); // halt
+            });
+
+            it('run()', () => {
+                return sim.run().then(() => {
+                    expect(sim.isHalted()).toBe(true);
+                    expect(sim.getPc()).toEqual(0x04);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000001, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000002,
+                    ]}});
+                });
+            });
+
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('loading', () => {
+            beforeEach(() => {
+                sim.store(0x00, 0x21000008); // addi $1, $0, 0x08
+                sim.store(0x01, 0x341fffff); // lw $4, -1($1)
+                sim.store(0x02, 0x35100000); // lw $5, 0($1)
+                sim.store(0x03, 0x36100001); // lw $6, 1($1)
+                sim.store(0x04, 0x97000002); // lea $7, 2
+                sim.store(0x05, 0x980fffff); // lea $8, -1
+                sim.store(0x06, 0x70000000); // halt
+                sim.store(0x07, 0x00000069); // .word 0x69
+                sim.store(0x08, 0x00000420); // .word 0x420
+                sim.store(0x09, 0xfffffffe); // .word -2
+            });
+
+            it('run()', () => {
+                return sim.run().then(() => {
+                    expect(sim.isHalted()).toBe(true);
+                    expect(sim.getPc()).toEqual(0x07);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000008, 0x00000000, 0x00000000,
+                        0x00000069, 0x00000420, 0xfffffffe & -1, 0x00000007,
+                        0x00000005, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('executes stores', () => {
+            beforeEach(() => {
+                sim.store(0x00, 0x21000008); // addi $1, $0, 0x08
+                sim.store(0x01, 0x220ffffe); // addi $2, $0, -2
+                sim.store(0x02, 0x23000420); // addi $3, $0, 0x420
+                sim.store(0x03, 0x421fffff); // sw $2, -1($1)
+                sim.store(0x04, 0x40100000); // sw $0, 0($1)
+                sim.store(0x05, 0x43100001); // sw $3, 1($1)
+                sim.store(0x06, 0x70000000); // halt
+                sim.store(0x07, 0x22222222);
+                sim.store(0x08, 0x22222222);
+                sim.store(0x09, 0x22222222);
+            });
+
+            it('run()', () => {
+                return sim.run().then(() => {
+                    expect(sim.isHalted()).toBe(true);
+                    expect(sim.getPc()).toEqual(0x07);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000008, 0xfffffffe & -1, 0x00000420,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                    expect(sim.load(0x07)).toEqual(0xfffffffe & -1);
+                    expect(sim.load(0x08)).toEqual(0x00000000);
+                    expect(sim.load(0x09)).toEqual(0x00000420);
+                });
+            });
+
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('executes writes to $0 as noops', () => {
+            beforeEach(() => {
+                sim.store(0x00, 0x20000001); // addi $0, $0, 1
+                sim.store(0x01, 0x70000000); // halt
+            });
+
+            it('run()', () => {
+                return sim.run().then(() => {
+                    expect(sim.isHalted()).toBe(true);
+                    expect(sim.getPc()).toEqual(0x02);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+
+            it('rewind()', () => {
+                return sim.run().then(() => {
+                    sim.rewind();
+                    expect(sim.isHalted()).toBe(false);
+                    expect(sim.getPc()).toEqual(0x00);
+                    expect(sim.getRegs()).toEqual({solo: {}, range: {'$': [
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                        0x00000000, 0x00000000, 0x00000000, 0x00000000,
+                    ]}});
+                });
+            });
+        });
+
+        describe('errors on invalid instruction', () => {
+            beforeEach(() => {
+                sim.store(0x00, 0xa0000000);
+            });
+
+            it('run()', () => {
+                return expect(sim.run()).rejects.toThrow(/0xa0000000/i);
             });
         });
     });

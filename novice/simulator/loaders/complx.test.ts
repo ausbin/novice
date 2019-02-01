@@ -168,6 +168,12 @@ describe('complx loader', () => {
         });
     });
 
+    describe('fileExt()', () => {
+        it('returns the right file extension', () => {
+            expect(loader.fileExt()).toEqual('obj');
+        });
+    });
+
     describe('symbFileExt()', () => {
         it('returns the right file extension', () => {
             expect(loader.symbFileExt()).toEqual('sym');

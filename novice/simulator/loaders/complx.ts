@@ -89,6 +89,10 @@ class ComplxObjectFileLoader implements Loader {
         }
     }
 
+    public fileExt(): string {
+        return 'obj';
+    }
+
     public symbFileExt(): string {
         return 'sym';
     }

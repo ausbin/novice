@@ -4,6 +4,7 @@ import { Memory } from '../mem';
 
 interface Loader {
     load(isa: Isa, fp: Readable, mem: Memory): Promise<void>;
+    fileExt(): string;
     symbFileExt(): string;
     loadSymb(fp: Readable, symbtable: SymbTable): Promise<void>;
 }

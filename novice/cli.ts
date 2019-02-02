@@ -166,10 +166,12 @@ async function dbg(configName: string, path: string, stdin: Readable,
                    stdout: Writable, stderr: Writable): Promise<number> {
     let cfg;
     let fp: Readable;
-    let symbFp: Readable;
-    let parseSymbTable = true;
+    let symbFp: Readable|null = null;
+    let isObjectFile: boolean;
+
     try {
         cfg = getSimulatorConfig(configName);
+        isObjectFile = hasObjectFileExt(path, cfg);
         fp = fs.createReadStream(path);
 
         await new Promise((resolve, reject) => {
@@ -177,19 +179,21 @@ async function dbg(configName: string, path: string, stdin: Readable,
             fp.on('error', reject);
         });
 
-        const symbPath = `${removeExt(path)}.${cfg.loader.symbFileExt()}`;
-        symbFp = fs.createReadStream(symbPath);
+        if (isObjectFile) {
+            const symbPath = `${removeExt(path)}.${cfg.loader.symbFileExt()}`;
+            symbFp = fs.createReadStream(symbPath);
 
-        await new Promise((resolve, reject) => {
-            symbFp.on('readable', resolve);
-            symbFp.on('error', err => {
-                stderr.write(`warning: could not open symbol file ` +
-                             `\`${symbPath}'. reason: \`${err.message}'. ` +
-                             `proceeding without debug symbols...\n`);
-                parseSymbTable = false;
-                resolve();
+            await new Promise((resolve, reject) => {
+                (symbFp as Readable).on('readable', resolve);
+                (symbFp as Readable).on('error', err => {
+                    stderr.write(`warning: could not open symbol file ` +
+                                 `\`${symbPath}'. reason: \`${err.message}'. ` +
+                                 `proceeding without debug symbols...\n`);
+                    symbFp = null;
+                    resolve();
+                });
             });
-        });
+        }
     } catch (err) {
         stderr.write(`dbg: setup error: ${err.message}\n`);
         return 1;
@@ -198,15 +202,24 @@ async function dbg(configName: string, path: string, stdin: Readable,
     const debug = new CliDebugger(cfg.isa, stdin, stdout);
 
     try {
-        const loadPromise = cfg.loader.load(cfg.isa, fp, debug);
-        if (parseSymbTable) {
-            await Promise.all([
-                loadPromise,
-                cfg.loader.loadSymb(symbFp, debug.getSymbTable()),
-            ]);
+        if (isObjectFile) {
+            const loadPromise = cfg.loader.load(cfg.isa, fp, debug);
+            if (symbFp) {
+                await Promise.all([
+                    loadPromise,
+                    cfg.loader.loadSymb(symbFp, debug.getSymbTable()),
+                ]);
+            } else {
+                await loadPromise;
+            }
         } else {
-            await loadPromise;
+            const asmCfg = getConfig(configName);
+            const assembler = new Assembler(asmCfg);
+            const [symbtable, sections] = await assembler.assemble(fp);
+            debug.loadSections(sections);
+            Object.assign(debug.getSymbTable(), symbtable);
         }
+
         await debug.run();
         debug.close();
         return 0;

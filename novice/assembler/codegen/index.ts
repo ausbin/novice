@@ -1,4 +1,4 @@
 import { BaseMachineCodeGenerator } from './base';
-import { MachineCodeGenerator, MachineCodeSection } from './codegen';
+import { MachineCodeGenerator } from './codegen';
 
-export { MachineCodeSection, MachineCodeGenerator, BaseMachineCodeGenerator };
+export { MachineCodeGenerator, BaseMachineCodeGenerator };

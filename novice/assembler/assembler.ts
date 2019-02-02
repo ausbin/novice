@@ -1,6 +1,6 @@
 import { Readable, Writable } from 'stream';
-import { Assembly, Isa, SymbTable } from '../isa';
-import { MachineCodeGenerator, MachineCodeSection } from './codegen';
+import { Assembly, Isa, MachineCodeSection, SymbTable } from '../isa';
+import { MachineCodeGenerator } from './codegen';
 import { PseudoOpSpec } from './opspec';
 import { Parser } from './parsers';
 import { Serializer } from './serializers';

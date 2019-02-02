@@ -1,5 +1,5 @@
-import { Fields, InstructionSpec, IO, Isa, MachineStateLogEntry, MachineStateUpdate,
-         Reg, RegIdentifier } from '../isa';
+import { Fields, InstructionSpec, IO, Isa, MachineCodeSection, MachineStateLogEntry,
+         MachineStateUpdate, Reg, RegIdentifier } from '../isa';
 import { forceUnsigned, maskTo, sextTo } from '../util';
 
 class Simulator {
@@ -35,6 +35,14 @@ class Simulator {
 
     // TODO: make this immutable somehow
     public getRegs() { return this.regs; }
+
+    public loadSections(sections: MachineCodeSection[]): void {
+        for (const section of sections) {
+            for (let i = 0; i < section.words.length; i++) {
+                this.store(section.startAddr + i, section.words[i]);
+            }
+        }
+    }
 
     public async step(): Promise<void> {
         // If already halted, do nothing

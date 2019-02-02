@@ -1,5 +1,6 @@
 import { Assembly, Instruction, IntegerOperand, LabelOperand, PseudoOp,
          RegisterOperand, Section, StringOperand } from './assembly';
+import { MachineCodeSection } from './codegen';
 import { DummyIsa } from './dummy';
 import { IO, StreamIO } from './io';
 import { AliasContext, AliasFields, AliasSpec, Fields, getRegAliases,
@@ -30,6 +31,8 @@ export { getIsa, isas,
          // assembly
          Assembly, Section, Instruction, RegisterOperand, IntegerOperand,
          LabelOperand, PseudoOp, StringOperand,
+         // codegen
+         MachineCodeSection,
          // io
          IO, StreamIO,
          // isa

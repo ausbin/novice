@@ -12,7 +12,7 @@ jest.mock('./simulator');
 import { CliDebugger, getSimulatorConfig, Simulator,
          SimulatorConfig } from './simulator';
 jest.mock('./isa');
-import { getIsa, StreamIO, SymbTable } from './isa';
+import { getIsa, StreamIO, SymbTable, MachineCodeSection } from './isa';
 
 describe('cli', () => {
     let stdin: Readable, stdout: Writable, stderr: Writable;
@@ -292,6 +292,7 @@ describe('cli', () => {
                 isa: {donkey: 'horse apple'},
                 loader: {
                     load: jest.fn(),
+                    fileExt: () => 'obj',
                     symbFileExt: () => 'lemonade',
                     loadSymb: jest.fn(),
                 },
@@ -325,11 +326,22 @@ describe('cli', () => {
         });
 
         describe('sim subcommand', () => {
+            let mockAsm: Assembler;
             let mockStdin: Readable;
             let mockIo: StreamIO;
             let mockSim: Simulator;
+            // @ts-ignore
+            let mockCfg: AssemblerConfig = {joe: 'biden'};
+            let mockSymbTable: SymbTable = {nice: 0x69};
+            let mockSections: MachineCodeSection[] = [
+                {startAddr: 0x420, words: [0xdead, 0xbeef]},
+            ];
 
             beforeAll(() => {
+                // @ts-ignore
+                mockAsm = {
+                    assemble: jest.fn(),
+                };
                 // @ts-ignore
                 mockStdin = {
                     iam: 'stdin',
@@ -342,11 +354,19 @@ describe('cli', () => {
                 mockIo = {timothy: 'aveni'};
                 // @ts-ignore
                 mockSim = {
+                    loadSections: jest.fn(),
                     run: jest.fn(),
                 };
             });
 
             beforeEach(() => {
+                // @ts-ignore
+                getConfig.mockReturnValue(mockCfg);
+                // @ts-ignore
+                Assembler.mockImplementation(() => mockAsm);
+                // @ts-ignore
+                mockAsm.assemble.mockReturnValue(
+                    Promise.resolve([mockSymbTable, mockSections]));
                 // @ts-ignore
                 StreamIO.mockImplementation(() => mockIo);
                 // @ts-ignore
@@ -355,14 +375,22 @@ describe('cli', () => {
 
             afterEach(() => {
                 // @ts-ignore
+                getConfig.mockReset();
+                // @ts-ignore
+                Assembler.mockReset();
+                // @ts-ignore
+                mockAsm.assemble.mockReset();
+                // @ts-ignore
                 StreamIO.mockReset();
                 // @ts-ignore
                 Simulator.mockReset();
                 // @ts-ignore
+                mockSim.loadSections.mockReset();
+                // @ts-ignore
                 mockSim.run.mockReset();
             });
 
-            it('simulates', () => {
+            it('simulates object file', () => {
                 return main(['sim', 'farzam.obj'],
                             mockStdin, stdout, stderr).then(exitCode => {
                     expect(stdoutActual).toEqual('');
@@ -374,6 +402,12 @@ describe('cli', () => {
                     // @ts-ignore
                     expect(fs.createReadStream.mock.calls).toEqual([['farzam.obj']]);
                     // @ts-ignore
+                    expect(getConfig.mock.calls).toEqual([]);
+                    // @ts-ignore
+                    expect(Assembler.mock.calls).toEqual([]);
+                    // @ts-ignore
+                    expect(mockSim.loadSections.mock.calls).toEqual([]);
+                    // @ts-ignore
                     expect(StreamIO.mock.calls).toEqual([[mockStdin, stdout]]);
                     // @ts-ignore
                     expect(Simulator.mock.calls).toEqual([[mockSimConfig.isa, mockIo]]);
@@ -382,7 +416,33 @@ describe('cli', () => {
                 });
             });
 
-            it('handles nonexistent file', () => {
+            it('assembles and simulates assembly file', () => {
+                return main(['sim', 'marley.s'],
+                            mockStdin, stdout, stderr).then(exitCode => {
+                    expect(stdoutActual).toEqual('');
+                    expect(stderrActual).toEqual('');
+                    expect(exitCode).toEqual(0);
+
+                    // @ts-ignore
+                    expect(getSimulatorConfig.mock.calls).toEqual([['lc3']]);
+                    // @ts-ignore
+                    expect(fs.createReadStream.mock.calls).toEqual([['marley.s']]);
+                    // @ts-ignore
+                    expect(getConfig.mock.calls).toEqual([['lc3']]);
+                    // @ts-ignore
+                    expect(Assembler.mock.calls).toEqual([[mockCfg]]);
+                    // @ts-ignore
+                    expect(mockSim.loadSections.mock.calls).toEqual([[mockSections]]);
+                    // @ts-ignore
+                    expect(StreamIO.mock.calls).toEqual([[mockStdin, stdout]]);
+                    // @ts-ignore
+                    expect(Simulator.mock.calls).toEqual([[mockSimConfig.isa, mockIo]]);
+                    // @ts-ignore
+                    expect(mockSim.run.mock.calls).toEqual([[]]);
+                });
+            });
+
+            it('handles nonexistent object file', () => {
                 // @ts-ignore
                 fs.createReadStream.mockReset();
                 // @ts-ignore

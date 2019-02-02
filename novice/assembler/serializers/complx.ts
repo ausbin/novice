@@ -1,6 +1,5 @@
 import { Writable } from 'stream';
-import { Isa, SymbTable } from '../../isa';
-import { MachineCodeSection } from '../codegen';
+import { Isa, MachineCodeSection, SymbTable } from '../../isa';
 import { Serializer } from './serializer';
 
 class ComplxObjectFileSerializer implements Serializer {

@@ -1,7 +1,8 @@
 import { AliasFields, AliasSpec, Assembly, Instruction, InstructionSpec,
-         Isa, PseudoOp, Section, SymbTable } from '../../isa';
+         Isa, MachineCodeSection, PseudoOp, Section,
+         SymbTable  } from '../../isa';
 import { AsmContext, OpOperands, OpSpec, PseudoOpSpec } from '../opspec';
-import { MachineCodeGenerator, MachineCodeSection } from './codegen';
+import { MachineCodeGenerator } from './codegen';
 
 interface ReassembleVictim {
     // Index in words array in MachineCodeSection

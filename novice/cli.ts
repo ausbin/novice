@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import { Readable, Writable } from 'stream';
 import { Assembler, getConfig, getParser, getSerializer } from './assembler';
 import { getIsa, StreamIO } from './isa';
-import { CliDebugger, getSimulatorConfig, Simulator } from './simulator';
+import { CliDebugger, getSimulatorConfig, Simulator, SimulatorConfig } from './simulator';
 
 async function main(argv: string[], stdin: Readable, stdout: Writable,
                     stderr: Writable): Promise<number> {
@@ -36,8 +36,8 @@ async function main(argv: string[], stdin: Readable, stdout: Writable,
                                   'the selected assembler configuration' });
 
     const simParser = sub.addParser('sim', { description:
-                                             'simulate an object file' });
-    simParser.addArgument(['file'], { help: 'object file to simulate' });
+                                             'simulate an assembly/object file' });
+    simParser.addArgument(['file'], { help: 'assembly/object file to simulate' });
     simParser.addArgument(['-c', '--config'],
                           { defaultValue: 'lc3',
                             help: 'simulator configuration to use. ' +
@@ -117,8 +117,13 @@ function removeExt(path: string): string {
     return hasExt ? path.substr(0, dotIdx) : path;
 }
 
+function hasObjectFileExt(path: string, cfg: SimulatorConfig) {
+    return path.endsWith('.' + cfg.loader.fileExt());
+}
+
 async function sim(configName: string, path: string, stdin: Readable,
                    stdout: Writable, stderr: Writable): Promise<number> {
+
     try {
         const cfg = getSimulatorConfig(configName);
         const fp = fs.createReadStream(path);
@@ -128,9 +133,20 @@ async function sim(configName: string, path: string, stdin: Readable,
                 f.on('error', reject);
             }),
         ));
+
         const io = new StreamIO(stdin, stdout);
         const simulator = new Simulator(cfg.isa, io);
-        await cfg.loader.load(cfg.isa, fp, simulator);
+
+        const isObjectFile = hasObjectFileExt(path, cfg);
+        if (isObjectFile) {
+            await cfg.loader.load(cfg.isa, fp, simulator);
+        } else {
+            const asmCfg = getConfig(configName);
+            const assembler = new Assembler(asmCfg);
+            const [symbtable, sections] = await assembler.assemble(fp);
+            simulator.loadSections(sections);
+        }
+
         await simulator.run();
         return 0;
     } catch (err) {

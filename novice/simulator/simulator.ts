@@ -12,11 +12,14 @@ class Simulator {
     protected halted: boolean;
     protected isa: Isa;
     protected io: IO;
+    protected maxExec: number;
     protected log: MachineStateLogEntry[];
+    protected numExec: number;
 
-    public constructor(isa: Isa, io: IO) {
+    public constructor(isa: Isa, io: IO, maxExec: number) {
         this.isa = isa;
         this.io = io;
+        this.maxExec = maxExec;
         this.pc = isa.pc.resetVector;
         this.mem = {};
         this.regs = {
@@ -25,6 +28,7 @@ class Simulator {
         };
         this.halted = false;
         this.log = [];
+        this.numExec = 0;
 
         this.resetRegs();
     }
@@ -49,6 +53,8 @@ class Simulator {
         if (this.halted) {
             return;
         }
+
+        this.numExec++;
 
         const ir = this.load(this.pc);
         this.pc += this.isa.pc.increment;
@@ -97,6 +103,12 @@ class Simulator {
 
     public async run(): Promise<void> {
         while (!this.halted) {
+            if (this.maxExec >= 0 && this.numExec >= this.maxExec) {
+                throw new Error(`hit maximum executed instruction count ` +
+                                `${this.maxExec}. this may indicate an ` +
+                                `infinite loop in code`);
+            }
+
             await this.step();
         }
     }

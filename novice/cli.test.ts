@@ -410,7 +410,7 @@ describe('cli', () => {
                     // @ts-ignore
                     expect(StreamIO.mock.calls).toEqual([[mockStdin, stdout]]);
                     // @ts-ignore
-                    expect(Simulator.mock.calls).toEqual([[mockSimConfig.isa, mockIo]]);
+                    expect(Simulator.mock.calls).toEqual([[mockSimConfig.isa, mockIo, 8192]]);
                     // @ts-ignore
                     expect(mockSim.run.mock.calls).toEqual([[]]);
                 });
@@ -436,7 +436,7 @@ describe('cli', () => {
                     // @ts-ignore
                     expect(StreamIO.mock.calls).toEqual([[mockStdin, stdout]]);
                     // @ts-ignore
-                    expect(Simulator.mock.calls).toEqual([[mockSimConfig.isa, mockIo]]);
+                    expect(Simulator.mock.calls).toEqual([[mockSimConfig.isa, mockIo, 8192]]);
                     // @ts-ignore
                     expect(mockSim.run.mock.calls).toEqual([[]]);
                 });

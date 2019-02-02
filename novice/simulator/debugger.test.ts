@@ -15,7 +15,51 @@ describe('debugger', () => {
 
     describe('lc-3 programs', () => {
         beforeEach(() => {
-            dbg = new Debugger(getIsa('lc3'), io);
+            dbg = new Debugger(getIsa('lc3'), io, 128);
+        });
+
+        describe('zeroed memory', () => {
+            beforeEach(() => {
+                // 1024 nops
+                for (let i = 0; i < (1 << 10); i++) {
+                    dbg.store(0x3000 + i, 0x0000); // nop
+                }
+            });
+
+            it('runs 128 instructions for each continue', () => {
+                return expect(dbg.cont()).rejects.toThrow('infinite loop').then(() => {
+                    expect(dbg.getPc()).toEqual(0x3080);
+                }).then(() => {
+                    // This is a promise, so return it
+                    return expect(dbg.cont()).rejects.toThrow('infinite loop');
+                }).then(() => {
+                    // The crucial check: did continue go for another 128
+                    // instructions?
+                    expect(dbg.getPc()).toEqual(0x3100);
+                });
+            });
+
+            it('respects maxExec = -1', () => {
+                // set maxExec = -1 instead
+                dbg = new Debugger(getIsa('lc3'), io, -1);
+                dbg.store(0x3100, 0xf025); // halt 256 deep, much past the OG
+                                           // 128 max
+
+                return dbg.cont().then(() => {
+                    expect(dbg.isHalted()).toBe(true);
+                    expect(dbg.getPc()).toEqual(0x3101);
+                });
+            });
+        });
+
+        describe('infinite loop', () => {
+            beforeEach(() => {
+                dbg.store(0x3000, 0b0000111111111111); // brnzp -1
+            });
+
+            it('stops after 128 executions', () => {
+                return expect(dbg.cont()).rejects.toThrow('infinite loop');
+            });
         });
 
         describe('prints 3 bangs', () => {

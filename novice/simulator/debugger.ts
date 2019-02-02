@@ -9,8 +9,8 @@ class Debugger extends Simulator {
     protected interrupt: boolean;
     protected symbTable: SymbTable;
 
-    public constructor(isa: Isa, io: IO) {
-        super(isa, io);
+    public constructor(isa: Isa, io: IO, maxExec: number) {
+        super(isa, io, maxExec);
 
         this.nextBreakpoint = 0;
         this.breakpoints = {};
@@ -28,9 +28,19 @@ class Debugger extends Simulator {
         // This way, if you've stopped at a breakpoint and press
         // "continue" it actually will
         let first = true;
+        // Reset dynamic instruction count for each "continuation"
+        this.numExec = 0;
 
         while ((first || !this.breakpoints.hasOwnProperty(this.pc))
                && !this.halted && !this.interrupt) {
+            if (this.maxExec >= 0 && this.numExec >= this.maxExec) {
+                throw new Error(`hit maximum executed instruction count ` +
+                                `${this.maxExec}. this may indicate an ` +
+                                `infinite loop in code. continuing will ` +
+                                `continue execution for another ` +
+                                `${this.maxExec} instructions.`);
+            }
+
             first = false;
             await this.step();
         }

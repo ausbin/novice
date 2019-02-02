@@ -56,8 +56,9 @@ class CliDebugger extends Debugger {
     private commands: Command[];
 
     public constructor(isa: Isa, stdin: Readable, stdout: Writable) {
+        const DEFAULT_MAX_EXEC = 1 << 13;
         const io = new PromptIO();
-        super(isa, io);
+        super(isa, io, DEFAULT_MAX_EXEC);
 
         this.stdin = stdin;
         this.stdout = stdout;

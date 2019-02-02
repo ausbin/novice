@@ -42,6 +42,12 @@ async function main(argv: string[], stdin: Readable, stdout: Writable,
                           { defaultValue: 'lc3',
                             help: 'simulator configuration to use. ' +
                                   'default: %(defaultValue)s' });
+    simParser.addArgument(['-x', '--max-exec'],
+                          { dest: 'maxExec',
+                            type: 'int',
+                            defaultValue: 1 << 13,
+                            help: 'max instructions to execute. pass -1 for ' +
+                                  'no limit. default: %(defaultValue)s' });
 
     const dbgParser = sub.addParser('dbg', { description:
                                              'interactively debug an object file'});
@@ -60,7 +66,7 @@ async function main(argv: string[], stdin: Readable, stdout: Writable,
         case 'asm':
             return await asm(args.config, args.file, args.outputFile, args.outputFormat, stdout, stderr);
         case 'sim':
-            return await sim(args.config, args.file, stdin, stdout, stderr);
+            return await sim(args.config, args.file, args.maxExec, stdin, stdout, stderr);
         case 'dbg':
             return await dbg(args.config, args.file, stdin, stdout, stderr);
         case 'tablegen':
@@ -121,8 +127,9 @@ function hasObjectFileExt(path: string, cfg: SimulatorConfig) {
     return path.endsWith('.' + cfg.loader.fileExt());
 }
 
-async function sim(configName: string, path: string, stdin: Readable,
-                   stdout: Writable, stderr: Writable): Promise<number> {
+async function sim(configName: string, path: string, maxExec: number,
+                   stdin: Readable, stdout: Writable, stderr: Writable):
+        Promise<number> {
 
     try {
         const cfg = getSimulatorConfig(configName);
@@ -135,7 +142,7 @@ async function sim(configName: string, path: string, stdin: Readable,
         ));
 
         const io = new StreamIO(stdin, stdout);
-        const simulator = new Simulator(cfg.isa, io);
+        const simulator = new Simulator(cfg.isa, io, maxExec);
 
         const isObjectFile = hasObjectFileExt(path, cfg);
         if (isObjectFile) {

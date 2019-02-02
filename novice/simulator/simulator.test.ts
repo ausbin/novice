@@ -12,7 +12,7 @@ describe('simulator', () => {
 
     describe('lc-3 programs', () => {
         beforeEach(() => {
-            sim = new Simulator(getIsa('lc3'), io);
+            sim = new Simulator(getIsa('lc3'), io, 128);
         });
 
         describe('halt', () => {
@@ -51,6 +51,16 @@ describe('simulator', () => {
                     expect(sim.isHalted()).toBe(false);
                     expect(sim.getPc()).toEqual(0x3000);
                 });
+            });
+        });
+
+        describe('infinite loop', () => {
+            beforeEach(() => {
+                sim.store(0x3000, 0b0000111111111111); // brnzp -1
+            });
+
+            it('run()', () => {
+                return expect(sim.run()).rejects.toThrow('infinite loop');
             });
         });
 
@@ -900,7 +910,7 @@ describe('simulator', () => {
 
     describe('lc-2200 programs', () => {
         beforeEach(() => {
-            sim = new Simulator(getIsa('lc2200'), io);
+            sim = new Simulator(getIsa('lc2200'), io, 128);
         });
 
         describe('halt', () => {
@@ -1254,7 +1264,7 @@ describe('simulator', () => {
 
     describe('rama-2200 programs', () => {
         beforeEach(() => {
-            sim = new Simulator(getIsa('rama2200'), io);
+            sim = new Simulator(getIsa('rama2200'), io, 128);
         });
 
         describe('halt', () => {

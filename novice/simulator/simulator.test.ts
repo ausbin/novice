@@ -15,6 +15,22 @@ describe('simulator', () => {
             sim = new Simulator(getIsa('lc3'), io, 128);
         });
 
+        describe('zeroed memory', () => {
+            beforeEach(() => {
+                // set maxExec = -1 instead
+                sim = new Simulator(getIsa('lc3'), io, -1);
+                sim.store(0x3100, 0xf025); // halt 256 deep, much past the OG
+                                           // 128 max
+            });
+
+            it('run() respects maxExec = -1', () => {
+                return sim.run().then(() => {
+                    expect(sim.isHalted()).toBe(true);
+                    expect(sim.getPc()).toEqual(0x3101);
+                });
+            });
+        });
+
         describe('halt', () => {
             beforeEach(() => {
                 sim.store(0x3000, 0xf025); // halt

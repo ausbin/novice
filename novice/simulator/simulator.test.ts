@@ -1422,7 +1422,7 @@ describe('simulator', () => {
                 sim.store(0x00, 0x50000001); // beq $0, $0, 1
                 sim.store(0x01, 0x21000001); // addi $1, $0, 1
                 sim.store(0x02, 0x2f000005); // addi $15, 0, 0x05
-                sim.store(0x03, 0x6fe00000); // jalr $15, $14
+                sim.store(0x03, 0x6ef00000); // jalr $14, $15
                 sim.store(0x04, 0x22000001); // addi $2, $0, 1
                 sim.store(0x05, 0x70000000); // halt
             });

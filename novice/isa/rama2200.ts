@@ -115,17 +115,17 @@ const Rama2200Isa: Isa = {
 
         {op: 'jalr', fields: [
             {kind: 'const', bits: [31, 28], val: 0b0110},
-            {kind: 'reg',   bits: [27, 24], prefix: '$', name: 'rx'},
-            {kind: 'reg',   bits: [23, 20], prefix: '$', name: 'ry'},
+            {kind: 'reg',   bits: [27, 24], prefix: '$', name: 'ra'},
+            {kind: 'reg',   bits: [23, 20], prefix: '$', name: 'at'},
             {kind: 'const', bits: [19,  0], val: 0x00000},
          ],
          sim: (state: MachineState, io: IO, ir: Fields) => nukeR0Writes(
-             [{kind: 'reg', reg: ir.regs.ry, val: state.pc + 1},
+             [{kind: 'reg', reg: ir.regs.ra, val: state.pc + 1},
               {kind: 'pc',
-               where: (!regEquals(ir.regs.ry, ['$', 0])
-                       && regEquals(ir.regs.rx, ir.regs.ry))
+               where: (!regEquals(ir.regs.at, ['$', 0])
+                       && regEquals(ir.regs.ra, ir.regs.at))
                        ? state.pc + 1
-                       : state.reg(ir.regs.rx)}]),
+                       : state.reg(ir.regs.at)}]),
         },
 
         {op: 'nop', fields: [

@@ -227,6 +227,20 @@ describe('cli debugger', () => {
             });
         });
 
+        it('does not double unstep for halts', () => {
+            dbg.store(0x3000, 0x0000); // nop
+            dbg.store(0x3001, 0xf025); // halt
+
+            runCmd('c');
+            runCmd('u');
+            runCmd('q');
+
+            return dbg.run().then(() => {
+                expect(stdoutActual).toMatch(/==> 0x3000[^]+==> 0x3001[^]+==> 0x3000/);
+                expect(stdoutActual).not.toMatch(/==> 0x3001[^]+==> 0x3001/);
+            });
+        });
+
         it('puts works', () => {
             dbg.store(0x3000, 0xe002); // lea r0, message
             dbg.store(0x3001, 0xf022); // puts

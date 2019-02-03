@@ -218,6 +218,13 @@ class CliDebugger extends Debugger {
     }
 
     private async unstepCmd(): Promise<void> {
+        // Maintain the lie that the debugger "freezes" on a halt by
+        // double-unstepping on halts. Without this, after executing a
+        // halt, it seems like nothing happened.
+        if (this.halted && this.log.length > 1) {
+            this.unstep();
+        }
+
         this.unstep();
     }
 

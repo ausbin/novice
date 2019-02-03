@@ -178,7 +178,10 @@ class CliDebugger extends Debugger {
                      /\d+/.test(operand) ? 10 : -1;
         let addr: number;
         if (base === -1) {
-            throw new Error('labels not yet implemented sorry');
+            if (!(operand in this.symbTable)) {
+                throw new Error(`unknown label \`${operand}'`);
+            }
+            addr = this.symbTable[operand];
         } else {
             addr = parseInt(operand, base);
         }

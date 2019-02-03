@@ -155,12 +155,12 @@ describe('cli debugger', () => {
             expect(mockInterface.close.mock.calls).toEqual([[]]);
         });
 
-        it('errors on label breakpoint', () => {
+        it('does not show state again after an error (bogus breakpoint)', () => {
             runCmd('b asdf');
             runCmd('q');
 
             return dbg.run().then(() => {
-                expect(stdoutActual).toMatch('not yet implemented');
+                expect(stdoutActual).toMatch('unknown label `asdf\'');
                 // Don't print state again after an error
                 expect(stdoutActual).not.toMatch(/==>[^]+==>/);
             });
@@ -191,6 +191,30 @@ describe('cli debugger', () => {
             dbg.store(0x3004, 0xf025); // halt
 
             runCmd('b 0x3002');
+            runCmd('c');
+            runCmd('c');
+            runCmd('q');
+
+            return dbg.run().then(() => {
+                expect(stdoutActual).toMatch('breakpoint set at 0x3002');
+                expect(stdoutActual).toMatch(/==> 0x3000[^]+==> 0x3002[^]+==> 0x3004/);
+                expect(stdoutActual).toMatch(/r0: 0x0000[^]+r0: 0x0003[^]+r0: 0x0003/);
+                expect(stdoutActual).toMatch(/r1: 0x0000[^]+r1: 0x0000[^]+r1: 0x0004/);
+            });
+        });
+
+        it('breakpoints with labels, continue work', () => {
+            dbg.store(0x3000, 0x5020); // and r0, r0, 0
+            dbg.store(0x3001, 0x1023); // add r0, r0, 3
+            dbg.store(0x3002, 0x5220); // and r1, r0, 0
+            dbg.store(0x3003, 0x1264); // add r1, r1, 4
+            dbg.store(0x3004, 0xf025); // halt
+
+            Object.assign(dbg.getSymbTable(), {
+                tim_brown: 0x3002
+            });
+
+            runCmd('b tim_brown');
             runCmd('c');
             runCmd('c');
             runCmd('q');

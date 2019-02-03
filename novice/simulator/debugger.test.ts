@@ -74,6 +74,14 @@ describe('debugger', () => {
                 dbg.store(0x3007, 0xf025); // done halt
                 dbg.store(0x3008, 0x0021); // bang .fill '!'
                 dbg.store(0x3009, 0xd000); // .fill 0xd000
+
+                Object.assign(dbg.getSymbTable(), {
+                    loop: 0x3003,
+                    // Don't include this so the branch has to have an integer
+                    // operand in the disassembly
+                    //done: 0x3007,
+                    bang: 0x3008,
+                });
             });
 
             it('errors on negative breakpoint', () => {
@@ -134,28 +142,28 @@ describe('debugger', () => {
 
             it('disassembles the whole dang thing', () => {
                 expect(dbg.disassembleRegion(0x2ffe, 0x300b)).toEqual([
-                    [0x2ffe, 0x0000,      0, "nop"],
-                    [0x2fff, 0x0000,      0, "nop"],
-                    [0x3000, 0x2007,   8199, "ld r0, 7"],
-                    [0x3001, 0x54a0,  21664, "and r2, r2, 0"],
-                    [0x3002, 0x14a3,   5283, "add r2, r2, 3"],
-                    [0x3003, 0x0c03,   3075, "brnz 3"],
-                    [0x3004, 0xf021,  -4063, "out"],
-                    [0x3005, 0x14bf,   5311, "add r2, r2, -1"],
-                    [0x3006, 0x0ffc,   4092, "brnzp -4"],
-                    [0x3007, 0xf025,  -4059, "halt"],
-                    [0x3008, 0x0021,     33, null],
-                    [0x3009, 0xd000, -12288, null],
-                    [0x300a, 0x0000,      0, "nop"],
-                    [0x300b, 0x0000,      0, "nop"],
+                    [0x2ffe, 0x0000,      0, 'nop', []],
+                    [0x2fff, 0x0000,      0, 'nop', []],
+                    [0x3000, 0x2007,   8199, 'ld r0, bang', []],
+                    [0x3001, 0x54a0,  21664, 'and r2, r2, 0', []],
+                    [0x3002, 0x14a3,   5283, 'add r2, r2, 3', []],
+                    [0x3003, 0x0c03,   3075, 'brnz 3', ['loop']],
+                    [0x3004, 0xf021,  -4063, 'out', []],
+                    [0x3005, 0x14bf,   5311, 'add r2, r2, -1', []],
+                    [0x3006, 0x0ffc,   4092, 'brnzp loop', []],
+                    [0x3007, 0xf025,  -4059, 'halt', []],
+                    [0x3008, 0x0021,     33, null, ['bang']],
+                    [0x3009, 0xd000, -12288, null, []],
+                    [0x300a, 0x0000,      0, 'nop', []],
+                    [0x300b, 0x0000,      0, 'nop', []],
                 ]);
             });
 
             it('disassembles reversed operands', () => {
                 expect(dbg.disassembleRegion(0x3004, 0x3002)).toEqual([
-                    [0x3002, 0x14a3,   5283, "add r2, r2, 3"],
-                    [0x3003, 0x0c03,   3075, "brnz 3"],
-                    [0x3004, 0xf021,  -4063, "out"],
+                    [0x3002, 0x14a3,   5283, 'add r2, r2, 3', []],
+                    [0x3003, 0x0c03,   3075, 'brnz 3', ['loop']],
+                    [0x3004, 0xf021,  -4063, 'out', []],
                 ]);
             });
         });

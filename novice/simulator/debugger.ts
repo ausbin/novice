@@ -60,10 +60,10 @@ class Debugger extends Simulator {
     }
 
     public disassembleAt(pc: number): string|null {
-        return this.disassemble(this.load(pc));
+        return this.disassemble(pc, this.load(pc));
     }
 
-    public disassemble(ir: number): string|null {
+    public disassemble(pc: number, ir: number): string|null {
         let spec: InstructionSpec|null;
         let fields: Fields|null;
 
@@ -77,10 +77,10 @@ class Debugger extends Simulator {
             return null;
         }
 
-        return this.reassemble(spec, fields);
+        return this.reassemble(pc, spec, fields);
     }
 
-    public reassemble(spec: InstructionSpec, fields: Fields): string {
+    public reassemble(pc: number, spec: InstructionSpec, fields: Fields): string {
         const operands: string[] = [];
 
         for (const field of spec.fields) {
@@ -90,8 +90,18 @@ class Debugger extends Simulator {
                     break;
 
                 case 'imm':
-                    // TODO: labels
-                    operands.push(fields.imms[field.name].toString());
+                    let labels: string[] = [];
+                    if (field.label) {
+                        const targetPc = pc + this.isa.pc.increment +
+                                         fields.imms[field.name];
+                        labels = this.labelsForAddr(targetPc);
+                    }
+
+                    if (labels.length > 0) {
+                        operands.push(labels[0]);
+                    } else {
+                        operands.push(fields.imms[field.name].toString());
+                    }
                     break;
 
                 case 'reg':
@@ -110,7 +120,8 @@ class Debugger extends Simulator {
     }
 
     public disassembleRegion(fromPc: number, toPc: number):
-            [number, number, number, string|null][] {
+            // pc, unsigned, signed, instruction, labels
+            [number, number, number, string|null, string[]][] {
         this.validateAddr(fromPc);
         this.validateAddr(toPc);
 
@@ -118,15 +129,32 @@ class Debugger extends Simulator {
             [fromPc, toPc] = [toPc, fromPc];
         }
 
-        const result: [number, number, number, string|null][] = [];
+        const result: [number, number, number, string|null, string[]][] = [];
 
         for (let pc = fromPc; pc <= toPc; pc += this.isa.pc.increment) {
             const word = this.load(pc);
             const sext = sextTo(word, this.isa.mem.word);
-            result.push([pc, word, sext, this.disassemble(word)]);
+            const labels = this.labelsForAddr(pc);
+            result.push([pc, word, sext, this.disassemble(pc, word), labels]);
         }
 
         return result;
+    }
+
+    private labelsForAddr(pc: number): string[] {
+        // TODO: replace with something less grossly inefficient
+        const results: string[] = [];
+
+        for (const label in this.symbTable) {
+            if (this.symbTable[label] === pc) {
+                results.push(label);
+            }
+        }
+
+        // Make sure order is deterministic
+        results.sort();
+
+        return results;
     }
 
     private validateAddr(addr: number): void {

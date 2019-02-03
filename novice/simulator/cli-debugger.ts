@@ -231,14 +231,28 @@ class CliDebugger extends Debugger {
     private printMemRegion(actualPc: number, fromPc: number, toPc: number): void {
         const padDecTo = Math.floor(Math.log10(Math.pow(2, this.isa.mem.word - 1) - 1)) + 2;
         const hasPc = fromPc <= actualPc && actualPc <= toPc;
+        const disassembled = this.disassembleRegion(fromPc, toPc);
 
-        for (const spot of this.disassembleRegion(fromPc, toPc)) {
-            const [pc, word, sext, disassembled] = spot;
+        let longestInstr = 0;
+        for (const spot of disassembled) {
+            const instrLen = spot[3] ? spot[3].length : 0;
+            longestInstr = Math.max(longestInstr, instrLen);
+        }
+
+        if (longestInstr > 0) {
+            // Add two spaces for between instructions and labels, but
+            // only if we actually disassembled some instructions
+            longestInstr += 2;
+        }
+
+        for (const spot of disassembled) {
+            const [pc, word, sext, instr, labels] = spot;
             this.stdout.write(`${!hasPc ? '' : pc === actualPc ? '==> ' : '    '}` +
                               `${this.fmtAddr(pc)}:  ` +
                               `${this.fmtWord(word)}  ` +
                               `${padStr(sext.toString(10), padDecTo, ' ', true)}  ` +
-                              `${disassembled || ''}\n`);
+                              `${padStr(instr || '', longestInstr, ' ', true)}` +
+                              `${labels.join(' ')}\n`);
         }
     }
 

@@ -1,4 +1,5 @@
-import { Fields, InstructionSpec, IO, Isa, SymbTable } from '../isa';
+import { Fields, getRegAliases, InstructionSpec, IO, Isa,
+         SymbTable } from '../isa';
 import { maskTo, maxUnsignedVal, sextTo } from '../util';
 import { Simulator } from './simulator';
 
@@ -105,11 +106,10 @@ class Debugger extends Simulator {
                     break;
 
                 case 'reg':
-                    // TODO: use reg aliases if available
                     const regid = fields.regs[field.name];
-                    const str = (typeof regid === 'string')
-                              ? regid
-                              : regid.join('');
+                    const str = (typeof regid === 'string') ? regid :
+                                regid[0] + (this.lookupRegAlias(...regid) || regid[1]);
+
                     operands.push(str);
             }
         }
@@ -139,6 +139,20 @@ class Debugger extends Simulator {
         }
 
         return result;
+    }
+
+    protected lookupRegAlias(prefix: string, regno: number): string|null {
+        const aliases = getRegAliases(this.isa, prefix);
+        // Choose the lexicographically first matching alias (so it's
+        // deterministic)
+        let minAlias: string|null = null;
+        // TODO: ~O(1) instead please
+        for (const alias in aliases) {
+            if (aliases[alias] === regno && (!minAlias || alias < minAlias)) {
+                minAlias = alias;
+            }
+        }
+        return minAlias;
     }
 
     private labelsForAddr(pc: number): string[] {

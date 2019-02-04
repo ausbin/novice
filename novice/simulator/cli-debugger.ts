@@ -289,13 +289,21 @@ class CliDebugger extends Debugger {
             if (reg.kind === 'reg-range') {
                 const nibbles = Math.ceil(reg.bits / 4);
                 const rowSize = Math.ceil(16 / nibbles);
-                const maxLen = Math.floor(Math.log10(reg.count)) + 2;
                 const base = (reg.bits <= 4) ? 2 : 16;
                 const prefix = (reg.bits === 1) ? '' : (base === 2) ? '0b' : '0x';
 
+                let maxRegnameLen = -1;
                 for (let i = 0; i < reg.count; i++) {
-                    // TODO: aliases
-                    const regname = padStr(`${reg.prefix}${i}`, maxLen, ' ');
+                    const regname = reg.prefix + (this.lookupRegAlias(reg.prefix, i) || i);
+                    const len = regname.length;
+                    if (len > maxRegnameLen) {
+                        maxRegnameLen = len;
+                    }
+                }
+
+                for (let i = 0; i < reg.count; i++) {
+                    const regno = this.lookupRegAlias(reg.prefix, i) || i;
+                    const regname = padStr(`${reg.prefix}${regno}`, maxRegnameLen, ' ');
                     const regval = forceUnsigned(this.regs.range[reg.prefix][i],
                                                  this.isa.mem.word);
                     const padded = padStr(regval.toString(base),

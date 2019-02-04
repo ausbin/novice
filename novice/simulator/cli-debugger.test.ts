@@ -445,4 +445,30 @@ describe('cli debugger', () => {
             });
         });
     });
+
+    describe('lc2200 debugging', () => {
+        beforeEach(() => {
+            dbg = new CliDebugger(getIsa('lc2200'), stdin, stdout);
+        });
+
+        it('displays register aliases properly', () => {
+            runCmd('q');
+
+            return dbg.run().then(() => {
+                // @ts-ignore
+                expect(mockInterface.question.mock.calls.length).toEqual(1);
+                // @ts-ignore
+                expect(mockInterface.question.mock.calls[0][0]).toEqual('(novice) ');
+                expect(stdoutActual).toMatch('==> 0x00000000');
+                expect(stdoutActual).toMatch(/^[^]*\$zero:[^]+\$at:[^]+$/m);
+                expect(stdoutActual).toMatch(/^[^]*\$v0:[^]+\$a0:[^]+$/m);
+                expect(stdoutActual).toMatch(/^[^]*\$a1:[^]+\$a2:[^]+$/m);
+                expect(stdoutActual).toMatch(/^[^]*\$t0:[^]+\$t1:[^]+$/m);
+                expect(stdoutActual).toMatch(/^[^]*\$t2:[^]+\$s0:[^]+$/m);
+                expect(stdoutActual).toMatch(/^[^]*\$s1:[^]+\$s2:[^]+$/m);
+                expect(stdoutActual).toMatch(/^[^]*\$k0:[^]+\$sp:[^]+$/m);
+                expect(stdoutActual).toMatch(/^[^]*\$fp:[^]+\$ra:[^]+$/m);
+            });
+        });
+    });
 });

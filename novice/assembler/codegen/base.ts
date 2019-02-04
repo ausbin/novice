@@ -137,8 +137,9 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                             const [words, hasLabel] =
                                 this.inflateInstr(isa, opSpec, subInstr, newPc,
                                                   symbtable);
-                            // TODO: unnecessary copy?
-                            allWords = allWords.concat(words);
+                            for (const word of words) {
+                                allWords.push(word);
+                            }
                         }
 
                         return [allWords, false];
@@ -246,8 +247,6 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                 const minTwos = -maxUnsignedVal(numBits - 1) - 1;
 
                 if (field.kind === 'reg' && operand.kind === 'reg') {
-                    // TODO: support other prefixes etc
-
                     if (operand.num < 0) {
                         throw new Error(`negative register number ` +
                                         `${operand.num} on line ${instr.line}`);

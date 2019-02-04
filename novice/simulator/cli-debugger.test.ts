@@ -355,8 +355,8 @@ describe('cli debugger', () => {
                 expect(stdoutActual).toMatch(/0x3000[^]+^==> 0x3000:  0xe002  -8190   lea r0, 2  $/m);
                 expect(stdoutActual).toMatch(/0x3001[^]+^    0x3001:  0xf022  -4062   puts       $/m);
                 expect(stdoutActual).toMatch(/0x3002[^]+^    0x3002:  0xf025  -4059   halt       $/m);
-                expect(stdoutActual).toMatch(/0x3003[^]+^    0x3003:  0x0068  104                $/m);
-                expect(stdoutActual).toMatch(/0x3004[^]+^    0x3004:  0x0065  101                $/m);
+                expect(stdoutActual).toMatch(/0x3003[^]+^    0x3003:  0x0068  104     'h'        $/m);
+                expect(stdoutActual).toMatch(/0x3004[^]+^    0x3004:  0x0065  101     'e'        $/m);
             });
         });
 
@@ -382,8 +382,8 @@ describe('cli debugger', () => {
             return dbg.run().then(() => {
                 expect(stdoutActual).toMatch(/0x3001[^]+^0x3001:  0xf022  -4062   puts  $/m);
                 expect(stdoutActual).toMatch(/0x3002[^]+^0x3002:  0xf025  -4059   halt  $/m);
-                expect(stdoutActual).toMatch(/0x3003[^]+^0x3003:  0x0068  104           $/m);
-                expect(stdoutActual).toMatch(/0x3004[^]+^0x3004:  0x0065  101           $/m);
+                expect(stdoutActual).toMatch(/0x3003[^]+^0x3003:  0x0068  104     'h'   $/m);
+                expect(stdoutActual).toMatch(/0x3004[^]+^0x3004:  0x0065  101     'e'   $/m);
             });
         });
 

@@ -135,7 +135,16 @@ class Debugger extends Simulator {
             const word = this.load(pc);
             const sext = sextTo(word, this.isa.mem.word);
             const labels = this.labelsForAddr(pc);
-            result.push([pc, word, sext, this.disassemble(pc, word), labels]);
+            let disassembled = this.disassemble(pc, word);
+
+            // If cannot disassemble and a printable ascii character,
+            // stick that bad boy in there
+            if (!disassembled && ' '.charCodeAt(0) <= word &&
+                    word <= '~'.charCodeAt(0)) {
+                disassembled = `'${String.fromCharCode(word)}'`;
+            }
+
+            result.push([pc, word, sext, disassembled, labels]);
         }
 
         return result;

@@ -1,9 +1,9 @@
 import { AliasFields, AliasSpec, Assembly, Instruction, InstructionSpec,
          Isa, MachineCodeSection, PseudoOp, Section,
          SymbTable  } from '../../isa';
+import { maskTo, maxUnsignedVal } from '../../util';
 import { AsmContext, OpOperands, OpSpec, PseudoOpSpec } from '../opspec';
 import { MachineCodeGenerator } from './codegen';
-import { maskTo, maxUnsignedVal } from '../../util';
 
 interface ReassembleVictim {
     // Index in words array in MachineCodeSection
@@ -13,7 +13,15 @@ interface ReassembleVictim {
 }
 
 class BaseMachineCodeGenerator implements MachineCodeGenerator {
-    public gen(isa: Isa, opSpec: PseudoOpSpec, asm: Assembly):
+    private isa: Isa;
+    private opSpec: PseudoOpSpec;
+
+    public constructor(isa: Isa, opSpec: PseudoOpSpec) {
+        this.isa = isa;
+        this.opSpec = opSpec;
+    }
+
+    public gen(asm: Assembly):
             [SymbTable, MachineCodeSection[]] {
         const sections: MachineCodeSection[] = [];
         const symbtable: SymbTable = {};
@@ -39,8 +47,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                 }
 
                 const instr = asmSection.instructions[j];
-                const [words, hasLabel] = this.inflateInstr(
-                    isa, opSpec, instr, pc, null);
+                const [words, hasLabel] = this.inflateInstr(instr, pc, null);
 
                 // If this instruction uses a label, we'll need to
                 // reassmble it
@@ -60,8 +67,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
             const section = asm.sections[victim.sectionIdx];
             const instr = section.instructions[victim.instrIdx];
             const pc = sections[victim.sectionIdx].startAddr + victim.index;
-            const [words, _] = this.inflateInstr(
-                isa, opSpec, instr, pc, symbtable);
+            const [words, _] = this.inflateInstr(instr, pc, symbtable);
 
             for (let k = 0; k < words.length; k++) {
                 sections[victim.sectionIdx].words[victim.index + k] = words[k];
@@ -85,15 +91,13 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
         return [symbtable, sections];
     }
 
-    private inflateInstr(isa: Isa,
-                         opSpec: PseudoOpSpec,
-                         instr: Instruction|PseudoOp,
+    private inflateInstr(instr: Instruction|PseudoOp,
                          pc: number,
                          symbtable: SymbTable|null): [number[], boolean] {
         if (instr.kind === 'pseudoop') {
             let match: OpSpec|null = null;
 
-            for (const op of opSpec.ops) {
+            for (const op of this.opSpec.ops) {
                 if (this.opMatch(instr, op)) {
                     match = op;
                     break;
@@ -112,9 +116,9 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                     instr.operand.kind === 'label') {
                 // TODO: make sure this is true
                 const estimator = match.size as ((isa: Isa) => number);
-                return [new Array<number>(estimator(isa)), true];
+                return [new Array<number>(estimator(this.isa)), true];
             } else {
-                const ctx: AsmContext = {isa, symbtable: symbtable as SymbTable};
+                const ctx: AsmContext = {isa: this.isa, symbtable: symbtable as SymbTable};
                 const operands: OpOperands = this.operandify(match, instr);
                 return [match.asm(ctx, operands), false];
             }
@@ -122,7 +126,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
             // If it's an alias, expand that mf
             // TODO: Figure out a more efficient way than this. just a
             //       hashmap right?
-            for (const alias of isa.aliases) {
+            for (const alias of this.isa.aliases) {
                 if (this.aliasMatch(instr, alias)) {
                     if (!symbtable) {
                         return [new Array<number>(alias.size), true];
@@ -130,13 +134,12 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                         const instrs = alias.asm(
                             {pc, line: instr.line, symbtable},
                             this.genAliasFields(instr, alias));
-                        let allWords: number[] = [];
+                        const allWords: number[] = [];
 
                         for (const subInstr of instrs) {
                             const newPc = pc + allWords.length;
                             const [words, hasLabel] =
-                                this.inflateInstr(isa, opSpec, subInstr, newPc,
-                                                  symbtable);
+                                this.inflateInstr(subInstr, newPc, symbtable);
                             for (const word of words) {
                                 allWords.push(word);
                             }
@@ -151,7 +154,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
 
             // TODO: Figure out a more efficient way than this. just a
             //       hashmap right?
-            for (const isaInstr of isa.instructions) {
+            for (const isaInstr of this.isa.instructions) {
                 if (this.instrMatch(instr, isaInstr)) {
                     match = isaInstr;
                     break;
@@ -172,8 +175,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
             const skip = !symbtable &&
                          instr.operands.some(op => op.kind === 'label');
             const instrBin = skip ? 0 : this.genInstrBin(instr, match, pc,
-                                                         symbtable as SymbTable,
-                                                         isa);
+                                                         symbtable as SymbTable);
             return [[instrBin], skip];
         }
     }
@@ -230,7 +232,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
     }
 
     private genInstrBin(instr: Instruction, isaInstr: InstructionSpec,
-                        pc: number, symbtable: SymbTable, isa: Isa): number {
+                        pc: number, symbtable: SymbTable): number {
         let bin = 0;
         let o = 0;
 
@@ -291,7 +293,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                                         `on line ${instr.line}`);
                     }
 
-                    const actualPc = pc + isa.pc.increment;
+                    const actualPc = pc + this.isa.pc.increment;
                     const offset = symbtable[operand.label] - actualPc;
 
                     if (field.sext) {

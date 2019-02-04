@@ -293,7 +293,6 @@ class Simulator {
             if (field.kind === 'reg') {
                 fields.regs[field.name] = [field.prefix, val];
             } else if (field.kind === 'imm') {
-                // TODO: probs should be helper function
                 if (field.sext) {
                     val = sextTo(val, numBits);
                 }

@@ -25,7 +25,7 @@ class Assembler {
     }
 
     public codegen(asm: Assembly): [SymbTable, MachineCodeSection[]] {
-        return this.cfg.generator.gen(this.cfg.isa, this.cfg.opSpec, asm);
+        return this.cfg.generator.gen(asm);
     }
 
     public async assemble(fp: Readable):

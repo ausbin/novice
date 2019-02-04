@@ -14,9 +14,9 @@ function getParser(parserName: string, isa: Isa): Parser {
     return new parsers[parserName](isa);
 }
 
-function getGenerator(): MachineCodeGenerator {
+function getGenerator(isa: Isa, opSpec: PseudoOpSpec): MachineCodeGenerator {
     // Go ahead and return only this lil fella for now
-    return new BaseMachineCodeGenerator();
+    return new BaseMachineCodeGenerator(isa, opSpec);
 }
 
 function getOpSpec(opSpecName: string): PseudoOpSpec {
@@ -42,12 +42,13 @@ function getConfig(configName: string): AssemblerConfig {
 
     const configNames = configs[configName];
     const isa = getIsa(configNames.isa);
+    const opSpec = getOpSpec(configNames.opSpec);
 
     return {
         parser: getParser(configNames.parser, isa),
-        generator: getGenerator(),
+        generator: getGenerator(isa, opSpec),
         isa,
-        opSpec: getOpSpec(configNames.opSpec),
+        opSpec,
         serializer: getSerializer(configNames.serializer),
     };
 }

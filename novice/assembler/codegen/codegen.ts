@@ -1,9 +1,7 @@
-import { Assembly, Isa, MachineCodeSection, SymbTable } from '../../isa';
-import { PseudoOpSpec } from '../opspec';
+import { Assembly, MachineCodeSection, SymbTable } from '../../isa';
 
 interface MachineCodeGenerator {
-    gen(isa: Isa, opSpec: PseudoOpSpec, asm: Assembly):
-        [SymbTable, MachineCodeSection[]];
+    gen(asm: Assembly): [SymbTable, MachineCodeSection[]];
 }
 
 export { MachineCodeGenerator };

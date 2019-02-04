@@ -17,6 +17,12 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
         const sections: MachineCodeSection[] = [];
         const symbtable: SymbTable = {};
         const reassemble: ReassembleVictim[] = [];
+        // Convert the map of labels in the assembly into a stack we can
+        // check and pop in O(1). This is [label, sectionIdx, instrIdx]
+        const labels: [string, number, number][] =
+            (Object.keys(asm.labels)
+                   .map(label => [label, asm.labels[label][0], asm.labels[label][1]]) as [string, number, number][])
+                   .sort((left, right) => right[1] - left[1] || right[2] - left[2]);
 
         for (let i = 0; i < asm.sections.length; i++) {
             const asmSection = asm.sections[i];
@@ -25,13 +31,10 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
             for (let j = 0; j < asmSection.instructions.length; j++) {
                 const pc = sections[i].startAddr + sections[i].words.length;
 
-                // TODO: super inefficient. sort the list of labels first.
-                // Add to symbol table if needed
-                for (const label of Object.keys(asm.labels)) {
-                    const [sectionIdx, instrIdx] = asm.labels[label];
-                    if (sectionIdx === i && instrIdx === j) {
-                        symbtable[label] = pc;
-                    }
+                while (labels.length > 0 &&
+                        labels[labels.length - 1][1] === i &&
+                        labels[labels.length - 1][2] === j) {
+                    symbtable[(labels.pop() as [string, number, number])[0]] = pc;
                 }
 
                 const instr = asmSection.instructions[j];
@@ -46,8 +49,9 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                                      instrIdx: j});
                 }
 
-                // TODO: unnecessary copy?
-                sections[i].words = sections[i].words.concat(words);
+                for (const word of words) {
+                    sections[i].words.push(word);
+                }
             }
         }
 

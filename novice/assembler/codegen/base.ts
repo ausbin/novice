@@ -3,6 +3,7 @@ import { AliasFields, AliasSpec, Assembly, Instruction, InstructionSpec,
          SymbTable  } from '../../isa';
 import { AsmContext, OpOperands, OpSpec, PseudoOpSpec } from '../opspec';
 import { MachineCodeGenerator } from './codegen';
+import { maskTo, maxUnsignedVal } from '../../util';
 
 interface ReassembleVictim {
     // Index in words array in MachineCodeSection
@@ -235,15 +236,14 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
         for (const field of isaInstr.fields) {
             if (field.kind === 'const') {
                 const numBits = field.bits[0] - field.bits[1] + 1;
-                const masked = field.val & ~(-1 << numBits);
-                bin |= masked << field.bits[1];
+                bin |= maskTo(field.val, numBits) << field.bits[1];
             } else {
                 const operand = instr.operands[o++];
                 const numBits = field.bits[0] - field.bits[1] + 1;
                 // max/min values.
-                const maxUns = ~(-1 << numBits);
-                const maxTwos = (1 << (numBits - 1)) - 1;
-                const minTwos = (1 << (numBits - 1)) | (-1 << numBits);
+                const maxUns = maxUnsignedVal(numBits);
+                const maxTwos = maxUnsignedVal(numBits - 1);
+                const minTwos = -maxUnsignedVal(numBits - 1) - 1;
 
                 if (field.kind === 'reg' && operand.kind === 'reg') {
                     // TODO: support other prefixes etc
@@ -285,8 +285,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                         }
                     }
 
-                    const masked = operand.val & ~(-1 << numBits);
-                    bin |= masked << field.bits[1];
+                    bin |= maskTo(operand.val, numBits) << field.bits[1];
                 } else if (field.kind === 'imm' && operand.kind === 'label') {
                     if (!symbtable.hasOwnProperty(operand.label)) {
                         throw new Error(`unknown label \`${operand.label}' ` +
@@ -324,9 +323,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                         }
                     }
 
-                    // TODO: make this a helper function
-                    const masked = offset & ~(-1 << numBits);
-                    bin |= masked << field.bits[1];
+                    bin |= maskTo(offset, numBits) << field.bits[1];
                 } else {
                     // TODO: non-garbage error message
                     throw new Error(`unknown operand ${operand.kind} ` +

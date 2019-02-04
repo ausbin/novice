@@ -17,7 +17,7 @@ interface OpOperands {
 }
 
 interface OpSpec {
-    name: string;
+    op: string;
     operands: OpOperandSpec[];
     asm: (ctx: AsmContext, operands: OpOperands) => number[];
     size?: (isa: Isa) => number;

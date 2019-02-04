@@ -12,13 +12,22 @@ interface ReassembleVictim {
     instrIdx: number;
 }
 
+interface HasOp { op: string; }
+type Lut<T extends HasOp> = {[op: string]: T[]};
+
 class BaseMachineCodeGenerator implements MachineCodeGenerator {
-    private isa: Isa;
-    private opSpec: PseudoOpSpec;
+    protected isa: Isa;
+    protected opSpec: PseudoOpSpec;
+    protected instrLut: Lut<InstructionSpec>;
+    protected aliasLut: Lut<AliasSpec>;
+    protected opLut: Lut<OpSpec>;
 
     public constructor(isa: Isa, opSpec: PseudoOpSpec) {
         this.isa = isa;
         this.opSpec = opSpec;
+        this.instrLut = this.genLut(this.isa.instructions);
+        this.aliasLut = this.genLut(this.isa.aliases);
+        this.opLut = this.genLut(this.opSpec.ops);
     }
 
     public gen(asm: Assembly):
@@ -91,13 +100,27 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
         return [symbtable, sections];
     }
 
+    protected genLut<T extends HasOp>(ops: T[]): Lut<T> {
+        const lut: Lut<T> = {};
+
+        for (const op of ops) {
+            if (!(op.op in lut)) {
+                lut[op.op] = [];
+            }
+            lut[op.op].push(op);
+        }
+
+        return lut;
+    }
+
     private inflateInstr(instr: Instruction|PseudoOp,
                          pc: number,
                          symbtable: SymbTable|null): [number[], boolean] {
         if (instr.kind === 'pseudoop') {
             let match: OpSpec|null = null;
+            const candidates = this.opLut[instr.op] || [];
 
-            for (const op of this.opSpec.ops) {
+            for (const op of candidates) {
                 if (this.opMatch(instr, op)) {
                     match = op;
                     break;
@@ -124,9 +147,9 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
             }
         } else {
             // If it's an alias, expand that mf
-            // TODO: Figure out a more efficient way than this. just a
-            //       hashmap right?
-            for (const alias of this.isa.aliases) {
+            const aliasCandidates = this.aliasLut[instr.op] || [];
+
+            for (const alias of aliasCandidates) {
                 if (this.aliasMatch(instr, alias)) {
                     if (!symbtable) {
                         return [new Array<number>(alias.size), true];
@@ -151,10 +174,9 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
             }
 
             let match: InstructionSpec|null = null;
+            const candidates = this.instrLut[instr.op] || [];
 
-            // TODO: Figure out a more efficient way than this. just a
-            //       hashmap right?
-            for (const isaInstr of this.isa.instructions) {
+            for (const isaInstr of candidates) {
                 if (this.instrMatch(instr, isaInstr)) {
                     match = isaInstr;
                     break;
@@ -337,7 +359,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
     }
 
     private opMatch(pseudoOp: PseudoOp, opSpec: OpSpec): boolean {
-        return pseudoOp.op === opSpec.name && (
+        return pseudoOp.op === opSpec.op && (
             !pseudoOp.operand && !opSpec.operands.length ||
             opSpec.operands.length === 1 && !!pseudoOp.operand &&
                 pseudoOp.operand.kind === opSpec.operands[0].kind);

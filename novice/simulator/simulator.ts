@@ -2,6 +2,85 @@ import { Fields, InstructionSpec, IO, Isa, MachineCodeSection, MachineStateLogEn
          MachineStateUpdate, Reg, RegIdentifier } from '../isa';
 import { forceUnsigned, maskTo, sextTo } from '../util';
 
+class InstrLut {
+    private isa: Isa;
+    private lookupBits: number;
+    // spec, mask, val, #bits
+    private lut: [InstructionSpec, number, number, number][][];
+
+    public constructor(isa: Isa, lookupBits: number) {
+        this.isa = isa;
+        this.lookupBits = Math.min(isa.pc.instrBits, lookupBits);
+        this.lut = this.genLut(lookupBits);
+    }
+
+    public lookup(ir: number): [InstructionSpec, number, number, number][] {
+        const idx = maskTo(ir >> (this.isa.pc.instrBits - this.lookupBits),
+                           this.lookupBits);
+
+        return this.lut[idx];
+    }
+
+    private genLut(lookupBits: number) {
+        const lut: [InstructionSpec, number, number, number][][] = [];
+
+        for (let i = 0; i < Math.pow(2, lookupBits); i++) {
+            lut.push([]);
+        }
+
+        for (const instr of this.isa.instructions) {
+            let mask = 0;
+            let val = 0;
+            let totalBits = 0;
+            let firstNBits = [0];
+
+            // Sort them so fields are in the right order
+            const fields = instr.fields.slice(0).sort(
+                (left, right) => right.bits[0] - left.bits[0]);
+
+            for (const field of fields) {
+                const numBits = field.bits[0] - field.bits[1] + 1;
+                const needBits = this.lookupBits - (this.isa.pc.instrBits - field.bits[0] - 1);
+                // Take the most significant X bits from this field
+                const whichBits = Math.min(numBits, needBits);
+
+                if (field.kind === 'const') {
+                    if (whichBits > 0) {
+                        // thinkin bout thos bits
+                        const thosBits = field.val >> (numBits - whichBits);
+                        firstNBits = firstNBits.map(bits => (bits << whichBits) | thosBits);
+                    }
+
+                    const babymask = maskTo(-1, numBits);
+                    mask |= babymask << field.bits[1];
+                    val |= (field.val & babymask) << field.bits[1];
+                    totalBits += numBits;
+                } else if (whichBits > 0) {
+                    const newFirstNBits: number[] = [];
+
+                    // In this case, we need to add all 2^whichBits
+                    // combinations
+                    for (let i = 0; i < Math.pow(2, whichBits); i++) {
+                        for (const bits of firstNBits) {
+                            newFirstNBits.push((bits << whichBits) | i);
+                        }
+                    }
+
+                    firstNBits = newFirstNBits;
+                }
+            }
+
+            const entry: [InstructionSpec, number, number, number] =
+                [instr, mask, val, totalBits];
+            for (const bits of firstNBits) {
+                lut[bits].push(entry);
+            }
+        }
+
+        return lut;
+    }
+}
+
 class Simulator {
     protected pc: number;
     protected mem: {[addr: number]: number};
@@ -15,8 +94,12 @@ class Simulator {
     protected maxExec: number;
     protected log: MachineStateLogEntry[];
     protected numExec: number;
+    protected lut: InstrLut;
 
     public constructor(isa: Isa, io: IO, maxExec: number) {
+        // 64 entries is a nice cozy size without being too gigantic
+        const LUT_SIZE = 6;
+
         this.isa = isa;
         this.io = io;
         this.maxExec = maxExec;
@@ -29,6 +112,7 @@ class Simulator {
         this.halted = false;
         this.log = [];
         this.numExec = 0;
+        this.lut = new InstrLut(this.isa, LUT_SIZE);
 
         this.resetRegs();
     }
@@ -228,29 +312,13 @@ class Simulator {
     }
 
     public decode(ir: number): [InstructionSpec, Fields] {
-        // TODO: ridiculously inefficient. idea for improvement: binary
-        //       tree of depth like 8 to cut down on iteration time
         const matches = [];
+        const candidates = this.lut.lookup(ir);
 
-        for (const instr of this.isa.instructions) {
-            let mask = 0;
-            let val = 0;
-            let totalBits = 0;
-
-            for (const field of instr.fields) {
-                if (field.kind !== 'const') {
-                    continue;
-                }
-
-                const numBits = field.bits[0] - field.bits[1] + 1;
-                const babymask = maskTo(-1, numBits);
-                mask |= babymask << field.bits[1];
-                val |= (field.val & babymask) << field.bits[1];
-                totalBits += numBits;
-            }
-
+        for (const instrTuple of candidates) {
+            const [instr, mask, val, bits] = instrTuple;
             if ((ir & mask) === val) {
-                matches.push({bits: totalBits, instr});
+                matches.push({bits, instr});
             }
         }
 

@@ -1,8 +1,8 @@
-import { Isa } from '../../isa';
+import { Isa, SymbTable } from '../../isa';
 
 interface AsmContext {
     isa: Isa;
-    symbtable: {[s: string]: number};
+    symbtable: SymbTable;
 }
 
 interface OpOperandSpec {

@@ -3,6 +3,7 @@ import { Loader } from './loader';
 import { ComplxObjectFileLoader } from './complx';
 import { Readable } from 'stream';
 import { Memory } from '../mem';
+import { Symbols } from '../symbols';
 
 interface Mem extends Memory {
     data: {[n: number]: number};
@@ -182,12 +183,18 @@ describe('complx loader', () => {
 
     describe('loadSymb()', () => {
         let symbTable: SymbTable;
+        let symbs: Symbols;
 
         beforeEach(() => {
             fp = new Readable({
                 objectMode: true,
             });
             symbTable = {};
+            // @ts-ignore
+            symbs = {
+                hasSymbol: (symb: string) => symb in symbTable,
+                setSymbol: (symb: string, addr: number) => { symbTable[symb] = addr; },
+            };
         });
 
         it('loads basic table', () => {
@@ -199,7 +206,7 @@ describe('complx loader', () => {
             ].forEach(s => fp.push(Buffer.from(s)));
             fp.push(null);
 
-            return loader.loadSymb(fp, symbTable).then(() => {
+            return loader.loadSymb(fp, symbs).then(() => {
                 expect(symbTable).toEqual({
                     daisyy:   0x69,
                     marley:   0x420,
@@ -216,7 +223,7 @@ describe('complx loader', () => {
             ].forEach(s => fp.push(Buffer.from(s)));
             fp.push(null);
 
-            return loader.loadSymb(fp, symbTable).then(() => {
+            return loader.loadSymb(fp, symbs).then(() => {
                 expect(symbTable).toEqual({
                     bob1: 0x69,
                     bob2: 0x69,
@@ -227,7 +234,7 @@ describe('complx loader', () => {
         it('handles empty table', () => {
             fp.push(null);
 
-            return loader.loadSymb(fp, symbTable).then(() => {
+            return loader.loadSymb(fp, symbs).then(() => {
                 expect(symbTable).toEqual({});
             });
         });
@@ -239,7 +246,7 @@ describe('complx loader', () => {
             ].forEach(s => fp.push(Buffer.from(s)));
             fp.push(null);
 
-            return loader.loadSymb(fp, symbTable).then(() => {
+            return loader.loadSymb(fp, symbs).then(() => {
                 expect(symbTable).toEqual({
                     savage: 0x21,
                     bob:    0x420,
@@ -253,7 +260,7 @@ describe('complx loader', () => {
             ].forEach(s => fp.push(Buffer.from(s)));
             fp.push(null);
 
-            return expect(loader.loadSymb(fp, symbTable)).rejects.toThrow(/exceeds.*on line 1$/);
+            return expect(loader.loadSymb(fp, symbs)).rejects.toThrow(/exceeds.*on line 1$/);
         });
 
         it('errors on overlong line', () => {
@@ -263,7 +270,7 @@ describe('complx loader', () => {
             ].forEach(s => fp.push(Buffer.from(s)));
             fp.push(null);
 
-            return expect(loader.loadSymb(fp, symbTable)).rejects.toThrow(/exceeds.*on line 2$/);
+            return expect(loader.loadSymb(fp, symbs)).rejects.toThrow(/exceeds.*on line 2$/);
         });
 
         it('errors on nonempty line without tab', () => {
@@ -274,7 +281,7 @@ describe('complx loader', () => {
             ].forEach(s => fp.push(Buffer.from(s)));
             fp.push(null);
 
-            return expect(loader.loadSymb(fp, symbTable)).rejects.toThrow(/tabs.*on line 2$/);
+            return expect(loader.loadSymb(fp, symbs)).rejects.toThrow(/tabs.*on line 2$/);
         });
 
         it('errors on negative address', () => {
@@ -283,7 +290,7 @@ describe('complx loader', () => {
             ].forEach(s => fp.push(Buffer.from(s)));
             fp.push(null);
 
-            return expect(loader.loadSymb(fp, symbTable)).rejects.toThrow(/negative.*on line 1$/);
+            return expect(loader.loadSymb(fp, symbs)).rejects.toThrow(/negative.*on line 1$/);
         });
 
         it('errors on non-hex address', () => {
@@ -292,7 +299,7 @@ describe('complx loader', () => {
             ].forEach(s => fp.push(Buffer.from(s)));
             fp.push(null);
 
-            return expect(loader.loadSymb(fp, symbTable)).rejects.toThrow(/`x4'.*on line 1$/);
+            return expect(loader.loadSymb(fp, symbs)).rejects.toThrow(/`x4'.*on line 1$/);
         });
 
         it('errors duplicate symbol', () => {
@@ -302,7 +309,7 @@ describe('complx loader', () => {
             ].forEach(s => fp.push(Buffer.from(s)));
             fp.push(null);
 
-            return expect(loader.loadSymb(fp, symbTable)).rejects.toThrow(/`gaming'.*on line 2$/);
+            return expect(loader.loadSymb(fp, symbs)).rejects.toThrow(/`gaming'.*on line 2$/);
         });
     });
 });

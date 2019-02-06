@@ -1,7 +1,8 @@
 import { Buffer } from 'buffer';
 import { Readable } from 'stream';
-import { Isa, SymbTable } from '../../isa';
+import { Isa } from '../../isa';
 import { Memory } from '../mem';
+import { Symbols } from '../symbols';
 import { Loader } from './loader';
 
 type State = 'addr'|'len'|'words';
@@ -97,7 +98,7 @@ class ComplxObjectFileLoader implements Loader {
         return 'sym';
     }
 
-    public async loadSymb(fp: Readable, symbtable: SymbTable): Promise<void> {
+    public async loadSymb(fp: Readable, symbols: Symbols): Promise<void> {
         // If you have any lines this long, I'm praying for your entire
         // family
         const buf = Buffer.alloc(1024);
@@ -131,7 +132,7 @@ class ComplxObjectFileLoader implements Loader {
 
                     try {
                         this.parseLine(buf.slice(0, totalLen).toString(),
-                                       lines, symbtable);
+                                       lines, symbols);
                     } catch (e) {
                         err = e;
                         return;
@@ -165,12 +166,12 @@ class ComplxObjectFileLoader implements Loader {
         }
 
         if (size > 0) {
-            this.parseLine(buf.slice(0, size).toString(), lines, symbtable);
+            this.parseLine(buf.slice(0, size).toString(), lines, symbols);
             size = 0;
         }
     }
 
-    private parseLine(line: string, lines: number, symbtable: SymbTable) {
+    private parseLine(line: string, lines: number, symbols: Symbols) {
         line = line.trim();
 
         // Ignore empty lines
@@ -196,11 +197,11 @@ class ComplxObjectFileLoader implements Loader {
             throw new Error(`invalid address \`${hexAddr}' on line ${lines}`);
         }
 
-        if (sym in symbtable) {
+        if (symbols.hasSymbol(sym)) {
             throw new Error(`duplicate symbol \`${sym}' on line ${lines}`);
         }
 
-        symbtable[sym] = addr;
+        symbols.setSymbol(sym, addr);
     }
 }
 

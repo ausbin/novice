@@ -495,25 +495,20 @@ describe('cli', () => {
 
         describe('dbg subcommand', () => {
             let mockDbg: CliDebugger;
-            // @ts-ignore
-            let mockDbgSymbTable: SymbTable;
 
             beforeAll(() => {
                 // @ts-ignore
                 mockDbg = {
                     loadSections: jest.fn(),
+                    setSymbols: jest.fn(),
                     run: jest.fn(),
-                    getSymbTable: jest.fn(),
                     close: jest.fn(),
                 };
             });
 
             beforeEach(() => {
-                mockDbgSymbTable = {bob: 0xbeef};
                 // @ts-ignore
                 CliDebugger.mockImplementation(() => mockDbg);
-                // @ts-ignore
-                mockDbg.getSymbTable.mockReturnValue(mockDbgSymbTable);
             });
 
             afterEach(() => {
@@ -522,9 +517,9 @@ describe('cli', () => {
                 // @ts-ignore
                 mockDbg.loadSections.mockReset();
                 // @ts-ignore
-                mockDbg.run.mockReset();
+                mockDbg.setSymbols.mockReset();
                 // @ts-ignore
-                mockDbg.getSymbTable.mockReset();
+                mockDbg.run.mockReset();
                 // @ts-ignore
                 mockDbg.close.mockReset();
             });
@@ -553,15 +548,11 @@ describe('cli', () => {
                     // @ts-ignore
                     expect(CliDebugger.mock.calls).toEqual([[mockSimConfig.isa, stdin, stdout]]);
                     // @ts-ignore
-                    expect(mockDbg.getSymbTable.mock.calls).toEqual([[]]);
+                    expect(mockDbg.setSymbols.mock.calls).toEqual([[mockSymbTable]]);
                     // @ts-ignore
                     expect(mockDbg.run.mock.calls).toEqual([[]]);
                     // @ts-ignore
                     expect(mockDbg.close.mock.calls).toEqual([[]]);
-                    expect(mockDbgSymbTable).toEqual({
-                        bob: 0xbeef,
-                        nice: 0x69,
-                    });
                 });
             });
 
@@ -579,7 +570,7 @@ describe('cli', () => {
                     // @ts-ignore
                     expect(mockSimConfig.loader.load.mock.calls).toEqual([[mockSimConfig.isa, mockFp, mockDbg]]);
                     // @ts-ignore
-                    expect(mockSimConfig.loader.loadSymb.mock.calls).toEqual([[mockFp, mockDbgSymbTable]]);
+                    expect(mockSimConfig.loader.loadSymb.mock.calls).toEqual([[mockFp, mockDbg]]);
                     // @ts-ignore
                     expect(getConfig.mock.calls).toEqual([]);
                     // @ts-ignore
@@ -588,8 +579,6 @@ describe('cli', () => {
                     expect(mockDbg.loadSections.mock.calls).toEqual([]);
                     // @ts-ignore
                     expect(CliDebugger.mock.calls).toEqual([[mockSimConfig.isa, stdin, stdout]]);
-                    // @ts-ignore
-                    expect(mockDbg.getSymbTable.mock.calls).toEqual([[]]);
                     // @ts-ignore
                     expect(mockDbg.run.mock.calls).toEqual([[]]);
                     // @ts-ignore
@@ -632,8 +621,6 @@ describe('cli', () => {
                     expect(mockDbg.loadSections.mock.calls).toEqual([]);
                     // @ts-ignore
                     expect(CliDebugger.mock.calls).toEqual([[mockSimConfig.isa, stdin, stdout]]);
-                    // @ts-ignore
-                    expect(mockDbg.getSymbTable.mock.calls).toEqual([]);
                     // @ts-ignore
                     expect(mockDbg.run.mock.calls).toEqual([[]]);
                     // @ts-ignore
@@ -686,7 +673,7 @@ describe('cli', () => {
                     // @ts-ignore
                     expect(mockSimConfig.loader.load.mock.calls).toEqual([[mockSimConfig.isa, mockFp, mockDbg]]);
                     // @ts-ignore
-                    expect(mockSimConfig.loader.loadSymb.mock.calls).toEqual([[mockFp, mockDbgSymbTable]]);
+                    expect(mockSimConfig.loader.loadSymb.mock.calls).toEqual([[mockFp, mockDbg]]);
                     // @ts-ignore
                     expect(getConfig.mock.calls).toEqual([]);
                     // @ts-ignore
@@ -695,8 +682,6 @@ describe('cli', () => {
                     expect(mockDbg.loadSections.mock.calls).toEqual([]);
                     // @ts-ignore
                     expect(CliDebugger.mock.calls).toEqual([[mockSimConfig.isa, stdin, stdout]]);
-                    // @ts-ignore
-                    expect(mockDbg.getSymbTable.mock.calls).toEqual([[]]);
                     // @ts-ignore
                     expect(mockDbg.run.mock.calls).toEqual([[]]);
                     // @ts-ignore

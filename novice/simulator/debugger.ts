@@ -2,15 +2,18 @@ import { Fields, getRegAliases, InstructionSpec, IO, Isa,
          SymbTable } from '../isa';
 import { maskTo, maxUnsignedVal, sextTo } from '../util';
 import { Simulator } from './simulator';
+import { Symbols } from './symbols';
 
 type RegAliasLut = {[prefix: string]: (string|null)[]};
+type InvSymbTable = {[addr: number]: string[]};
 
-class Debugger extends Simulator {
+class Debugger extends Simulator implements Symbols {
     protected nextBreakpoint: number;
     // Map of address -> breakpoint number
     protected breakpoints: {[addr: number]: number};
     protected interrupt: boolean;
     protected symbTable: SymbTable;
+    protected invSymbTable: InvSymbTable;
     protected regAliasLut: RegAliasLut;
 
     public constructor(isa: Isa, io: IO, maxExec: number) {
@@ -20,36 +23,12 @@ class Debugger extends Simulator {
         this.breakpoints = {};
         this.interrupt = false;
         this.symbTable = {};
+        this.invSymbTable = {};
         this.regAliasLut = this.genRegAliasLut(isa);
     }
 
-    private genRegAliasLut(isa: Isa): RegAliasLut {
-        const lut: RegAliasLut = {};
-
-        for (const reg of isa.regs) {
-            if (reg.kind === 'reg-range') {
-                lut[reg.prefix] = new Array(reg.count).fill(null);
-
-                if (reg.aliases) {
-                    for (const alias in reg.aliases) {
-                        const regno = reg.aliases[alias];
-                        const current = lut[reg.prefix][regno];
-                        // Make sure we behave deterministically: If we
-                        // have a collision, choose the
-                        // lexicographically smaller alias
-                        if (!current || current > alias) {
-                            lut[reg.prefix][regno] = alias;
-                        }
-                    }
-                }
-            }
-        }
-
-        return lut;
-    }
-
     public getSymbTable(): SymbTable {
-        return this.symbTable;
+        return Object.assign({}, this.symbTable);
     }
 
     // continue
@@ -179,8 +158,78 @@ class Debugger extends Simulator {
         return result;
     }
 
+    public hasSymbol(symb: string): boolean {
+        return symb in this.symbTable;
+    }
+
+    public setSymbol(symb: string, addr: number): void {
+        if (this.hasSymbol(symb)) {
+            const oldAddr = this.symbTable[symb];
+            // update inverted
+            const symbols = this.invSymbTable[oldAddr];
+            symbols.splice(symbols.indexOf(symb), 1);
+        }
+
+        this.symbTable[symb] = addr;
+
+        if (!(addr in this.invSymbTable)) {
+            this.invSymbTable[addr] = [];
+        }
+
+        this.invSymbTable[addr].push(symb);
+        // Determinism!
+        this.invSymbTable[addr].sort();
+    }
+
+    public setSymbols(symbtable: SymbTable): void {
+        for (const symb in symbtable) {
+            this.setSymbol(symb, symbtable[symb]);
+        }
+    }
+
+    public getSymbolAddr(symb: string): number {
+        if (!(symb in this.symbTable)) {
+            throw new Error(`no such symbol \`${symb}'`);
+        }
+
+        return this.symbTable[symb];
+    }
+
+    public getAddrSymbols(addr: number): string[] {
+        if (!(addr in this.invSymbTable)) {
+            return [];
+        }
+
+        return this.invSymbTable[addr];
+    }
+
     protected lookupRegAlias(prefix: string, regno: number): string|null {
         return this.regAliasLut[prefix][regno];
+    }
+
+    private genRegAliasLut(isa: Isa): RegAliasLut {
+        const lut: RegAliasLut = {};
+
+        for (const reg of isa.regs) {
+            if (reg.kind === 'reg-range') {
+                lut[reg.prefix] = new Array(reg.count).fill(null);
+
+                if (reg.aliases) {
+                    for (const alias in reg.aliases) {
+                        const regno = reg.aliases[alias];
+                        const current = lut[reg.prefix][regno];
+                        // Make sure we behave deterministically: If we
+                        // have a collision, choose the
+                        // lexicographically smaller alias
+                        if (!current || current > alias) {
+                            lut[reg.prefix][regno] = alias;
+                        }
+                    }
+                }
+            }
+        }
+
+        return lut;
     }
 
     private labelsForAddr(pc: number): string[] {

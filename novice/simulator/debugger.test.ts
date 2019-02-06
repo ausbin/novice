@@ -75,7 +75,7 @@ describe('debugger', () => {
                 dbg.store(0x3008, 0x0021); // bang .fill '!'
                 dbg.store(0x3009, 0xd000); // .fill 0xd000
 
-                Object.assign(dbg.getSymbTable(), {
+                dbg.setSymbols({
                     loop: 0x3003,
                     // Don't include this so the branch has to have an integer
                     // operand in the disassembly

@@ -210,8 +210,8 @@ describe('cli debugger', () => {
             dbg.store(0x3003, 0x1264); // add r1, r1, 4
             dbg.store(0x3004, 0xf025); // halt
 
-            Object.assign(dbg.getSymbTable(), {
-                tim_brown: 0x3002
+            dbg.setSymbols({
+                tim_brown: 0x3002,
             });
 
             runCmd('b tim_brown');

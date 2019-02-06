@@ -1,6 +1,7 @@
 import { Fields, InstructionSpec, IO, Isa, MachineCodeSection, MachineStateLogEntry,
          MachineStateUpdate, Reg, RegIdentifier } from '../isa';
 import { forceUnsigned, maskTo, sextTo } from '../util';
+import { Memory } from './mem';
 
 class InstrLut {
     private isa: Isa;
@@ -81,7 +82,7 @@ class InstrLut {
     }
 }
 
-class Simulator {
+class Simulator implements Memory {
     protected pc: number;
     protected mem: {[addr: number]: number};
     protected regs: {

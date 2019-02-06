@@ -207,7 +207,7 @@ async function dbg(configName: string, path: string, stdin: Readable,
             if (symbFp) {
                 await Promise.all([
                     loadPromise,
-                    cfg.loader.loadSymb(symbFp, debug.getSymbTable()),
+                    cfg.loader.loadSymb(symbFp, debug),
                 ]);
             } else {
                 await loadPromise;
@@ -217,7 +217,7 @@ async function dbg(configName: string, path: string, stdin: Readable,
             const assembler = new Assembler(asmCfg);
             const [symbtable, sections] = await assembler.assemble(fp);
             debug.loadSections(sections);
-            Object.assign(debug.getSymbTable(), symbtable);
+            debug.setSymbols(symbtable);
         }
 
         await debug.run();

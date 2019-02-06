@@ -178,10 +178,10 @@ class CliDebugger extends Debugger {
                      /\d+/.test(operand) ? 10 : -1;
         let addr: number;
         if (base === -1) {
-            if (!(operand in this.symbTable)) {
+            if (!this.hasSymbol(operand)) {
                 throw new Error(`unknown label \`${operand}'`);
             }
-            addr = this.symbTable[operand];
+            addr = this.getSymbolAddr(operand);
         } else {
             addr = parseInt(operand, base);
         }

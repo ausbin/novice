@@ -3,12 +3,15 @@ import { Fields, getRegAliases, InstructionSpec, IO, Isa,
 import { maskTo, maxUnsignedVal, sextTo } from '../util';
 import { Simulator } from './simulator';
 
+type RegAliasLut = {[prefix: string]: (string|null)[]};
+
 class Debugger extends Simulator {
     protected nextBreakpoint: number;
     // Map of address -> breakpoint number
     protected breakpoints: {[addr: number]: number};
     protected interrupt: boolean;
     protected symbTable: SymbTable;
+    protected regAliasLut: RegAliasLut;
 
     public constructor(isa: Isa, io: IO, maxExec: number) {
         super(isa, io, maxExec);
@@ -17,6 +20,32 @@ class Debugger extends Simulator {
         this.breakpoints = {};
         this.interrupt = false;
         this.symbTable = {};
+        this.regAliasLut = this.genRegAliasLut(isa);
+    }
+
+    private genRegAliasLut(isa: Isa): RegAliasLut {
+        const lut: RegAliasLut = {};
+
+        for (const reg of isa.regs) {
+            if (reg.kind === 'reg-range') {
+                lut[reg.prefix] = new Array(reg.count).fill(null);
+
+                if (reg.aliases) {
+                    for (const alias in reg.aliases) {
+                        const regno = reg.aliases[alias];
+                        const current = lut[reg.prefix][regno];
+                        // Make sure we behave deterministically: If we
+                        // have a collision, choose the
+                        // lexicographically smaller alias
+                        if (!current || current > alias) {
+                            lut[reg.prefix][regno] = alias;
+                        }
+                    }
+                }
+            }
+        }
+
+        return lut;
     }
 
     public getSymbTable(): SymbTable {
@@ -151,17 +180,7 @@ class Debugger extends Simulator {
     }
 
     protected lookupRegAlias(prefix: string, regno: number): string|null {
-        const aliases = getRegAliases(this.isa, prefix);
-        // Choose the lexicographically first matching alias (so it's
-        // deterministic)
-        let minAlias: string|null = null;
-        // TODO: ~O(1) instead please
-        for (const alias in aliases) {
-            if (aliases[alias] === regno && (!minAlias || alias < minAlias)) {
-                minAlias = alias;
-            }
-        }
-        return minAlias;
+        return this.regAliasLut[prefix][regno];
     }
 
     private labelsForAddr(pc: number): string[] {

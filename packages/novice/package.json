@@ -1,0 +1,25 @@
+{
+  "name": "novice",
+  "version": "0.0.0",
+  "description": "machine code simulator",
+  "main": "novice.js",
+  "bin": {
+    "novice": "novice/main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zucchini/novice.git"
+  },
+  "author": "austin adams <git@austinjadams.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zucchini/novice/issues"
+  },
+  "homepage": "https://github.com/zucchini/novice#readme",
+  "dependencies": {
+    "argparse": "^1.0.10"
+  },
+  "devDependencies": {
+    "@types/argparse": "^1.0.35"
+  }
+}

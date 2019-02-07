@@ -7,14 +7,15 @@ Getting Started
 ---------------
 
     $ npm install --dev
+    $ npx lerna bootstrap
     $ npm run build
     $ ./novice.js --help
 
 Useful stuff:
 
-    $ npm run build:watch
     $ npm run lint
     $ npm run lint:fix
     $ npm test
+    $ npm test:cover
     $ ./bootstrap-parse-table.sh complx
     $ ./generate-parse-table.sh complx

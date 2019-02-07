@@ -2,10 +2,10 @@
   "name": "novice",
   "version": "0.0.0",
   "description": "machine code simulator",
-  "main": "novice.js",
-  "bin": {
-    "novice": "novice/main.js"
-  },
+  "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zucchini/novice.git"
@@ -15,11 +15,5 @@
   "bugs": {
     "url": "https://github.com/zucchini/novice/issues"
   },
-  "homepage": "https://github.com/zucchini/novice#readme",
-  "dependencies": {
-    "argparse": "^1.0.10"
-  },
-  "devDependencies": {
-    "@types/argparse": "^1.0.35"
-  }
+  "homepage": "https://github.com/zucchini/novice#readme"
 }

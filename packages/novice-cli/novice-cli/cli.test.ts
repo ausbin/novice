@@ -5,14 +5,12 @@ import main from './cli';
 // Mocks
 jest.mock('fs');
 import * as fs from 'fs';
-jest.mock('./assembler');
+jest.mock('novice');
 import { Assembler, AssemblerConfig, Serializer, getConfig, getParser,
-         getSerializer } from './assembler';
-jest.mock('./simulator');
-import { CliDebugger, getSimulatorConfig, Simulator,
-         SimulatorConfig } from './simulator';
-jest.mock('./isa');
-import { getIsa, StreamIO, SymbTable, MachineCodeSection } from './isa';
+         getSerializer,
+         CliDebugger, getSimulatorConfig, Simulator,
+         SimulatorConfig,
+         getIsa, StreamIO, SymbTable, MachineCodeSection } from 'novice';
 
 describe('cli', () => {
     let stdin: Readable, stdout: Writable, stderr: Writable;

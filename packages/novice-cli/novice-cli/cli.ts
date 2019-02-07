@@ -1,9 +1,9 @@
 import { ArgumentParser } from 'argparse';
 import * as fs from 'fs';
 import { Readable, Writable } from 'stream';
-import { Assembler, getConfig, getParser, getSerializer } from './assembler';
-import { getIsa, StreamIO } from './isa';
-import { CliDebugger, getSimulatorConfig, Simulator, SimulatorConfig } from './simulator';
+import { getIsa, StreamIO, Assembler, getConfig, getParser, getSerializer,
+         CliDebugger, getSimulatorConfig, Simulator,
+         SimulatorConfig } from 'novice';
 
 async function main(argv: string[], stdin: Readable, stdout: Writable,
                     stderr: Writable): Promise<number> {

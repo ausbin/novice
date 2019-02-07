@@ -20,7 +20,7 @@ export default class IntegerDFA<T> extends DFA<T> {
     private alive!: boolean;
     private length!: number;
     private acceptingLength!: number;
-    private T!: T;
+    private terminal!: T;
 
     public constructor(Ts: IntegerTs<T>, noHexZeroPrefix?: boolean) {
         super();
@@ -47,10 +47,10 @@ export default class IntegerDFA<T> extends DFA<T> {
                         this.state = State.Decimal;
                     }
                     this.acceptingLength = this.length;
-                    this.T = this.Ts.dec;
+                    this.terminal = this.Ts.dec;
                 } else if (c === '-') {
                     this.state = State.Decimal;
-                    this.T = this.Ts.dec;
+                    this.terminal = this.Ts.dec;
                 } else {
                     this.alive = false;
                 }
@@ -59,7 +59,7 @@ export default class IntegerDFA<T> extends DFA<T> {
             case State.GotZero:
                 if (c.toLowerCase() === 'x') {
                     // Don't bump acceptingLength because 0x is nonsense
-                    // Don't set this.T in case 0 gets accepted on
+                    // Don't set this.terminal in case 0 gets accepted on
                     // its own
                     this.state = State.Hexadecimal;
                 } else if (isDecimalDigit(c)) {
@@ -70,7 +70,7 @@ export default class IntegerDFA<T> extends DFA<T> {
                 break;
             case State.Hexadecimal:
                 if (isHexDigit(c)) {
-                    this.T = this.Ts.hex;
+                    this.terminal = this.Ts.hex;
                     this.acceptingLength = this.length;
                 } else {
                     this.alive = false;
@@ -102,6 +102,6 @@ export default class IntegerDFA<T> extends DFA<T> {
     }
 
     public getT(): T {
-        return this.T;
+        return this.terminal;
     }
 }

@@ -1,0 +1,35 @@
+{
+  "name": "novice-cli",
+  "version": "0.0.0",
+  "description": "cli frontend to novice",
+  "author": "Austin Adams <git@austinjadams.com>",
+  "homepage": "https://github.com/zucchini/novice#readme",
+  "license": "MIT",
+  "main": "lib/novice-cli.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "files": [
+    "lib"
+  ],
+  "bin": {
+    "novice": "lib/main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zucchini/novice.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "bugs": {
+    "url": "https://github.com/zucchini/novice/issues"
+  },
+  "dependencies": {
+    "novice": "^0.0.0",
+    "argparse": "^1.0.10"
+  },
+  "devDependencies": {
+    "@types/argparse": "^1.0.35"
+  }
+}

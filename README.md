@@ -9,7 +9,7 @@ Getting Started
     $ npm install --dev
     $ npx lerna bootstrap
     $ npm run build
-    $ ./novice.js --help
+    $ ./novice --help
 
 Useful stuff:
 

@@ -2,7 +2,7 @@ import { Assembly, Instruction, IntegerOperand, LabelOperand, PseudoOp,
          RegisterOperand, Section, StringOperand } from './assembly';
 import { MachineCodeSection } from './codegen';
 import { DummyIsa } from './dummy';
-import { IO, StreamIO } from './io';
+import { IO } from './io';
 import { AliasContext, AliasFields, AliasSpec, Fields, getRegAliases,
          InstructionSpec, Isa, isInstruction, Reg, regPrefixes,
          SymbTable } from './isa';
@@ -34,7 +34,7 @@ export { getIsa, isas,
          // codegen
          MachineCodeSection,
          // io
-         IO, StreamIO,
+         IO,
          // isa
          Isa, InstructionSpec, Fields, Reg, regPrefixes, getRegAliases,
          isInstruction, AliasContext, AliasFields, AliasSpec, SymbTable,

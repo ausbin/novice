@@ -10,7 +10,9 @@ import { Assembler, AssemblerConfig, Serializer, getConfig, getParser,
          getSerializer,
          CliDebugger, getSimulatorConfig, Simulator,
          SimulatorConfig,
-         getIsa, StreamIO, SymbTable, MachineCodeSection } from 'novice';
+         getIsa, SymbTable, MachineCodeSection } from 'novice';
+jest.mock('./stream-io');
+import { StreamIO } from './stream-io';
 
 describe('cli', () => {
     let stdin: Readable, stdout: Writable, stderr: Writable;

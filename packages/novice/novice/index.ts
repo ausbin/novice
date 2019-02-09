@@ -5,7 +5,7 @@ import { AliasContext, AliasFields, AliasSpec, Assembly, Fields, getIsa,
          Isa, isas, isInstruction, LabelOperand, MachineCodeSection,
          MachineState, MachineStateDelta, MachineStateLogEntry,
          MachineStateUpdate, PseudoOp, Reg, RegIdentifier, RegisterOperand,
-         regPrefixes, Section, StreamIO, StringOperand, SymbTable } from './isa';
+         regPrefixes, Section, StringOperand, SymbTable } from './isa';
 import { CliDebugger, Debugger, getSimulatorConfig, Loader, Simulator,
          SimulatorConfig } from './simulator';
 
@@ -20,7 +20,7 @@ export { //// assembler
          // codegen
          MachineCodeSection,
          // io
-         IO, StreamIO,
+         IO,
          // isa
          Isa, InstructionSpec, Fields, Reg, regPrefixes, getRegAliases,
          isInstruction, AliasContext, AliasFields, AliasSpec, SymbTable,

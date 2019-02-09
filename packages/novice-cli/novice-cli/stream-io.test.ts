@@ -1,6 +1,7 @@
 import { Buffer } from 'buffer';
 import { Readable, Writable } from 'stream';
-import { IO, StreamIO } from './io';
+import { IO } from 'novice';
+import { StreamIO } from './stream-io';
 
 describe('StreamIO', () => {
     let stdinFp: Readable, stdoutFp: Writable;

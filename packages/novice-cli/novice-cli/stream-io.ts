@@ -1,10 +1,5 @@
 import { Readable, Writable } from 'stream';
 
-interface IO {
-    getc(): Promise<number>;
-    putc(c: number): void;
-}
-
 class StreamIO {
     private stdin: Readable;
     private stdout: Writable;
@@ -30,4 +25,4 @@ class StreamIO {
     }
 }
 
-export { IO };
+export { StreamIO };

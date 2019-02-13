@@ -1,4 +1,3 @@
-import { Readable } from 'stream';
 import { Assembly, Isa } from '../../isa';
 import { Parser as LR1Parser, ParseTable, ParseTree,
          TableGenerator } from '../lr1';

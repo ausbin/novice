@@ -1,4 +1,3 @@
-import { Readable, Writable } from 'stream';
 import { Assembly, Isa, MachineCodeSection, SymbTable } from '../isa';
 import { MachineCodeGenerator } from './codegen';
 import { PseudoOpSpec } from './opspec';

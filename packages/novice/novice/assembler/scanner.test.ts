@@ -1,4 +1,3 @@
-import { Readable } from 'stream';
 import { CommentDFA, IntegerDFA, PseudoOpDFA, RegDFA, StringDFA, SymbolDFA,
          WhitespaceDFA, WordDFA } from './dfa';
 import { Scanner } from './scanner';
@@ -8,7 +7,6 @@ type T = 'decimal'|'hex'|'register'|'pseudo-op'|'str'|'chr'|'word'
 
 describe('scanner', () => {
     let scanner: Scanner<T>;
-    let fp: Readable;
 
     beforeEach(() => {
         scanner = new Scanner<T>([
@@ -21,7 +19,6 @@ describe('scanner', () => {
             new WhitespaceDFA<T>(),
             new WordDFA<T>({word: 'word'}),
         ]);
-        fp = new Readable();
     });
 
     it('handles empty input', () => {

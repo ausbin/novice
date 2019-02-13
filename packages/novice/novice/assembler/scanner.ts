@@ -1,4 +1,3 @@
-import { Readable } from 'stream';
 import { DFA } from './dfa';
 
 interface Token<T> {

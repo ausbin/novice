@@ -1,5 +1,3 @@
-import { Buffer } from 'buffer';
-import { Writable, Readable } from 'stream';
 import { getConfig, Assembler } from '.';
 
 describe('assembler', () => {

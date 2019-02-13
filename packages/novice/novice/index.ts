@@ -7,7 +7,7 @@ import { AliasContext, AliasFields, AliasSpec, Assembly, Fields, getIsa,
          MachineStateUpdate, PseudoOp, Reg, RegIdentifier, RegisterOperand,
          regPrefixes, Section, StringOperand, SymbTable } from './isa';
 import { Debugger, Memory, Simulator, Symbols } from './simulator';
-import { forceUnsigned, maskTo, maxUnsignedVal, sextTo, padStr } from './util';
+import { forceUnsigned, maskTo, maxUnsignedVal, padStr, sextTo } from './util';
 
 export { //// assembler
          Assembler, AssemblerConfig, getParser, getGenerator, getOpSpec,

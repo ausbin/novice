@@ -2,11 +2,11 @@ import { ArgumentParser } from 'argparse';
 import * as fs from 'fs';
 import { getConfig, getIsa, getParser, Simulator } from 'novice';
 import { Readable, Writable } from 'stream';
+import { CliDebugger } from './cli-debugger';
 import { getLoader, Loader } from './loaders';
 import { getSerializer } from './serializers';
 import { StreamAssembler } from './stream-assembler';
 import { StreamIO } from './stream-io';
-import { CliDebugger } from './cli-debugger';
 
 async function main(argv: string[], stdin: Readable, stdout: Writable,
                     stderr: Writable): Promise<number> {

@@ -1,8 +1,6 @@
 import * as readline from 'readline';
 import { Readable, Writable } from 'stream';
-import { IO, Isa } from '../isa';
-import { forceUnsigned, maxUnsignedVal, padStr } from '../util';
-import { Debugger } from './debugger';
+import { IO, Isa, Debugger, forceUnsigned, maxUnsignedVal, padStr } from 'novice';
 
 interface Command {
     op: string[];

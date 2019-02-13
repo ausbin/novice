@@ -6,8 +6,8 @@ import main from './cli';
 jest.mock('fs');
 import * as fs from 'fs';
 jest.mock('novice');
-import { AssemblerConfig, getConfig, getParser, CliDebugger, Simulator,
-         getIsa, SymbTable, MachineCodeSection } from 'novice';
+import { AssemblerConfig, getConfig, getParser, Simulator, getIsa, SymbTable,
+         MachineCodeSection } from 'novice';
 jest.mock('./stream-io');
 import { StreamIO } from './stream-io';
 jest.mock('./stream-assembler');
@@ -16,6 +16,8 @@ jest.mock('./serializers');
 import { Serializer, getSerializer } from './serializers';
 jest.mock('./loaders');
 import { Loader, getLoader } from './loaders';
+jest.mock('./cli-debugger');
+import { CliDebugger } from './cli-debugger';
 
 describe('cli', () => {
     let stdin: Readable, stdout: Writable, stderr: Writable;

@@ -1,4 +1,4 @@
-import { getIsa } from '../isa';
+import { getIsa } from 'novice';
 import { CliDebugger } from './cli-debugger';
 import { Readable, Writable } from 'stream';
 

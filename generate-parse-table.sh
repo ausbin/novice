@@ -10,7 +10,7 @@ set -e
 
 parser=$1
 
-[[ -f novice/assembler/parsers/$parser.ts ]] || {
+[[ -f packages/novice/novice/assembler/parsers/$parser.ts ]] || {
     printf "error: unknown parser \`%s', sorry bud\n" "$parser" >&2
     exit 1
 }
@@ -21,7 +21,7 @@ parser=$1
     printf "import { ParseTable } from '../../lr1';\n"
     printf "import { NT, T } from '../grammars/%s';\n" "$parser"
     printf 'const table: ParseTable<NT, T> = '
-    node novice/main.js tablegen "$parser"
+    ./novice tablegen "$parser"
     printf ';\n'
     printf 'export default table;\n'
-} >"novice/assembler/parsers/tables/$parser.ts"
+} >"packages/novice/novice/assembler/parsers/tables/$parser.ts"

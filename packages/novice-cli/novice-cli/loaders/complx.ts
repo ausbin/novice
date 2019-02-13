@@ -1,8 +1,6 @@
 import { Buffer } from 'buffer';
+import { Isa, Memory, Symbols } from 'novice';
 import { Readable } from 'stream';
-import { Isa } from '../../isa';
-import { Memory } from '../mem';
-import { Symbols } from '../symbols';
 import { Loader } from './loader';
 
 type State = 'addr'|'len'|'words';

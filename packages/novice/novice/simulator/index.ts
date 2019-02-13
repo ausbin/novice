@@ -1,8 +1,7 @@
 import { CliDebugger } from './cli-debugger';
-import { getSimulatorConfig, SimulatorConfig } from './configs';
 import { Debugger } from './debugger';
-import { Loader } from './loaders';
+import { Memory } from './mem';
 import { Simulator } from './simulator';
+import { Symbols } from './symbols';
 
-export { CliDebugger, Debugger, Simulator, getSimulatorConfig, SimulatorConfig,
-         Loader };
+export { CliDebugger, Debugger, Simulator, Symbols, Memory };

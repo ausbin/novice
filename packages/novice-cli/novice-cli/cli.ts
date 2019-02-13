@@ -1,8 +1,8 @@
 import { ArgumentParser } from 'argparse';
 import * as fs from 'fs';
-import { CliDebugger, getConfig, getIsa, getParser, getSimulatorConfig,
-         Simulator, SimulatorConfig } from 'novice';
+import { CliDebugger, getConfig, getIsa, getParser, Simulator } from 'novice';
 import { Readable, Writable } from 'stream';
+import { getLoader, Loader } from './loaders';
 import { getSerializer } from './serializers';
 import { StreamAssembler } from './stream-assembler';
 import { StreamIO } from './stream-io';
@@ -40,9 +40,14 @@ async function main(argv: string[], stdin: Readable, stdout: Writable,
     const simParser = sub.addParser('sim', { description:
                                              'simulate an assembly/object file' });
     simParser.addArgument(['file'], { help: 'assembly/object file to simulate' });
+    simParser.addArgument(['-l', '--loader'],
+                          { defaultValue: null,
+                            help: 'treat file as an object file and use ' +
+                                  'this loader. default: assemble as assembly ' +
+                                  'code' });
     simParser.addArgument(['-c', '--config'],
                           { defaultValue: 'lc3',
-                            help: 'simulator configuration to use. ' +
+                            help: 'assembler configuration to use. ' +
                                   'default: %(defaultValue)s' });
     simParser.addArgument(['-x', '--max-exec'],
                           { dest: 'maxExec',
@@ -54,9 +59,14 @@ async function main(argv: string[], stdin: Readable, stdout: Writable,
     const dbgParser = sub.addParser('dbg', { description:
                                              'interactively debug an object file'});
     dbgParser.addArgument(['file'], { help: 'object file to debug' });
+    dbgParser.addArgument(['-l', '--loader'],
+                          { defaultValue: null,
+                            help: 'treat file as an object file and use ' +
+                                  'this loader. default: assemble as assembly ' +
+                                  'code' });
     dbgParser.addArgument(['-c', '--config'],
                           { defaultValue: 'lc3',
-                            help: 'simulator configuration to use. ' +
+                            help: 'assembler configuration to use. ' +
                                   'default: %(defaultValue)s' });
 
     const tablegenParser = sub.addParser('tablegen');
@@ -66,11 +76,14 @@ async function main(argv: string[], stdin: Readable, stdout: Writable,
     const args = parser.parseArgs(argv);
     switch (args.subcmd) {
         case 'asm':
-            return await asm(args.config, args.file, args.outputFile, args.outputFormat, stdout, stderr);
+            return await asm(args.config, args.file, args.outputFile,
+                             args.outputFormat, stdout, stderr);
         case 'sim':
-            return await sim(args.config, args.file, args.maxExec, stdin, stdout, stderr);
+            return await sim(args.loader, args.config, args.file, args.maxExec,
+                             stdin, stdout, stderr);
         case 'dbg':
-            return await dbg(args.config, args.file, stdin, stdout, stderr);
+            return await dbg(args.loader, args.config, args.file, stdin,
+                             stdout, stderr);
         case 'tablegen':
             return tablegen(args.parser, stdout, stderr);
         default:
@@ -127,16 +140,13 @@ function removeExt(path: string): string {
     return hasExt ? path.substr(0, dotIdx) : path;
 }
 
-function hasObjectFileExt(path: string, cfg: SimulatorConfig) {
-    return path.endsWith('.' + cfg.loader.fileExt());
-}
-
-async function sim(configName: string, path: string, maxExec: number,
-                   stdin: Readable, stdout: Writable, stderr: Writable):
+async function sim(loaderName: string|null, configName: string,
+                   path: string, maxExec: number, stdin: Readable,
+                   stdout: Writable, stderr: Writable):
         Promise<number> {
 
     try {
-        const cfg = getSimulatorConfig(configName);
+        const cfg = getConfig(configName);
         const fp = fs.createReadStream(path);
         await Promise.all([fp, stdin].map(
             f => new Promise((resolve, reject) => {
@@ -148,12 +158,11 @@ async function sim(configName: string, path: string, maxExec: number,
         const io = new StreamIO(stdin, stdout);
         const simulator = new Simulator(cfg.isa, io, maxExec);
 
-        const isObjectFile = hasObjectFileExt(path, cfg);
-        if (isObjectFile) {
-            await cfg.loader.load(cfg.isa, fp, simulator);
+        if (loaderName) {
+            const loader = getLoader(loaderName);
+            await loader.load(cfg.isa, fp, simulator);
         } else {
-            const asmCfg = getConfig(configName);
-            const assembler = new StreamAssembler(asmCfg);
+            const assembler = new StreamAssembler(cfg);
             const [symbtable, sections] = await assembler.assemble(fp);
             simulator.loadSections(sections);
         }
@@ -166,16 +175,16 @@ async function sim(configName: string, path: string, maxExec: number,
     }
 }
 
-async function dbg(configName: string, path: string, stdin: Readable,
-                   stdout: Writable, stderr: Writable): Promise<number> {
+async function dbg(loaderName: string|null, configName: string, path: string,
+                   stdin: Readable, stdout: Writable, stderr: Writable):
+        Promise<number> {
     let cfg;
     let fp: Readable;
     let symbFp: Readable|null = null;
-    let isObjectFile: boolean;
+    let loader: Loader|null = null;
 
     try {
-        cfg = getSimulatorConfig(configName);
-        isObjectFile = hasObjectFileExt(path, cfg);
+        cfg = getConfig(configName);
         fp = fs.createReadStream(path);
 
         await new Promise((resolve, reject) => {
@@ -183,8 +192,9 @@ async function dbg(configName: string, path: string, stdin: Readable,
             fp.on('error', reject);
         });
 
-        if (isObjectFile) {
-            const symbPath = `${removeExt(path)}.${cfg.loader.symbFileExt()}`;
+        if (loaderName) {
+            loader = getLoader(loaderName);
+            const symbPath = `${removeExt(path)}.${loader.symbFileExt()}`;
             symbFp = fs.createReadStream(symbPath);
 
             await new Promise((resolve, reject) => {
@@ -206,19 +216,18 @@ async function dbg(configName: string, path: string, stdin: Readable,
     const debug = new CliDebugger(cfg.isa, stdin, stdout);
 
     try {
-        if (isObjectFile) {
-            const loadPromise = cfg.loader.load(cfg.isa, fp, debug);
+        if (loaderName && loader) {
+            const loadPromise = loader.load(cfg.isa, fp, debug);
             if (symbFp) {
                 await Promise.all([
                     loadPromise,
-                    cfg.loader.loadSymb(symbFp, debug),
+                    loader.loadSymb(symbFp, debug),
                 ]);
             } else {
                 await loadPromise;
             }
         } else {
-            const asmCfg = getConfig(configName);
-            const assembler = new StreamAssembler(asmCfg);
+            const assembler = new StreamAssembler(cfg);
             const [symbtable, sections] = await assembler.assemble(fp);
             debug.loadSections(sections);
             debug.setSymbols(symbtable);

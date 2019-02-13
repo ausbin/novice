@@ -2,7 +2,7 @@ import { ComplxObjectFileLoader } from './complx';
 import { Loader } from './loader';
 
 const loaders: {[s: string]: new() => Loader} = {
-    complx: ComplxObjectFileLoader,
+    lc3: ComplxObjectFileLoader,
 };
 
 function getLoader(loaderName: string): Loader {

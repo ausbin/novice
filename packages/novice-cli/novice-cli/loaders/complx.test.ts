@@ -1,9 +1,7 @@
-import { SymbTable, isas } from '../../isa';
-import { Loader } from './loader';
-import { ComplxObjectFileLoader } from './complx';
 import { Readable } from 'stream';
-import { Memory } from '../mem';
-import { Symbols } from '../symbols';
+import { SymbTable, isas, Memory, Symbols } from 'novice';
+import { ComplxObjectFileLoader } from './complx';
+import { Loader } from './loader';
 
 interface Mem extends Memory {
     data: {[n: number]: number};

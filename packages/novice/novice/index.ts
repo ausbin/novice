@@ -6,8 +6,7 @@ import { AliasContext, AliasFields, AliasSpec, Assembly, Fields, getIsa,
          MachineState, MachineStateDelta, MachineStateLogEntry,
          MachineStateUpdate, PseudoOp, Reg, RegIdentifier, RegisterOperand,
          regPrefixes, Section, StringOperand, SymbTable } from './isa';
-import { CliDebugger, Debugger, getSimulatorConfig, Loader, Simulator,
-         SimulatorConfig } from './simulator';
+import { CliDebugger, Debugger, Memory, Simulator, Symbols } from './simulator';
 
 export { //// assembler
          Assembler, AssemblerConfig, getParser, getGenerator, getOpSpec,
@@ -29,5 +28,4 @@ export { //// assembler
          // log
          MachineStateDelta, MachineStateLogEntry,
          //// simulator
-         CliDebugger, Debugger, Simulator, getSimulatorConfig, SimulatorConfig,
-         Loader };
+         CliDebugger, Debugger, Simulator, Symbols, Memory };

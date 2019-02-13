@@ -139,7 +139,7 @@ class ComplxParser extends AbstractParser<ParseContext, NT, T> {
         }
     }
 
-    protected finish(ctx: ParseContext): Assembly {
+    protected finishParse(ctx: ParseContext): Assembly {
         if (ctx.currentSection) {
             throw new Error('missing an .end at the end of file');
         }

@@ -1,5 +1,5 @@
+import { Isa, MachineCodeSection, SymbTable } from 'novice';
 import { Writable } from 'stream';
-import { Isa, MachineCodeSection, SymbTable } from '../../isa';
 
 interface Serializer {
     serialize(isa: Isa, code: MachineCodeSection[], fp: Writable): void;

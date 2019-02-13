@@ -6,7 +6,8 @@ import { Line, Scanner, Token } from '../scanner';
 import { Grammar } from './grammar';
 
 interface Parser {
-    parse(fp: Readable): Promise<Assembly>;
+    feedChars(buf: string): void;
+    finish(): Assembly;
     // Pass back an object because higher levels of abstraction don't
     // care about what exactly is in here, it's just a blob of JSON
     genTable(): object;
@@ -24,8 +25,12 @@ abstract class AbstractParser<Ctx, NT, T> implements Parser {
         this.parser = new LR1Parser<NT, T>(this.getTable());
     }
 
-    public async parse(fp: Readable): Promise<Assembly> {
-        return this.parseLines(await this.scanner.scan(fp));
+    public feedChars(buf: string): void {
+        this.scanner.feedChars(buf);
+    }
+
+    public finish(): Assembly {
+        return this.parseLines(this.scanner.finish());
     }
 
     public genTable(): ParseTable<NT, T> {
@@ -43,7 +48,7 @@ abstract class AbstractParser<Ctx, NT, T> implements Parser {
             this.parseLine(ctx, parseTree, line);
         }
 
-        return this.finish(ctx);
+        return this.finishParse(ctx);
     }
 
     protected abstract getTable(): ParseTable<NT, T>;
@@ -51,7 +56,7 @@ abstract class AbstractParser<Ctx, NT, T> implements Parser {
     protected abstract initCtx(): Ctx;
     protected abstract parseLine(ctx: Ctx, parseTree: ParseTree<NT, T>,
                                  line: Line<T>): void;
-    protected abstract finish(ctx: Ctx): Assembly;
+    protected abstract finishParse(ctx: Ctx): Assembly;
 }
 
 export { Parser, AbstractParser, Line };

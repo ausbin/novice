@@ -1,8 +1,10 @@
 import { ArgumentParser } from 'argparse';
 import * as fs from 'fs';
-import { Assembler, CliDebugger, getConfig, getIsa, getParser, getSerializer,
-         getSimulatorConfig, Simulator, SimulatorConfig } from 'novice';
+import { CliDebugger, getConfig, getIsa, getParser, getSimulatorConfig,
+         Simulator, SimulatorConfig } from 'novice';
 import { Readable, Writable } from 'stream';
+import { getSerializer } from './serializers';
+import { StreamAssembler } from './stream-assembler';
 import { StreamIO } from './stream-io';
 
 async function main(argv: string[], stdin: Readable, stdout: Writable,
@@ -83,14 +85,12 @@ async function asm(configName: string, inPath: string,
         Promise<number> {
     try {
         const cfg = getConfig(configName);
+        const serializer = getSerializer(outFmt ? outFmt : configName);
 
-        if (outFmt) {
-            cfg.serializer = getSerializer(outFmt);
-        }
         if (!outPath) {
-            outPath = removeExt(inPath) + '.' + cfg.serializer.fileExt();
+            outPath = removeExt(inPath) + '.' + serializer.fileExt();
         }
-        const symbPath = removeExt(outPath) + '.' + cfg.serializer.symbFileExt();
+        const symbPath = removeExt(outPath) + '.' + serializer.symbFileExt();
 
         const inFp = fs.createReadStream(inPath);
         await new Promise((resolve, reject) => {
@@ -99,12 +99,16 @@ async function asm(configName: string, inPath: string,
         });
         const outFp = fs.createWriteStream(outPath);
         const symbFp = fs.createWriteStream(symbPath);
-        const assembler = new Assembler(cfg);
+        const assembler = new StreamAssembler(cfg);
 
         // Buffer so we don't make 1,000,000 syscalls
         outFp.cork();
         symbFp.cork();
-        await assembler.assembleTo(inFp, outFp, symbFp);
+
+        const [symbtable, code] = await assembler.assemble(inFp);
+        serializer.serialize(cfg.isa, code, outFp);
+        serializer.serializeSymb(symbtable, symbFp);
+
         outFp.uncork();
         symbFp.uncork();
         outFp.end();
@@ -149,7 +153,7 @@ async function sim(configName: string, path: string, maxExec: number,
             await cfg.loader.load(cfg.isa, fp, simulator);
         } else {
             const asmCfg = getConfig(configName);
-            const assembler = new Assembler(asmCfg);
+            const assembler = new StreamAssembler(asmCfg);
             const [symbtable, sections] = await assembler.assemble(fp);
             simulator.loadSections(sections);
         }
@@ -214,7 +218,7 @@ async function dbg(configName: string, path: string, stdin: Readable,
             }
         } else {
             const asmCfg = getConfig(configName);
-            const assembler = new Assembler(asmCfg);
+            const assembler = new StreamAssembler(asmCfg);
             const [symbtable, sections] = await assembler.assemble(fp);
             debug.loadSections(sections);
             debug.setSymbols(symbtable);

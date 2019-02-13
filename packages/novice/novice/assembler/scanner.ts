@@ -21,30 +21,13 @@ class Scanner<T> {
     private lineNum!: number;
     private col!: number;
     private lastChar!: string;
-    private rejectCallback!: (err: Error) => void;
 
     constructor(dfas: DFA<T>[]) {
         this.dfas = dfas;
         this.reset();
     }
 
-    public async scan(fp: Readable): Promise<Line<T>[]> {
-        this.reset();
-
-        const endPromise = new Promise((resolve, reject) => {
-            this.rejectCallback = reject;
-            fp.on('end', () => {
-                // send EOF to scanner
-                this.nextChar(Scanner.EOF);
-                resolve();
-            });
-        });
-        fp.on('data', this.onData.bind(this));
-        await endPromise;
-        return this.lines;
-    }
-
-    private reset(): void {
+    public reset(): void {
         this.currentToken = '';
         this.lines = [];
         this.dfas.forEach(dfa => dfa.reset());
@@ -56,17 +39,17 @@ class Scanner<T> {
         this.lastChar = '';
     }
 
-    private onData(data: string | Buffer) {
-        let buf: string;
-        if (typeof data === 'string') {
-            buf = data;
-        } else {
-            buf = data.toString();
-        }
-
+    // TODO: UTF-8?
+    // TODO: Return *new* lines, kinda like a perverted iterator
+    public feedChars(buf: string): void {
         for (let i = 0; i < buf.length; i++) {
             this.nextChar(buf.charAt(i));
         }
+    }
+
+    public finish(): Line<T>[] {
+        this.nextChar(Scanner.EOF);
+        return this.lines;
     }
 
     private nextChar(c: string) {
@@ -114,11 +97,9 @@ class Scanner<T> {
                     this.nextChar(Scanner.EOF);
                 }
             } else if (this.currentToken !== '') {
-                const err =  new Error(
+                throw new Error(
                     `scanner error: unexpected character \`${c}' on line ` +
                     `${this.lineNum} column ${this.col}`);
-                this.rejectCallback(err);
-                return;
             }
         }
 

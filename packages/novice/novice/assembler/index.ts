@@ -4,11 +4,10 @@ import { BaseMachineCodeGenerator, MachineCodeGenerator } from './codegen';
 import { configs } from './configs';
 import { opSpecs, PseudoOpSpec } from './opspec';
 import { Parser, parsers } from './parsers';
-import { Serializer, serializers } from './serializers';
 
 function getParser(parserName: string, isa: Isa): Parser {
     if (!parsers.hasOwnProperty(parserName)) {
-        throw new Error(`no such parser \`${parserName}'\n`);
+        throw new Error(`no such parser \`${parserName}'`);
     }
 
     return new parsers[parserName](isa);
@@ -21,23 +20,15 @@ function getGenerator(isa: Isa, opSpec: PseudoOpSpec): MachineCodeGenerator {
 
 function getOpSpec(opSpecName: string): PseudoOpSpec {
     if (!opSpecs.hasOwnProperty(opSpecName)) {
-        throw new Error(`no such opspec \`${opSpecName}'\n`);
+        throw new Error(`no such opspec \`${opSpecName}'`);
     }
 
     return opSpecs[opSpecName];
 }
 
-function getSerializer(serializerName: string): Serializer {
-    if (!serializers.hasOwnProperty(serializerName)) {
-        throw new Error(`no such serializer \`${serializerName}'\n`);
-    }
-
-    return new serializers[serializerName]();
-}
-
 function getConfig(configName: string): AssemblerConfig {
     if (!configs.hasOwnProperty(configName)) {
-        throw new Error(`no such assembler config \`${configName}'\n`);
+        throw new Error(`no such assembler config \`${configName}'`);
     }
 
     const configNames = configs[configName];
@@ -49,9 +40,8 @@ function getConfig(configName: string): AssemblerConfig {
         generator: getGenerator(isa, opSpec),
         isa,
         opSpec,
-        serializer: getSerializer(configNames.serializer),
     };
 }
 
-export { Assembler, AssemblerConfig, Serializer, getParser, getGenerator,
-         getOpSpec, getSerializer, getConfig };
+export { Assembler, AssemblerConfig, getParser, getGenerator, getOpSpec,
+         getConfig };

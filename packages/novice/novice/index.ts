@@ -1,5 +1,5 @@
 import { Assembler, AssemblerConfig, getConfig, getGenerator, getOpSpec,
-         getParser, getSerializer, Serializer } from './assembler';
+         getParser } from './assembler';
 import { AliasContext, AliasFields, AliasSpec, Assembly, Fields, getIsa,
          getRegAliases, Instruction, InstructionSpec, IntegerOperand, IO,
          Isa, isas, isInstruction, LabelOperand, MachineCodeSection,
@@ -10,8 +10,8 @@ import { CliDebugger, Debugger, getSimulatorConfig, Loader, Simulator,
          SimulatorConfig } from './simulator';
 
 export { //// assembler
-         Assembler, AssemblerConfig, Serializer, getParser, getGenerator,
-         getOpSpec, getSerializer, getConfig,
+         Assembler, AssemblerConfig, getParser, getGenerator, getOpSpec,
+         getConfig,
          //// isa
          getIsa, isas,
          // assembly

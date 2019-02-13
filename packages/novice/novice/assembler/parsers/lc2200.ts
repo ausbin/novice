@@ -73,7 +73,7 @@ class Lc2200Parser extends AbstractParser<ParseContext, NT, T> {
         }
     }
 
-    protected finish(ctx: ParseContext): Assembly {
+    protected finishParse(ctx: ParseContext): Assembly {
         if (ctx.labelQueue.length > 0) {
             const [label, line] = ctx.labelQueue[0];
             throw new Error(`stray label ${label} at end of file on ` +

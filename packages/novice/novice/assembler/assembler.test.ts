@@ -3,12 +3,8 @@ import { Writable, Readable } from 'stream';
 import { getConfig, Assembler } from '.';
 
 describe('assembler', () => {
-    let fp: Readable;
+    let input: string;
     let assembler: Assembler;
-
-    beforeEach(() => {
-        fp = new Readable();
-    });
 
     describe('lc-3', () => {
         beforeEach(() => {
@@ -18,12 +14,11 @@ describe('assembler', () => {
 
         describe('parse(fp)', () => {
             it('parses trivial program', () => {
-                fp.push('.orig x3000\n')
-                fp.push('halt\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'halt\n' +
+                        '.end\n';
 
-                return expect(assembler.parse(fp)).resolves.toEqual({
+                expect(assembler.parseString(input)).toEqual({
                     sections: [
                         {startAddr: 0x3000, instructions: [
                             {kind: 'instr', line: 2, op: 'halt', operands: []},
@@ -34,13 +29,12 @@ describe('assembler', () => {
             });
 
             it('parses label on its own line', () => {
-                fp.push('.orig x3000\n')
-                fp.push('fun\n')
-                fp.push('br fun\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'fun\n' +
+                        'br fun\n' +
+                        '.end\n';
 
-                return expect(assembler.parse(fp)).resolves.toEqual({
+                expect(assembler.parseString(input)).toEqual({
                     sections: [
                         {startAddr: 0x3000, instructions: [
                             {kind: 'instr', line: 3, op: 'br', operands: [
@@ -53,17 +47,16 @@ describe('assembler', () => {
             });
 
             it('parses hello world program', () => {
-                fp.push('.orig x3000\n')
-                fp.push('lea r0, mystring\n')
-                fp.push('puts\n')
-                fp.push('halt\n')
-                fp.push('\n');
-                fp.push('\n');
-                fp.push('mystring .stringz "hello world!"\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'lea r0, mystring\n' +
+                        'puts\n' +
+                        'halt\n' +
+                        '\n' +
+                        '\n' +
+                        'mystring .stringz "hello world!"\n' +
+                        '.end\n';
 
-                return expect(assembler.parse(fp)).resolves.toEqual({
+                expect(assembler.parseString(input)).toEqual({
                     sections: [
                         {startAddr: 0x3000, instructions: [
                             {kind: 'instr', line: 2, op: 'lea', operands: [
@@ -84,17 +77,16 @@ describe('assembler', () => {
             });
 
             it('parses multiple sections', () => {
-                fp.push('.orig x3000\n')
-                fp.push('haltme halt\n')
-                fp.push('.end\n')
-                fp.push('\n')
-                fp.push('.orig x4000\n')
-                fp.push('and r0, r0, -3\n')
-                fp.push('halt2 halt\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'haltme halt\n' +
+                        '.end\n' +
+                        '\n' +
+                        '.orig x4000\n' +
+                        'and r0, r0, -3\n' +
+                        'halt2 halt\n' +
+                        '.end\n';
 
-                return expect(assembler.parse(fp)).resolves.toEqual({
+                expect(assembler.parseString(input)).toEqual({
                     sections: [
                         {startAddr: 0x3000, instructions: [
                             {kind: 'instr', line: 2, op: 'halt', operands: []},
@@ -116,14 +108,13 @@ describe('assembler', () => {
             });
 
             it('preserves label case', () => {
-                fp.push('.orig x3000\n')
-                fp.push('mYlAbeL halt\n')
-                fp.push('another-label .blkw 1\n')
-                fp.push('LOUD_LABEL .blkw 1\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'mYlAbeL halt\n' +
+                        'another-label .blkw 1\n' +
+                        'LOUD_LABEL .blkw 1\n' +
+                        '.end\n';
 
-                return expect(assembler.parse(fp)).resolves.toEqual({
+                expect(assembler.parseString(input)).toEqual({
                     sections: [
                         {startAddr: 0x3000, instructions: [
                             {kind: 'instr', line: 2, op: 'halt', operands: []},
@@ -142,17 +133,16 @@ describe('assembler', () => {
             });
 
             it('understands string escapes', () => {
-                fp.push('.orig x3000\n')
-                fp.push(".fill '\\n'\n")
-                fp.push(".fill '\\r'\n")
-                fp.push(".fill '\\t'\n")
-                fp.push(".fill '\\\\'\n")
-                fp.push(".fill '\\''\n")
-                fp.push(".fill '\a'\n")
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        ".fill '\\n'\n" +
+                        ".fill '\\r'\n" +
+                        ".fill '\\t'\n" +
+                        ".fill '\\\\'\n" +
+                        ".fill '\\''\n" +
+                        ".fill '\a'\n" +
+                        '.end\n';
 
-                return expect(assembler.parse(fp)).resolves.toEqual({
+                expect(assembler.parseString(input)).toEqual({
                     sections: [
                         {startAddr: 0x3000, instructions: [
                             {kind: 'pseudoop', line: 2, op: 'fill', operand:
@@ -174,15 +164,14 @@ describe('assembler', () => {
             });
 
             it('understands annoying # before int operands', () => {
-                fp.push('.orig x3000\n')
-                fp.push('add r0, r0, #xa\n')
-                fp.push('add r0, r0, #3\n')
-                fp.push('.fill #xbeef\n')
-                fp.push('.fill #4\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'add r0, r0, #xa\n' +
+                        'add r0, r0, #3\n' +
+                        '.fill #xbeef\n' +
+                        '.fill #4\n' +
+                        '.end\n';
 
-                return expect(assembler.parse(fp)).resolves.toEqual({
+                expect(assembler.parseString(input)).toEqual({
                     sections: [
                         {startAddr: 0x3000, instructions: [
                             {kind: 'instr', line: 2, op: 'add', operands: [
@@ -206,14 +195,13 @@ describe('assembler', () => {
             });
 
             it('lowercases screaming code', () => {
-                fp.push('.orig x3000\n')
-                fp.push('ADD R3, R2, #8\n')
-                fp.push('HALT\n')
-                fp.push('.FILL 8\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'ADD R3, R2, #8\n' +
+                        'HALT\n' +
+                        '.FILL 8\n' +
+                        '.end\n';
 
-                return expect(assembler.parse(fp)).resolves.toEqual({
+                expect(assembler.parseString(input)).toEqual({
                     sections: [
                         {startAddr: 0x3000, instructions: [
                             {kind: 'instr', line: 2, op: 'add', operands: [
@@ -231,108 +219,117 @@ describe('assembler', () => {
             });
 
             it('errors on duplicate labels', () => {
-                fp.push('.orig x3000\n')
-                fp.push('mylabel .blkw 1\n')
-                fp.push('mylabel .blkw 1\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'mylabel .blkw 1\n' +
+                        'mylabel .blkw 1\n' +
+                        '.end\n';
 
-                return expect(assembler.parse(fp)).rejects.toThrow(
-                    'duplicate label mylabel on line 3');
+                expect(() => {
+                    assembler.parseString(input)
+                }).toThrow('duplicate label mylabel on line 3');
             });
 
             it('errors on missing .end', () => {
-                fp.push('.orig x3000\n')
-                fp.push('halt\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'halt\n';
 
-                return expect(assembler.parse(fp)).rejects.toThrow('missing an .end');
+                expect(() => {
+                    assembler.parseString(input);
+                }).toThrow('missing an .end');
             });
 
             it('errors on .end label', () => {
-                fp.push('.orig x3000\n')
-                fp.push('halt\n')
-                fp.push('duh .end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'halt\n' +
+                        'duh .end\n';
 
-                return expect(assembler.parse(fp)).rejects.toThrow('should not have a label');
+                expect(() => {
+                    assembler.parseString(input);
+                }).toThrow('should not have a label');
             });
 
             it('errors on .end with operand', () => {
-                fp.push('.orig x3000\n')
-                fp.push('halt\n')
-                fp.push('.end "ho ho"\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'halt\n' +
+                        '.end "ho ho"\n';
 
-                return expect(assembler.parse(fp)).rejects.toThrow('should not have an operand');
+                expect(() => {
+                    assembler.parseString(input);
+                }).toThrow('should not have an operand');
             });
 
             it('errors on .orig label', () => {
-                fp.push('duhhhh .orig x3000\n')
-                fp.push('halt\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = 'duhhhh .orig x3000\n' +
+                        'halt\n' +
+                        '.end\n';
 
-                return expect(assembler.parse(fp)).rejects.toThrow('should not have a label');
+                expect(() => {
+                    assembler.parseString(input);
+                }).toThrow('should not have a label');
             });
 
             it('errors on .orig without operand', () => {
-                fp.push('.orig\n')
-                fp.push('halt\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig\n' +
+                        'halt\n' +
+                        '.end\n';
 
-                return expect(assembler.parse(fp)).rejects.toThrow('needs an address operand');
+                expect(() => {
+                    assembler.parseString(input);
+                }).toThrow('needs an address operand');
             });
 
             it('errors on .orig with wrong operand type', () => {
-                fp.push('.orig "duhhhh"\n')
-                fp.push('halt\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig "duhhhh"\n' +
+                        'halt\n' +
+                        '.end\n';
 
-                return expect(assembler.parse(fp)).rejects.toThrow('needs an address operand');
+                expect(() => {
+                    assembler.parseString(input)
+                }).toThrow('needs an address operand');
             });
 
             it('errors on stray pseudo-op', () => {
-                fp.push('.blkw 1\n')
-                fp.push(null)
+                input = '.blkw 1\n';
 
-                return expect(assembler.parse(fp)).rejects.toThrow('stray assembler directive');
+                expect(() => {
+                    assembler.parseString(input);
+                }).toThrow('stray assembler directive');
             });
 
             it('errors on stray label', () => {
-                fp.push('doh\n')
-                fp.push(null)
+                input = 'doh\n';
 
-                return expect(assembler.parse(fp)).rejects.toThrow('stray label');
+                expect(() => {
+                    assembler.parseString(input);
+                }).toThrow('stray label');
             });
 
             it('errors on stray instruction', () => {
-                fp.push('trap x420\n')
-                fp.push(null)
+                input = 'trap x420\n';
 
-                return expect(assembler.parse(fp)).rejects.toThrow('stray instruction');
+                expect(() => {
+                    assembler.parseString(input);
+                }).toThrow('stray instruction');
             });
 
             it('errors on dangling operand', () => {
-                fp.push('.orig x3000\n');
-                fp.push('lea r0, mystring puts\n');
-                fp.push('halt\n');
-                fp.push('.end\n');
-                fp.push(null);
-                return expect(assembler.parse(fp)).rejects.toThrow('puts');
+                input = '.orig x3000\n' +
+                        'lea r0, mystring puts\n' +
+                        'halt\n' +
+                        '.end\n';
+                expect(() => {
+                    assembler.parseString(input);
+                }).toThrow('puts');
             });
         });
 
         describe('assemble(fp)', () => {
             it('assembles trivial program', () => {
-                fp.push('.orig x3000\n')
-                fp.push('halt\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'halt\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {},
                     [
                         {
@@ -346,13 +343,12 @@ describe('assembler', () => {
             });
 
             it('assembles branch', () => {
-                fp.push('.orig x3000\n')
-                fp.push('fun\n')
-                fp.push('br fun\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'fun\n' +
+                        'br fun\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {
                         fun: 0x3000,
                     },
@@ -368,17 +364,16 @@ describe('assembler', () => {
             });
 
             it('assembles hello world program', () => {
-                fp.push('.orig x3000\n')
-                fp.push('lea r0, mystring\n')
-                fp.push('puts\n')
-                fp.push('halt\n')
-                fp.push('\n');
-                fp.push('\n');
-                fp.push('mystring .stringz "hello world!"\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'lea r0, mystring\n' +
+                        'puts\n' +
+                        'halt\n' +
+                        '\n' +
+                        '\n' +
+                        'mystring .stringz "hello world!"\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {
                         mystring: 0x3003,
                     },
@@ -409,17 +404,16 @@ describe('assembler', () => {
             });
 
             it('assembles multiple sections', () => {
-                fp.push('.orig x3000\n')
-                fp.push('haltme halt\n')
-                fp.push('.end\n')
-                fp.push('\n')
-                fp.push('.orig x4000\n')
-                fp.push('and r1, r2, -3\n')
-                fp.push('halt2 halt\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'haltme halt\n' +
+                        '.end\n' +
+                        '\n' +
+                        '.orig x4000\n' +
+                        'and r1, r2, -3\n' +
+                        'halt2 halt\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {
                         haltme: 0x3000,
                         halt2: 0x4001,
@@ -443,16 +437,15 @@ describe('assembler', () => {
             });
 
             it('assembles arithmetic instructions', () => {
-                fp.push('.orig x3000\n')
-                fp.push('add r4, r5, r3\n')
-                fp.push('add r4, r5, 3\n')
-                fp.push('and r6, r3, r2\n')
-                fp.push('and r6, r3, 2\n')
-                fp.push('asdf not r3, r4\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'add r4, r5, r3\n' +
+                        'add r4, r5, 3\n' +
+                        'and r6, r3, r2\n' +
+                        'and r6, r3, 2\n' +
+                        'asdf not r3, r4\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {
                         asdf: 0x3004,
                     },
@@ -472,28 +465,27 @@ describe('assembler', () => {
             });
 
             it('assembles branch instructions', () => {
-                fp.push('.orig x3000\n')
-                fp.push('nop\n')
-                fp.push('\n')
-                fp.push('asdf0 brp   asdf0\n')
-                fp.push('asdf1 brz   asdf1\n')
-                fp.push('asdf2 brzp  asdf2\n')
-                fp.push('asdf3 brn   asdf3\n')
-                fp.push('asdf4 brnp  asdf4\n')
-                fp.push('asdf5 brnz  asdf5\n')
-                fp.push('asdf6 brnzp asdf6\n')
-                fp.push('asdf7 br    asdf7\n')
-                fp.push('\n')
-                fp.push('subr jmp r3\n')
-                fp.push('jsr subr\n')
-                fp.push('jsrr r5\n')
-                fp.push('ret\n')
-                fp.push('\n')
-                fp.push('trap x69\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'nop\n' +
+                        '\n' +
+                        'asdf0 brp   asdf0\n' +
+                        'asdf1 brz   asdf1\n' +
+                        'asdf2 brzp  asdf2\n' +
+                        'asdf3 brn   asdf3\n' +
+                        'asdf4 brnp  asdf4\n' +
+                        'asdf5 brnz  asdf5\n' +
+                        'asdf6 brnzp asdf6\n' +
+                        'asdf7 br    asdf7\n' +
+                        '\n' +
+                        'subr jmp r3\n' +
+                        'jsr subr\n' +
+                        'jsrr r5\n' +
+                        'ret\n' +
+                        '\n' +
+                        'trap x69\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {
                         asdf0: 0x3001,
                         asdf1: 0x3002,
@@ -537,19 +529,18 @@ describe('assembler', () => {
             });
 
             it('assembles memory instructions', () => {
-                fp.push('.orig x3000\n')
-                fp.push('asdf0 ld  r3, asdf0\n')
-                fp.push('asdf1 ldi r4, asdf1\n')
-                fp.push('asdf2 lea r2, asdf2\n')
-                fp.push('ldr r1, r5, -4\n')
-                fp.push('\n')
-                fp.push('asdf3 st  r3, asdf3\n')
-                fp.push('asdf4 sti r4, asdf4\n')
-                fp.push('str r1, r5, -4\n')
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'asdf0 ld  r3, asdf0\n' +
+                        'asdf1 ldi r4, asdf1\n' +
+                        'asdf2 lea r2, asdf2\n' +
+                        'ldr r1, r5, -4\n' +
+                        '\n' +
+                        'asdf3 st  r3, asdf3\n' +
+                        'asdf4 sti r4, asdf4\n' +
+                        'str r1, r5, -4\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {
                         asdf0: 0x3000,
                         asdf1: 0x3001,
@@ -578,16 +569,15 @@ describe('assembler', () => {
             });
 
             it('assembles trap aliases', () => {
-                fp.push('.orig x3000\n')
-                fp.push('getc\n');
-                fp.push('out\n');
-                fp.push('puts\n');
-                fp.push('in\n');
-                fp.push('halt\n');
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x3000\n' +
+                        'getc\n' +
+                        'out\n' +
+                        'puts\n' +
+                        'in\n' +
+                        'halt\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {},
                     [
                         {
@@ -605,18 +595,17 @@ describe('assembler', () => {
             });
 
             it('assembles pseudo-ops', () => {
-                fp.push('.orig x5000\n')
-                fp.push('.blkw 3\n');
-                fp.push('.fill x1337\n');
-                fp.push('.blkw 1\n');
-                fp.push('.fill -2\n');
-                fp.push('label .fill label\n');
-                fp.push('.stringz ""\n');
-                fp.push('.stringz "hi"\n');
-                fp.push('.end\n')
-                fp.push(null)
+                input = '.orig x5000\n' +
+                        '.blkw 3\n' +
+                        '.fill x1337\n' +
+                        '.blkw 1\n' +
+                        '.fill -2\n' +
+                        'label .fill label\n' +
+                        '.stringz ""\n' +
+                        '.stringz "hi"\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {
                         label: 0x5006,
                     },
@@ -642,40 +631,42 @@ describe('assembler', () => {
             });
 
             it('errors on nonexistent label', () => {
-                fp.push('.orig x3000\n');
-                fp.push('lea r0, mystringputs\n');
-                fp.push('halt\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'lea r0, mystringputs\n' +
+                        'halt\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('mystringputs');
+                expect(() => {
+                    assembler.assembleString(input)
+                }).toThrow('mystringputs');
             });
 
             it('errors on undersized immediate', () => {
-                fp.push('.orig x3000\n');
-                fp.push('add r0, r0, -64\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'add r0, r0, -64\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('-64');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('-64');
             });
 
             it('errors on barely undersized immediate', () => {
-                fp.push('.orig x3000\n');
-                fp.push('add r0, r0, -17\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'add r0, r0, -17\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('-17');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('-17');
             });
 
             it('assembles almost undersized immediate', () => {
-                fp.push('.orig x3000\n');
-                fp.push('add r0, r0, -16\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'add r0, r0, -16\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {},
                     [
                         {
@@ -689,30 +680,31 @@ describe('assembler', () => {
             });
 
             it('errors on oversized immediate', () => {
-                fp.push('.orig x3000\n');
-                fp.push('add r0, r0, 64\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'add r0, r0, 64\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('64');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('64');
             });
 
             it('errors on barely oversized immediate', () => {
-                fp.push('.orig x3000\n');
-                fp.push('add r0, r0, 16\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'add r0, r0, 16\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('16');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('16');
             });
 
             it('assembles almost oversized immediate', () => {
-                fp.push('.orig x3000\n');
-                fp.push('add r0, r0, 15\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'add r0, r0, 15\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {},
                     [
                         {
@@ -726,59 +718,62 @@ describe('assembler', () => {
             });
 
             it('errors on oversized label offset', () => {
-                fp.push('.orig x3000\n');
-                fp.push('ld r3, faraway\n');
-                fp.push('.blkw 1024\n');
-                fp.push('faraway .fill 69\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'ld r3, faraway\n' +
+                        '.blkw 1024\n' +
+                        'faraway .fill 69\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('1024');
+                expect(() => {
+                    assembler.assembleString(input)
+                }).toThrow('1024');
             });
 
             it('errors on barely oversized label offset', () => {
-                fp.push('.orig x3000\n');
-                fp.push('ld r3, faraway\n');
-                fp.push('.blkw 256\n');
-                fp.push('faraway .fill 69\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'ld r3, faraway\n' +
+                        '.blkw 256\n' +
+                        'faraway .fill 69\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('256');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('256');
             });
 
             it('errors on undersized label offset', () => {
-                fp.push('.orig x3000\n');
-                fp.push('faraway .fill 69\n');
-                fp.push('.blkw 1024\n');
-                fp.push('ld r3, faraway\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'faraway .fill 69\n' +
+                        '.blkw 1024\n' +
+                        'ld r3, faraway\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('-1026');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('-1026');
             });
 
             it('errors on barely oversized label offset', () => {
-                fp.push('.orig x3000\n');
-                fp.push('faraway .fill 69\n');
-                fp.push('.blkw 255\n');
-                fp.push('ld r3, faraway\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'faraway .fill 69\n' +
+                        '.blkw 255\n' +
+                        'ld r3, faraway\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('-257');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('-257');
             });
 
             it('assembles non-overlapping sections', () => {
-                fp.push('.orig x4001\n');
-                fp.push('.blkw 1\n');
-                fp.push('.end\n');
-                fp.push('.orig x4000\n');
-                fp.push('.blkw 1\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x4001\n' +
+                        '.blkw 1\n' +
+                        '.end\n' +
+                        '.orig x4000\n' +
+                        '.blkw 1\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {},
                     [
                         {
@@ -798,274 +793,126 @@ describe('assembler', () => {
             });
 
             it('errors on overlapping sections', () => {
-                fp.push('.orig x4001\n');
-                fp.push('.blkw 1\n');
-                fp.push('.end\n');
-                fp.push('.orig x4000\n');
-                fp.push('.blkw 2\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x4001\n' +
+                        '.blkw 1\n' +
+                        '.end\n' +
+                        '.orig x4000\n' +
+                        '.blkw 2\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('overlap');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('overlap');
             });
 
             it('errors on bogus pseudoops with no operands', () => {
-                fp.push('.orig x3000\n');
-                fp.push('.bob\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        '.bob\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow('.bob with no operand');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('.bob with no operand');
             });
 
             it('errors on bogus pseudoops with operand', () => {
-                fp.push('.orig x3000\n');
-                fp.push('.bob "hey ya"\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        '.bob "hey ya"\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow('.bob with string operand');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('.bob with string operand');
             });
 
             it('errors on bogus instructions', () => {
-                fp.push('.orig x3000\n');
-                fp.push('steveo r1, r3, r3\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'steveo r1, r3, r3\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow('steveo with operands reg, reg, reg');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('steveo with operands reg, reg, reg');
             });
 
             it('errors on barely oversized regnos', () => {
-                fp.push('.orig x3000\n');
-                fp.push('add r0, r0, r8\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'add r0, r0, r8\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow(/8 .* on line 2/i);
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow(/8 .* on line 2/i);
             });
 
             it('errors on oversized regnos', () => {
-                fp.push('.orig x3000\n');
-                fp.push('add r0, r0, r1000\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'add r0, r0, r1000\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow(/1000 .* on line 2/i);
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow(/1000 .* on line 2/i);
             });
 
             it('errors on barely negative non-sign-extended immediates', () => {
-                fp.push('.orig x3000\n');
-                fp.push('trap -1\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'trap -1\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow('-1');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('-1');
             });
 
             it('errors on negative non-sign-extended immediates', () => {
-                fp.push('.orig x3000\n');
-                fp.push('trap -1000\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'trap -1000\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow('-1000');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('-1000');
             });
 
             it('errors on barely oversized non-sign-extended immediates', () => {
-                fp.push('.orig x3000\n');
-                fp.push('trap 256\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'trap 256\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow('256');
+                expect(() => {
+                    assembler.assembleString(input)
+                }).toThrow('256');
             });
 
             it('errors on oversized non-sign-extended immediates', () => {
-                fp.push('.orig x3000\n');
-                fp.push('trap 1000\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'trap 1000\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow('1000');
+                expect(() => {
+                    assembler.assembleString(input)
+                }).toThrow('1000');
             });
 
             it('errors on too many operands', () => {
-                fp.push('.orig x3000\n');
-                fp.push('add r0, r0, 3, r0\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'add r0, r0, 3, r0\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow('reg, reg, int, reg');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('reg, reg, int, reg');
             });
 
             it('errors on too few operands', () => {
-                fp.push('.orig x3000\n');
-                fp.push('add r0, r0\n');
-                fp.push('.end\n');
-                fp.push(null);
+                input = '.orig x3000\n' +
+                        'add r0, r0\n' +
+                        '.end\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow('reg, reg');
-            });
-        });
-
-        describe('assembleTo(inFp, outFp)', () => {
-            interface Buf {
-                buf: Uint8Array;
-                len: number;
-            }
-
-            let outFp: Writable;
-            let outBuf: Buf;
-            let symFp: Writable;
-            let symBuf: Buf;
-
-            const encode = (s: string) => new Uint8Array(s.split('').map(c => c.charCodeAt(0)));
-
-            function mockFp(): [Writable, Buf] {
-                const buf: Buf = {len: 0, buf: new Uint8Array(1024)};
-                const writable = new Writable({
-                    write(arr, encoding, callback) {
-                        for (let i = 0; i < arr.length; i++) {
-                            if (buf.len === buf.buf.length) {
-                                throw new Error('object file too big');
-                            }
-
-                            buf.buf[buf.len++] = arr[i];
-                        }
-                        callback();
-                    },
-                });
-                return [writable, buf];
-            }
-
-            beforeEach(() => {
-                [outFp, outBuf] = mockFp();
-                [symFp, symBuf] = mockFp();
-            });
-
-            it('generates object file for minimal program', () => {
-                fp.push('.orig x3000\n');
-                fp.push('halt\n');
-                fp.push('.end\n');
-                fp.push(null);
-
-                return assembler.assembleTo(fp, outFp, symFp).then(() => {
-                    let exp = new Uint8Array([
-                        0x30,0x00,
-                        0x00,0x01,
-                        0xf0,0x25,
-                    ]);
-                    expect(outBuf.len).toEqual(exp.length);
-                    expect(outBuf.buf.slice(0, outBuf.len)).toEqual(exp);
-
-                    let expSym = new Uint8Array();
-                    expect(symBuf.len).toEqual(expSym.length);
-                    expect(symBuf.buf.slice(0, symBuf.len)).toEqual(expSym);
-                });
-            });
-
-            it('generates object file for hello world', () => {
-                fp.push('.orig x3000\n')
-                fp.push('lea r0, mystring\n')
-                fp.push('puts\n')
-                fp.push('halt\n')
-                fp.push('\n');
-                fp.push('\n');
-                fp.push('mystring .stringz "hello world!"\n')
-                fp.push('.end\n')
-                fp.push(null)
-
-                return assembler.assembleTo(fp, outFp, symFp).then(() => {
-                    let exp = new Uint8Array([
-                        0x30,0x00,
-                        0x00,0x10,
-                        0xe0,0x02,
-                        0xf0,0x22,
-                        0xf0,0x25,
-                        0x00,'h'.charCodeAt(0),
-                        0x00,'e'.charCodeAt(0),
-                        0x00,'l'.charCodeAt(0),
-                        0x00,'l'.charCodeAt(0),
-                        0x00,'o'.charCodeAt(0),
-                        0x00,' '.charCodeAt(0),
-                        0x00,'w'.charCodeAt(0),
-                        0x00,'o'.charCodeAt(0),
-                        0x00,'r'.charCodeAt(0),
-                        0x00,'l'.charCodeAt(0),
-                        0x00,'d'.charCodeAt(0),
-                        0x00,'!'.charCodeAt(0),
-                        0x00,0x00,
-                    ]);
-                    expect(outBuf.len).toEqual(exp.length);
-                    expect(outBuf.buf.slice(0, outBuf.len)).toEqual(exp);
-
-                    let expSym = encode("3003\tmystring\n");
-                    expect(symBuf.len).toEqual(expSym.length);
-                    expect(symBuf.buf.slice(0, symBuf.len)).toEqual(expSym);
-                });
-            });
-
-            it('generates object file for multiple sections', () => {
-                fp.push('.orig x8000\n');
-                fp.push('lea r0, hi\n');
-                fp.push('puts\n');
-                fp.push('halt\n');
-                fp.push('hi .fill \'h\'\n');
-                fp.push('.fill \'i\'\n');
-                fp.push('.fill 0\n');
-                fp.push('.end\n');
-                fp.push('.orig x3000\n');
-                fp.push('dinkleberg halt\n');
-                fp.push('.end\n');
-                fp.push('.orig x5000\n');
-                fp.push('and r0, r0, 0\n');
-                fp.push('tuba add r0, r0, 1\n');
-                fp.push('halt\n');
-                fp.push('.end\n');
-                fp.push(null);
-
-                return assembler.assembleTo(fp, outFp, symFp).then(() => {
-                    let exp = new Uint8Array([
-                        0x80,0x00,
-                        0x00,0x06,
-                        0xe0,0x02,
-                        0xf0,0x22,
-                        0xf0,0x25,
-                        0x00,'h'.charCodeAt(0),
-                        0x00,'i'.charCodeAt(0),
-                        0x00,0x00,
-
-                        0x30,0x00,
-                        0x00,0x01,
-                        0xf0,0x25,
-
-                        0x50,0x00,
-                        0x00,0x03,
-                        0x50,0x20,
-                        0x10,0x21,
-                        0xf0,0x25,
-                    ]);
-                    expect(outBuf.len).toEqual(exp.length);
-                    expect(outBuf.buf.slice(0, outBuf.len)).toEqual(exp);
-
-                    let expSym = encode("3000\tdinkleberg\n" +
-                                        "5001\ttuba\n" +
-                                        "8003\thi\n");
-                    expect(symBuf.len).toEqual(expSym.length);
-                    expect(symBuf.buf.slice(0, symBuf.len)).toEqual(expSym);
-                });
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('reg, reg');
             });
         });
     });
@@ -1077,10 +924,9 @@ describe('assembler', () => {
 
         describe('parse(fp)', () => {
             it('parses trivial program', () => {
-                fp.push('halt\n')
-                fp.push(null)
+                input = 'halt\n';
 
-                return expect(assembler.parse(fp)).resolves.toEqual({
+                expect(assembler.parseString(input)).toEqual({
                     sections: [
                         {startAddr: 0, instructions: [
                             {kind: 'instr', line: 1, op: 'halt', operands: []},
@@ -1091,11 +937,10 @@ describe('assembler', () => {
             });
 
             it('parses label on its own line', () => {
-                fp.push('fun:\n')
-                fp.push('beq $zero, $zero, fun\n')
-                fp.push(null)
+                input = 'fun:\n' +
+                        'beq $zero, $zero, fun\n';
 
-                return expect(assembler.parse(fp)).resolves.toEqual({
+                expect(assembler.parseString(input)).toEqual({
                     sections: [
                         {startAddr: 0, instructions: [
                             {kind: 'instr', line: 2, op: 'beq', operands: [
@@ -1110,12 +955,11 @@ describe('assembler', () => {
             });
 
             it('preserves label case', () => {
-                fp.push('mYlAbeL: halt\n')
-                fp.push('another-label: halt\n')
-                fp.push('LOUD_LABEL: halt\n')
-                fp.push(null)
+                input = 'mYlAbeL: halt\n' +
+                        'another-label: halt\n' +
+                        'LOUD_LABEL: halt\n';
 
-                return expect(assembler.parse(fp)).resolves.toEqual({
+                expect(assembler.parseString(input)).toEqual({
                     sections: [
                         {startAddr: 0, instructions: [
                             {kind: 'instr', line: 1, op: 'halt', operands: []},
@@ -1132,35 +976,36 @@ describe('assembler', () => {
             });
 
             it('errors on duplicate labels', () => {
-                fp.push('mylabel: .word 0\n')
-                fp.push('mylabel: .word 0\n')
-                fp.push(null)
+                input = 'mylabel: .word 0\n' +
+                        'mylabel: .word 0\n';
 
-                return expect(assembler.parse(fp)).rejects.toThrow(
-                    'duplicate label mylabel on line 2');
+                expect(() => {
+                    assembler.parseString(input);
+                }).toThrow('duplicate label mylabel on line 2');
             });
 
             it('errors on stray label', () => {
-                fp.push('doh:\n')
-                fp.push(null)
+                input = 'doh:\n';
 
-                return expect(assembler.parse(fp)).rejects.toThrow('stray label');
+                expect(() => {
+                    assembler.parseString(input);
+                }).toThrow('stray label');
             });
 
             it('errors on dangling operand', () => {
-                fp.push('addi $zero, $zero, 34 halt\n');
-                fp.push('halt\n');
-                fp.push(null);
-                return expect(assembler.parse(fp)).rejects.toThrow('halt');
+                input = 'addi $zero, $zero, 34 halt\n' +
+                        'halt\n';
+                expect(() => {
+                    assembler.parseString(input);
+                }).toThrow('halt');
             });
         });
 
         describe('assemble(fp)', () => {
             it('assembles trivial program', () => {
-                fp.push('halt\n')
-                fp.push(null)
+                input = 'halt\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {},
                     [
                         {
@@ -1174,11 +1019,10 @@ describe('assembler', () => {
             });
 
             it('assembles branch', () => {
-                fp.push('fun:\n')
-                fp.push('beq $zero, $zero, fun\n')
-                fp.push(null)
+                input = 'fun:\n' +
+                        'beq $zero, $zero, fun\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {
                         fun: 0x00,
                     },
@@ -1194,13 +1038,12 @@ describe('assembler', () => {
             });
 
             it('assembles arithmetic instructions', () => {
-                fp.push('nop\n')
-                fp.push('add $t0, $s0, $a0\n')
-                fp.push('addi $s2, $t1, 37\n')
-                fp.push('asdf: nand $v0, $s1, $at\n')
-                fp.push(null)
+                input = 'nop\n' +
+                        'add $t0, $s0, $a0\n' +
+                        'addi $s2, $t1, 37\n' +
+                        'asdf: nand $v0, $s1, $at\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {
                         asdf: 0x03,
                     },
@@ -1219,11 +1062,10 @@ describe('assembler', () => {
             });
 
             it('assembles branch instructions', () => {
-                fp.push('asdf0: beq $v0, $t0, asdf0\n')
-                fp.push('jalr $at, $ra\n')
-                fp.push(null)
+                input = 'asdf0: beq $v0, $t0, asdf0\n' +
+                        'jalr $at, $ra\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {
                         asdf0: 0x00,
                     },
@@ -1240,11 +1082,10 @@ describe('assembler', () => {
             });
 
             it('assembles memory instructions', () => {
-                fp.push('lw $t0, 33($v0)\n')
-                fp.push('sw $s0, -5($t2)\n')
-                fp.push(null)
+                input = 'lw $t0, 33($v0)\n' +
+                        'sw $s0, -5($t2)\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {},
                     [
                         {
@@ -1259,13 +1100,12 @@ describe('assembler', () => {
             });
 
             it('assembles pseudo-ops', () => {
-                fp.push('.word 0xf0006969\n')
-                fp.push('xd: .word -2\n');
-                fp.push('.word 1056\n');
-                fp.push('.word xd\n');
-                fp.push(null)
+                input = '.word 0xf0006969\n' +
+                        'xd: .word -2\n' +
+                        '.word 1056\n' +
+                        '.word xd\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {
                         xd: 0x01,
                     },
@@ -1285,15 +1125,14 @@ describe('assembler', () => {
             });
 
             it('assembles la', () => {
-                fp.push('la $t0, trevor\n');
-                fp.push('.word 0\n');
-                fp.push('.word 0\n');
-                fp.push('.word 0\n');
-                fp.push('.word 0\n');
-                fp.push('trevor: .word 0x69\n');
-                fp.push(null)
+                input = 'la $t0, trevor\n' +
+                        '.word 0\n' +
+                        '.word 0\n' +
+                        '.word 0\n' +
+                        '.word 0\n' +
+                        'trevor: .word 0x69\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {
                         trevor: 0x06,
                     },
@@ -1315,40 +1154,43 @@ describe('assembler', () => {
             });
 
             it('errors on nonexistent label', () => {
-                fp.push('beq $zero, $zero, daddy\n');
-                fp.push('halt\n');
-                fp.push(null);
+                input = 'beq $zero, $zero, daddy\n' +
+                        'halt\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('daddy');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('daddy');
             });
 
             it('errors on nonexistent label with la', () => {
-                fp.push('la $t0, daddy\n');
-                fp.push('halt\n');
-                fp.push(null);
+                input = 'la $t0, daddy\n' +
+                        'halt\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('daddy');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('daddy');
             });
 
             it('errors on undersized immediate', () => {
-                fp.push('addi $zero, $zero, -1000000\n');
-                fp.push(null);
+                input = 'addi $zero, $zero, -1000000\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('-1000000');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('-1000000');
             });
 
             it('errors on barely undersized immediate', () => {
-                fp.push('addi $zero, $zero, -524289\n');
-                fp.push(null);
+                input = 'addi $zero, $zero, -524289\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('-524289');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('-524289');
             });
 
             it('assembles almost undersized immediate', () => {
-                fp.push('addi $zero, $zero, -524288\n');
-                fp.push(null);
+                input = 'addi $zero, $zero, -524288\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {},
                     [
                         {
@@ -1362,24 +1204,25 @@ describe('assembler', () => {
             });
 
             it('errors on oversized immediate', () => {
-                fp.push('addi $zero, $zero, 1000000\n');
-                fp.push(null);
+                input = 'addi $zero, $zero, 1000000\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('1000000');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('1000000');
             });
 
             it('errors on barely oversized immediate', () => {
-                fp.push('addi $zero, $zero, 524288\n');
-                fp.push(null);
+                input = 'addi $zero, $zero, 524288\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('524288');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('524288');
             });
 
             it('assembles almost oversized immediate', () => {
-                fp.push('addi $zero, $zero, 524287\n');
-                fp.push(null);
+                input = 'addi $zero, $zero, 524287\n';
 
-                return expect(assembler.assemble(fp)).resolves.toEqual([
+                expect(assembler.assembleString(input)).toEqual([
                     {},
                     [
                         {
@@ -1396,74 +1239,75 @@ describe('assembler', () => {
             //       destroying jest
 
             it('errors on bogus pseudoops with no operands', () => {
-                fp.push('.bob\n');
-                fp.push(null);
+                input = '.bob\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow('.bob with no operand');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('.bob with no operand');
             });
 
             it('errors on bogus pseudoops with operand', () => {
-                fp.push('.bob 3\n');
-                fp.push(null);
+                input = '.bob 3\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow('.bob with int operand');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('.bob with int operand');
             });
 
             it('errors on bogus instructions without operands', () => {
-                fp.push('water\n');
-                fp.push(null);
+                input = 'water\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow('water with no operands');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('water with no operands');
             });
 
             it('errors on bogus instructions with operands', () => {
-                fp.push('steveo $t0, $t1, $t2\n');
-                fp.push(null);
+                input = 'steveo $t0, $t1, $t2\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow('steveo with operands reg, reg, reg');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('steveo with operands reg, reg, reg');
             });
 
             it('errors on barely oversized regnos', () => {
-                fp.push('add $zero, $zero, $16\n');
-                fp.push(null);
+                input = 'add $zero, $zero, $16\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow(/16 .* on line 1/i);
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow(/16 .* on line 1/i);
             });
 
             it('errors on oversized regnos', () => {
-                fp.push('add $zero, $zero, $1000\n');
-                fp.push(null);
+                input = 'add $zero, $zero, $1000\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow(/1000 .* on line 1/i);
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow(/1000 .* on line 1/i);
             });
 
             it('errors on bogus reg aliases', () => {
-                fp.push('add $zero, $zero, $feces\n');
-                fp.push(null);
+                input = 'add $zero, $zero, $feces\n';
 
-                return expect(assembler.assemble(fp)).rejects.toThrow('feces');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('feces');
             });
 
             it('errors on too many operands', () => {
-                fp.push('add $0, $0, 3, $0\n');
-                fp.push(null);
+                input = 'add $0, $0, 3, $0\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow('reg, reg, int, reg');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('reg, reg, int, reg');
             });
 
             it('errors on too few operands', () => {
-                fp.push('add $0, $0\n');
-                fp.push(null);
+                input = 'add $0, $0\n';
 
-                return expect(assembler.assemble(fp)).rejects
-                       .toThrow('reg, reg');
+                expect(() => {
+                    assembler.assembleString(input);
+                }).toThrow('reg, reg');
             });
         });
     });

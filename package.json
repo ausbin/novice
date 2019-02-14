@@ -2,7 +2,7 @@
   "name": "root",
   "private": true,
   "scripts": {
-    "build": "lerna exec -- tsc -d && chmod +x packages/novice-cli/lib/main.js",
+    "build": "lerna run build",
     "test": "jest",
     "test:cover": "jest --coverage --collectCoverageFrom=**/*.ts --collectCoverageFrom=!**/*.d.ts --collectCoverageFrom=!**/index.ts",
     "lint": "lerna exec -- tslint --fix -p . -t verbose"

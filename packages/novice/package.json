@@ -2,6 +2,9 @@
   "name": "novice",
   "version": "0.0.0",
   "description": "machine code simulator",
+  "scripts": {
+    "build": "tsc -d"
+  },
   "main": "lib/index.js",
   "files": [
     "lib"

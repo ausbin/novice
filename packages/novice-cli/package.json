@@ -20,6 +20,7 @@
     "url": "git+https://github.com/zucchini/novice.git"
   },
   "scripts": {
+    "build": "tsc -d && chmod +x lib/main.js",
     "test": "echo \"Error: run tests from root\" && exit 1"
   },
   "bugs": {

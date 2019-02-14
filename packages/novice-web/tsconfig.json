@@ -1,0 +1,16 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "./dist",
+        "jsx": "react",
+        "sourceMap": true,
+        "lib": ["ES5", "DOM"]
+    },
+    "include": [
+        "./novice-web/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "**/*.test.ts"
+    ]
+}

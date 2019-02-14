@@ -4,6 +4,7 @@ node_modules/
 # Generated code
 *.js
 *.d.ts
+*.map
 
 # Coverage results
 coverage/

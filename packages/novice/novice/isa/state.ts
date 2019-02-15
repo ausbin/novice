@@ -29,6 +29,7 @@ interface MachineStatePcUpdate {
 
 interface MachineStateHaltUpdate {
     kind: 'halt';
+    halted: boolean;
 }
 
 type MachineStateUpdate = MachineStateRegUpdate|

@@ -154,36 +154,7 @@ class Simulator implements Memory {
             (Promise.resolve(ret) === ret)
             ? await (ret as Promise<MachineStateUpdate[]>)
             : ret as MachineStateUpdate[];
-        const logEntry: MachineStateLogEntry = {instr, fields, deltas: []};
-
-        for (const update of updates) {
-            const delta = {update, old: 0};
-
-            switch (update.kind) {
-                case 'reg':
-                    delta.old = this.reg(update.reg);
-                    break;
-
-                case 'mem':
-                    delta.old = this.load(update.addr);
-                    break;
-
-                case 'pc':
-                    delta.old = this.pc;
-                    break;
-
-                case 'halt':
-                    // Nothing to back up
-                    break;
-
-                default:
-                    const _: never = update;
-            }
-
-            logEntry.deltas.push(delta);
-        }
-
-        this.pushLogEntry(logEntry);
+        this.pushLogEntry(instr, fields, updates);
     }
 
     public async run(): Promise<void> {
@@ -198,31 +169,11 @@ class Simulator implements Memory {
         }
     }
 
-    public pushLogEntry(logEntry: MachineStateLogEntry) {
-        for (const delta of logEntry.deltas) {
-            const update = delta.update;
-            switch (update.kind) {
-                case 'reg':
-                    this.regSet(update.reg, update.val);
-                    break;
-
-                case 'mem':
-                    this.store(update.addr, update.val);
-                    break;
-
-                case 'pc':
-                    this.pc = update.where;
-                    break;
-
-                case 'halt':
-                    this.halted = true;
-                    break;
-
-                default:
-                    const _: never = update;
-            }
-        }
-
+    public pushLogEntry(instr: InstructionSpec, fields: Fields,
+                        updates: MachineStateUpdate[]): void {
+        const undo = this.applyUpdates(updates);
+        const logEntry: MachineStateLogEntry = {instr, fields, updates,
+                                                undo};
         this.log.push(logEntry);
     }
 
@@ -244,31 +195,7 @@ class Simulator implements Memory {
             throw new Error('already at the beginning of time');
         }
 
-        for (let i = logEntry.deltas.length - 1; i >= 0; i--) {
-            const delta = logEntry.deltas[i];
-            const update = delta.update;
-            switch (update.kind) {
-                case 'reg':
-                    this.regSet(update.reg, delta.old);
-                    break;
-
-                case 'mem':
-                    this.store(update.addr, delta.old);
-                    break;
-
-                case 'pc':
-                    this.pc = delta.old;
-                    break;
-
-                case 'halt':
-                    this.halted = false;
-                    break;
-
-                default:
-                    const _: never = update;
-            }
-        }
-
+        this.applyUpdates(logEntry.undo);
         return logEntry;
     }
 
@@ -333,6 +260,44 @@ class Simulator implements Memory {
 
         const instruction = matches[0].instr;
         return [instruction, this.genFields(ir, instruction)];
+    }
+
+    // Return a list of corresponding undoing updates
+    private applyUpdates(updates: MachineStateUpdate[]):
+            MachineStateUpdate[] {
+        const undos: MachineStateUpdate[] = [];
+
+        for (const update of updates) {
+            switch (update.kind) {
+                case 'reg':
+                    undos.push({kind: 'reg', reg: update.reg,
+                                val: this.reg(update.reg)});
+                    this.regSet(update.reg, update.val);
+                    break;
+
+                case 'mem':
+                    undos.push({kind: 'mem', addr: update.addr,
+                                val: this.load(update.addr)});
+                    this.store(update.addr, update.val);
+                    break;
+
+                case 'pc':
+                    undos.push({kind: 'pc', where: this.pc});
+                    this.pc = update.where;
+                    break;
+
+                case 'halt':
+                    undos.push({kind: 'halt', halted: this.halted});
+                    this.halted = update.halted;
+                    break;
+
+                default:
+                    const _: never = update;
+            }
+        }
+
+        // Need to undo them in opposite order
+        return undos.reverse();
     }
 
     private lookupRegSpec(id: RegIdentifier): Reg {

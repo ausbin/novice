@@ -343,7 +343,8 @@ const Lc3Isa: Isa = {
         {op: 'halt', fields: [
             {kind: 'const', bits: [15,  0], val: 0b1111000000100101},
          ],
-         sim: (state: MachineState, io: IO, ir: Fields) => [{kind: 'halt'}],
+         sim: (state: MachineState, io: IO, ir: Fields) =>
+             [{kind: 'halt', halted: true}],
         },
     ],
     aliases: [

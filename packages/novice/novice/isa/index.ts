@@ -8,7 +8,7 @@ import { AliasContext, AliasFields, AliasSpec, Fields, getRegAliases,
          SymbTable } from './isa';
 import { Lc2200Isa } from './lc2200';
 import { Lc3Isa } from './lc3';
-import { MachineStateDelta, MachineStateLogEntry } from './log';
+import { MachineStateLogEntry } from './log';
 import { Rama2200Isa } from './rama2200';
 import { MachineState, MachineStateUpdate, RegIdentifier } from './state';
 
@@ -41,4 +41,4 @@ export { getIsa, isas,
          // state
          RegIdentifier, MachineState, MachineStateUpdate,
          // log
-         MachineStateDelta, MachineStateLogEntry };
+         MachineStateLogEntry };

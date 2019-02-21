@@ -1,6 +1,7 @@
 import { Instruction, PseudoOp } from './assembly';
 import { IO } from './io';
-import { MachineState, MachineStateUpdate, RegIdentifier } from './state';
+import { FullMachineState, MachineState, MachineStateUpdate,
+         RegIdentifier } from './state';
 
 interface Pc {
     // by how much is the pc incremented during FETCH?
@@ -127,5 +128,38 @@ function isInstruction(isa: Isa, op: string): boolean {
            isa.aliases.some(alias => alias.op === op);
 }
 
+function initMachineState(isa: Isa): FullMachineState {
+    const state: FullMachineState = {
+        pc: isa.pc.resetVector,
+        mem: {},
+        regs: {
+            solo: {},
+            range: {},
+        },
+        halted: false,
+    };
+
+    for (const reg of isa.regs) {
+        switch (reg.kind) {
+            case 'reg':
+                state.regs.solo[reg.name] = 0;
+                break;
+
+            case 'reg-range':
+                state.regs.range[reg.prefix] = new Array<number>(reg.count);
+                for (let i = 0; i < reg.count; i++) {
+                    state.regs.range[reg.prefix][i] = 0;
+                }
+                break;
+
+            default:
+                const _: never = reg;
+        }
+    }
+
+    return state;
+}
+
 export { Isa, Fields, InstructionSpec, Reg, regPrefixes, getRegAliases,
-         isInstruction, AliasContext, AliasFields, AliasSpec, SymbTable };
+         isInstruction, initMachineState, AliasContext, AliasFields, AliasSpec,
+         SymbTable };

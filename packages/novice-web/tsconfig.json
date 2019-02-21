@@ -4,7 +4,7 @@
         "outDir": "./dist",
         "jsx": "react",
         "sourceMap": true,
-        "lib": ["ES5", "DOM", "WebWorker"]
+        "lib": ["ES6", "DOM", "WebWorker"]
     },
     "include": [
         "./novice-web/**/*.ts"

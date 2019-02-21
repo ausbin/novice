@@ -1,11 +1,11 @@
 import { Assembler, AssemblerConfig, getConfig, getGenerator, getOpSpec,
          getParser } from './assembler';
-import { AliasContext, AliasFields, AliasSpec, Assembly, Fields, getIsa,
-         getRegAliases, Instruction, InstructionSpec, IntegerOperand, IO,
-         Isa, isas, isInstruction, LabelOperand, MachineCodeSection,
-         MachineState, MachineStateLogEntry, MachineStateUpdate, PseudoOp, Reg,
-         RegIdentifier, RegisterOperand, regPrefixes, Section, StringOperand,
-         SymbTable } from './isa';
+import { AliasContext, AliasFields, AliasSpec, Assembly, Fields, FullMachineState,
+         getIsa, getRegAliases, initMachineState, Instruction, InstructionSpec,
+         IntegerOperand, IO, Isa, isas, isInstruction,
+         LabelOperand, MachineCodeSection, MachineState, MachineStateLogEntry, MachineStateUpdate,
+         PseudoOp, Reg, RegIdentifier, RegisterOperand, regPrefixes,
+         Section, StringOperand, SymbTable } from './isa';
 import { Debugger, Memory, Simulator, Symbols } from './simulator';
 import { forceUnsigned, maskTo, maxUnsignedVal, padStr, sextTo } from './util';
 
@@ -24,6 +24,7 @@ export { //// assembler
          // isa
          Isa, InstructionSpec, Fields, Reg, regPrefixes, getRegAliases,
          isInstruction, AliasContext, AliasFields, AliasSpec, SymbTable,
+         FullMachineState, initMachineState,
          // state
          RegIdentifier, MachineState, MachineStateUpdate,
          // log

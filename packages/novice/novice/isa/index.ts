@@ -4,13 +4,14 @@ import { MachineCodeSection } from './codegen';
 import { DummyIsa } from './dummy';
 import { IO } from './io';
 import { AliasContext, AliasFields, AliasSpec, Fields, getRegAliases,
-         InstructionSpec, Isa, isInstruction, Reg, regPrefixes,
-         SymbTable } from './isa';
+         initMachineState, InstructionSpec, Isa, isInstruction, Reg,
+         regPrefixes, SymbTable } from './isa';
 import { Lc2200Isa } from './lc2200';
 import { Lc3Isa } from './lc3';
 import { MachineStateLogEntry } from './log';
 import { Rama2200Isa } from './rama2200';
-import { MachineState, MachineStateUpdate, RegIdentifier } from './state';
+import { FullMachineState, MachineState, MachineStateUpdate,
+         RegIdentifier } from './state';
 
 const isas: {[s: string]: Isa} = {
     dummy: DummyIsa,
@@ -38,7 +39,8 @@ export { getIsa, isas,
          // isa
          Isa, InstructionSpec, Fields, Reg, regPrefixes, getRegAliases,
          isInstruction, AliasContext, AliasFields, AliasSpec, SymbTable,
+         initMachineState,
          // state
-         RegIdentifier, MachineState, MachineStateUpdate,
+         RegIdentifier, FullMachineState, MachineState, MachineStateUpdate,
          // log
          MachineStateLogEntry };

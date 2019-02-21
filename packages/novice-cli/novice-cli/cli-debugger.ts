@@ -219,7 +219,7 @@ class CliDebugger extends Debugger {
         // Maintain the lie that the debugger "freezes" on a halt by
         // double-unstepping on halts. Without this, after executing a
         // halt, it seems like nothing happened.
-        if (this.halted && this.log.length > 1) {
+        if (this.state.halted && this.log.length > 1) {
             this.unstep();
         }
 
@@ -233,7 +233,7 @@ class CliDebugger extends Debugger {
     }
 
     private async printCmd(operands: string[]): Promise<void> {
-        this.printMemRegion(this.pc, ...this.parseAddrRange(operands[0]));
+        this.printMemRegion(this.state.pc, ...this.parseAddrRange(operands[0]));
     }
 
     private printMemRegion(actualPc: number, fromPc: number, toPc: number): void {
@@ -302,7 +302,7 @@ class CliDebugger extends Debugger {
                 for (let i = 0; i < reg.count; i++) {
                     const regno = this.lookupRegAlias(reg.prefix, i) || i;
                     const regname = padStr(`${reg.prefix}${regno}`, maxRegnameLen, ' ');
-                    const regval = forceUnsigned(this.regs.range[reg.prefix][i],
+                    const regval = forceUnsigned(this.state.regs.range[reg.prefix][i],
                                                  this.isa.mem.word);
                     const padded = padStr(regval.toString(base),
                                           (base === 2) ? reg.bits : nibbles, '0');
@@ -313,7 +313,7 @@ class CliDebugger extends Debugger {
                 const nibbles = Math.ceil(reg.bits / 4);
                 const base = (reg.bits <= 4) ? 2 : 16;
                 const prefix = (reg.bits === 1) ? '' : (base === 2) ? '0b' : '0x';
-                const regval = forceUnsigned(this.regs.solo[reg.name],
+                const regval = forceUnsigned(this.state.regs.solo[reg.name],
                                              this.isa.mem.word);
                 const padded = padStr(regval.toString(base),
                                       (base === 2) ? reg.bits : nibbles, '0');
@@ -327,7 +327,7 @@ class CliDebugger extends Debugger {
 
         // Be a little dishonest: to avoid confusing users, get 'stuck'
         // on halts
-        const pc = this.halted ? this.pc - this.isa.pc.increment : this.pc;
+        const pc = this.state.halted ? this.state.pc - this.isa.pc.increment : this.state.pc;
         const fromPc = Math.max(0, pc - 4);
         const toPc = Math.min(maxUnsignedVal(this.isa.mem.space), pc + 4);
         this.printMemRegion(pc, fromPc, toPc);

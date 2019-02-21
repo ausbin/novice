@@ -40,8 +40,8 @@ class Debugger extends Simulator implements Symbols {
         // Reset dynamic instruction count for each "continuation"
         this.numExec = 0;
 
-        while ((first || !this.breakpoints.hasOwnProperty(this.pc))
-               && !this.halted && !this.interrupt) {
+        while ((first || !this.breakpoints.hasOwnProperty(this.state.pc))
+               && !this.state.halted && !this.interrupt) {
             if (this.maxExec >= 0 && this.numExec >= this.maxExec) {
                 throw new Error(`hit maximum executed instruction count ` +
                                 `${this.maxExec}. this may indicate an ` +

@@ -1,5 +1,6 @@
-import { Fields, InstructionSpec, IO, Isa, MachineCodeSection, MachineStateLogEntry,
-         MachineStateUpdate, Reg, RegIdentifier } from '../isa';
+import { Fields, FullMachineState, initMachineState, InstructionSpec, IO, Isa,
+         MachineCodeSection, MachineStateLogEntry, MachineStateUpdate, Reg,
+         RegIdentifier } from '../isa';
 import { forceUnsigned, maskTo, sextTo } from '../util';
 import { Memory } from './mem';
 
@@ -83,13 +84,7 @@ class InstrLut {
 }
 
 class Simulator implements Memory {
-    protected pc: number;
-    protected mem: {[addr: number]: number};
-    protected regs: {
-        solo: {[name: string]: number};
-        range: {[prefix: string]: number[]};
-    };
-    protected halted: boolean;
+    protected state: FullMachineState;
     protected isa: Isa;
     protected io: IO;
     protected maxExec: number;
@@ -101,29 +96,21 @@ class Simulator implements Memory {
         // 64 entries is a nice cozy size without being too gigantic
         const LUT_SIZE = 6;
 
+        this.state = initMachineState(isa);
         this.isa = isa;
         this.io = io;
         this.maxExec = maxExec;
-        this.pc = isa.pc.resetVector;
-        this.mem = {};
-        this.regs = {
-            solo: {},
-            range: {},
-        };
-        this.halted = false;
         this.log = [];
         this.numExec = 0;
         this.lut = new InstrLut(this.isa, LUT_SIZE);
-
-        this.resetRegs();
     }
 
-    public getPc(): number { return this.pc; }
+    public getPc(): number { return this.state.pc; }
 
-    public isHalted(): boolean { return this.halted; }
+    public isHalted(): boolean { return this.state.halted; }
 
     // TODO: make this immutable somehow
-    public getRegs() { return this.regs; }
+    public getRegs() { return this.state.regs; }
 
     public loadSections(sections: MachineCodeSection[]): void {
         for (const section of sections) {
@@ -135,18 +122,18 @@ class Simulator implements Memory {
 
     public async step(): Promise<void> {
         // If already halted, do nothing
-        if (this.halted) {
+        if (this.state.halted) {
             return;
         }
 
         this.numExec++;
 
-        const ir = this.load(this.pc);
-        this.pc += this.isa.pc.increment;
+        const ir = this.load(this.state.pc);
+        this.state.pc += this.isa.pc.increment;
 
         const [instr, fields] = this.decode(ir);
         // Don't pass the incremented PC
-        const state = {pc: this.pc - this.isa.pc.increment,
+        const state = {pc: this.state.pc - this.isa.pc.increment,
                        reg: this.reg.bind(this),
                        load: this.load.bind(this)};
         const ret = instr.sim(state, this.io, fields);
@@ -158,7 +145,7 @@ class Simulator implements Memory {
     }
 
     public async run(): Promise<void> {
-        while (!this.halted) {
+        while (!this.state.halted) {
             if (this.maxExec >= 0 && this.numExec >= this.maxExec) {
                 throw new Error(`hit maximum executed instruction count ` +
                                 `${this.maxExec}. this may indicate an ` +
@@ -185,7 +172,7 @@ class Simulator implements Memory {
 
     public unstep(): void {
         this.popLogEntry();
-        this.pc -= this.isa.pc.increment;
+        this.state.pc -= this.isa.pc.increment;
     }
 
     public popLogEntry(): MachineStateLogEntry {
@@ -200,15 +187,15 @@ class Simulator implements Memory {
     }
 
     public load(addr: number): number {
-        if (this.mem.hasOwnProperty(addr)) {
-            return this.mem[addr];
+        if (this.state.mem.hasOwnProperty(addr)) {
+            return this.state.mem[addr];
         } else {
             return 0;
         }
     }
 
     public store(addr: number, val: number): void {
-        this.mem[addr] = maskTo(val, this.isa.mem.word);
+        this.state.mem[addr] = maskTo(val, this.isa.mem.word);
     }
 
     public reg(id: RegIdentifier): number {
@@ -216,9 +203,9 @@ class Simulator implements Memory {
         let val;
 
         if (typeof id === 'string') {
-            val = this.regs.solo[id];
+            val = this.state.regs.solo[id];
         } else {
-            val = this.regs.range[id[0]][id[1]];
+            val = this.state.regs.range[id[0]][id[1]];
         }
 
         if (reg.sext) {
@@ -233,9 +220,9 @@ class Simulator implements Memory {
         val = maskTo(val, reg.bits);
 
         if (typeof id === 'string') {
-            this.regs.solo[id] = val;
+            this.state.regs.solo[id] = val;
         } else {
-            this.regs.range[id[0]][id[1]] = val;
+            this.state.regs.range[id[0]][id[1]] = val;
         }
     }
 
@@ -282,13 +269,13 @@ class Simulator implements Memory {
                     break;
 
                 case 'pc':
-                    undos.push({kind: 'pc', where: this.pc});
-                    this.pc = update.where;
+                    undos.push({kind: 'pc', where: this.state.pc});
+                    this.state.pc = update.where;
                     break;
 
                 case 'halt':
-                    undos.push({kind: 'halt', halted: this.halted});
-                    this.halted = update.halted;
+                    undos.push({kind: 'halt', halted: this.state.halted});
+                    this.state.halted = update.halted;
                     break;
 
                 default:
@@ -335,23 +322,6 @@ class Simulator implements Memory {
         }
 
         return fields;
-    }
-
-    private resetRegs(): void {
-        for (const reg of this.isa.regs) {
-            switch (reg.kind) {
-                case 'reg':
-                    this.regs.solo[reg.name] = 0;
-                    break;
-
-                case 'reg-range':
-                    this.regs.range[reg.prefix] = new Array<number>(reg.count);
-                    for (let i = 0; i < reg.count; i++) {
-                        this.regs.range[reg.prefix][i] = 0;
-                    }
-                    break;
-            }
-        }
     }
 }
 

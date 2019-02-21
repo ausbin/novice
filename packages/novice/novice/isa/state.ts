@@ -1,6 +1,16 @@
 // Either just the name ('cc') or a prefix and a regno ['r', 3]
 type RegIdentifier = string|[string, number];
 
+interface FullMachineState {
+    pc: number;
+    mem: {[addr: number]: number};
+    regs: {
+        solo: {[name: string]: number};
+        range: {[prefix: string]: number[]};
+    };
+    halted: boolean;
+}
+
 interface MachineState {
     // Address of current instruction. NOT incremented!
     pc: number;
@@ -37,4 +47,4 @@ type MachineStateUpdate = MachineStateRegUpdate|
                           MachineStatePcUpdate|
                           MachineStateHaltUpdate;
 
-export { RegIdentifier, MachineState, MachineStateUpdate };
+export { RegIdentifier, MachineState, MachineStateUpdate, FullMachineState };

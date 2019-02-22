@@ -1,5 +1,5 @@
 import { IO } from './io';
-import { AliasContext, AliasFields, Fields, Isa } from './isa';
+import { AliasContext, AliasFields, Fields, IsaSpec } from './isa';
 import { MachineState, MachineStateUpdate, RegIdentifier } from './state';
 
 function regEquals(rx: RegIdentifier, ry: RegIdentifier): boolean {
@@ -21,7 +21,7 @@ function nukeR0Writes(updates: MachineStateUpdate[]): MachineStateUpdate[] {
     return updates;
 }
 
-const Lc2200Isa: Isa = {
+const lc2200IsaSpec: IsaSpec = {
     pc: {
         increment: 1,
         resetVector: 0x00000000,
@@ -171,4 +171,4 @@ const Lc2200Isa: Isa = {
     ],
 };
 
-export { Lc2200Isa };
+export { lc2200IsaSpec };

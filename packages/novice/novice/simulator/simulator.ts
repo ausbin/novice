@@ -1,4 +1,4 @@
-import { Fields, FullMachineState, initMachineState, InstructionSpec, IO, Isa,
+import { Fields, FullMachineState, InstructionSpec, IO, Isa,
          MachineCodeSection, MachineStateLogEntry, MachineStateUpdate, Reg,
          RegIdentifier } from '../isa';
 import { forceUnsigned, maskTo, sextTo } from '../util';
@@ -12,12 +12,12 @@ class InstrLut {
 
     public constructor(isa: Isa, lookupBits: number) {
         this.isa = isa;
-        this.lookupBits = Math.min(isa.pc.instrBits, lookupBits);
+        this.lookupBits = Math.min(isa.spec.pc.instrBits, lookupBits);
         this.lut = this.genLut(lookupBits);
     }
 
     public lookup(ir: number): [InstructionSpec, number, number, number][] {
-        const idx = maskTo(ir >> (this.isa.pc.instrBits - this.lookupBits),
+        const idx = maskTo(ir >> (this.isa.spec.pc.instrBits - this.lookupBits),
                            this.lookupBits);
 
         return this.lut[idx];
@@ -30,7 +30,7 @@ class InstrLut {
             lut.push([]);
         }
 
-        for (const instr of this.isa.instructions) {
+        for (const instr of this.isa.spec.instructions) {
             let mask = 0;
             let val = 0;
             let totalBits = 0;
@@ -42,7 +42,8 @@ class InstrLut {
 
             for (const field of fields) {
                 const numBits = field.bits[0] - field.bits[1] + 1;
-                const needBits = this.lookupBits - (this.isa.pc.instrBits - field.bits[0] - 1);
+                const needBits = this.lookupBits -
+                                 (this.isa.spec.pc.instrBits - field.bits[0] - 1);
                 // Take the most significant X bits from this field
                 const whichBits = Math.min(numBits, needBits);
 
@@ -96,7 +97,7 @@ class Simulator implements Memory {
         // 64 entries is a nice cozy size without being too gigantic
         const LUT_SIZE = 6;
 
-        this.state = initMachineState(isa);
+        this.state = isa.initMachineState();
         this.isa = isa;
         this.io = io;
         this.maxExec = maxExec;
@@ -129,11 +130,11 @@ class Simulator implements Memory {
         this.numExec++;
 
         const ir = this.load(this.state.pc);
-        this.state.pc += this.isa.pc.increment;
+        this.state.pc += this.isa.spec.pc.increment;
 
         const [instr, fields] = this.decode(ir);
         // Don't pass the incremented PC
-        const state = {pc: this.state.pc - this.isa.pc.increment,
+        const state = {pc: this.state.pc - this.isa.spec.pc.increment,
                        reg: this.reg.bind(this),
                        load: this.load.bind(this)};
         const ret = instr.sim(state, this.io, fields);
@@ -172,7 +173,7 @@ class Simulator implements Memory {
 
     public unstep(): void {
         this.popLogEntry();
-        this.state.pc -= this.isa.pc.increment;
+        this.state.pc -= this.isa.spec.pc.increment;
     }
 
     public popLogEntry(): MachineStateLogEntry {
@@ -195,11 +196,11 @@ class Simulator implements Memory {
     }
 
     public store(addr: number, val: number): void {
-        this.state.mem[addr] = maskTo(val, this.isa.mem.word);
+        this.state.mem[addr] = maskTo(val, this.isa.spec.mem.word);
     }
 
     public reg(id: RegIdentifier): number {
-        const reg = this.lookupRegSpec(id);
+        const reg = this.isa.lookupRegSpec(id);
         let val;
 
         if (typeof id === 'string') {
@@ -216,7 +217,7 @@ class Simulator implements Memory {
     }
 
     public regSet(id: RegIdentifier, val: number) {
-        const reg = this.lookupRegSpec(id);
+        const reg = this.isa.lookupRegSpec(id);
         val = maskTo(val, reg.bits);
 
         if (typeof id === 'string') {
@@ -238,7 +239,7 @@ class Simulator implements Memory {
         }
 
         if (!matches.length) {
-            const unsigned = forceUnsigned(ir, this.isa.pc.instrBits);
+            const unsigned = forceUnsigned(ir, this.isa.spec.pc.instrBits);
             throw new Error(`cannot decode instruction ` +
                             `0x${unsigned.toString(16)}`);
         }
@@ -285,19 +286,6 @@ class Simulator implements Memory {
 
         // Need to undo them in opposite order
         return undos.reverse();
-    }
-
-    private lookupRegSpec(id: RegIdentifier): Reg {
-        for (const reg of this.isa.regs) {
-            if (typeof id === 'string' && reg.kind === 'reg'
-                    && reg.name === id ||
-                typeof id !== 'string' && reg.kind === 'reg-range'
-                    && id[0] === reg.prefix) {
-                return reg;
-            }
-        }
-
-        throw new Error(`unknown register identifier ${id}`);
     }
 
     private genFields(ir: number, instr: InstructionSpec): Fields {

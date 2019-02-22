@@ -1,7 +1,6 @@
 // Parser for complx syntax
-import { Assembly, Instruction, IntegerOperand, Isa,
-         isInstruction, LabelOperand, PseudoOp, RegisterOperand,
-         Section, StringOperand } from '../../isa';
+import { Assembly, Instruction, IntegerOperand, Isa, LabelOperand, PseudoOp,
+         RegisterOperand, Section, StringOperand } from '../../isa';
 import { ParseTable, ParseTree } from '../lr1';
 import { Grammar } from './grammar';
 import { grammar, NT, T } from './grammars/complx';
@@ -149,7 +148,7 @@ class ComplxParser extends AbstractParser<ParseContext, NT, T> {
 
     private isInstruction(ctx: ParseContext, op: ParseTree<NT, T>): boolean {
         const wordVal = this.parseLabel(op).toLowerCase();
-        return isInstruction(this.isa, wordVal);
+        return this.isa.isInstruction(wordVal);
     }
 
     // Takes either an insr-line or a pseudoop-line, returns its label

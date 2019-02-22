@@ -1,4 +1,4 @@
-import { getIsa, Isa, isas } from '../isa';
+import { getIsa, Isa } from '../isa';
 import { Assembler, AssemblerConfig } from './assembler';
 import { BaseMachineCodeGenerator, MachineCodeGenerator } from './codegen';
 import { configs } from './configs';

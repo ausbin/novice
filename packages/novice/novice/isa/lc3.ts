@@ -1,5 +1,5 @@
 import { IO } from './io';
-import { AliasContext, AliasFields, Fields, Isa } from './isa';
+import { AliasContext, AliasFields, Fields, IsaSpec } from './isa';
 import { MachineState, MachineStateUpdate } from './state';
 
 function calcCc(val: number): number {
@@ -20,7 +20,7 @@ function withCcUpdate(updates: MachineStateUpdate[]): MachineStateUpdate[] {
     return updates;
 }
 
-const Lc3Isa: Isa = {
+const lc3IsaSpec: IsaSpec = {
     pc: {
         increment: 1,
         resetVector: 0x3000,
@@ -377,4 +377,4 @@ const Lc3Isa: Isa = {
     ],
 };
 
-export { Lc3Isa };
+export { lc3IsaSpec };

@@ -1,6 +1,6 @@
 // Parser for LC-2200 syntax
-import { Assembly, getRegAliases, Instruction, IntegerOperand, Isa, LabelOperand,
-         PseudoOp, RegisterOperand, Section  } from '../../isa';
+import { Assembly, Instruction, IntegerOperand, Isa, LabelOperand, PseudoOp,
+         RegisterOperand, Section  } from '../../isa';
 import { ParseTable, ParseTree } from '../lr1';
 import { Grammar } from './grammar';
 import { grammar, NT, T } from './grammars/lc2200';
@@ -152,7 +152,7 @@ class Lc2200Parser extends AbstractParser<ParseContext, NT, T> {
                 if (/^\d+$/.test(alias)) {
                     regno = parseInt(alias, 10);
                 } else {
-                    const aliases = getRegAliases(this.isa, prefix);
+                    const aliases = this.isa.getRegAliases(prefix);
 
                     if (!aliases.hasOwnProperty(alias)) {
                         throw new Error(`unknown register alias ${alias} on ` +

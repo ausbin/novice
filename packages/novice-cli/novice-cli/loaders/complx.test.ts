@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import { SymbTable, isas, Memory, Symbols } from 'novice';
+import { SymbTable, getIsa, Memory, Symbols } from 'novice';
 import { ComplxObjectFileLoader } from './complx';
 import { Loader } from './loader';
 
@@ -37,7 +37,7 @@ describe('complx loader', () => {
             ]));
             fp.push(null);
 
-            return loader.load(isas.lc3, fp, mem).then(() => {
+            return loader.load(getIsa('lc3'), fp, mem).then(() => {
                 expect(mem.data).toEqual({
                     0x3000: 0x1337,
                 });
@@ -55,7 +55,7 @@ describe('complx loader', () => {
             ]));
             fp.push(null);
 
-            return loader.load(isas.lc3, fp, mem).then(() => {
+            return loader.load(getIsa('lc3'), fp, mem).then(() => {
                 expect(mem.data).toEqual({
                     0x3000: 0x1337,
                     0x3001: 0x6969,
@@ -80,7 +80,7 @@ describe('complx loader', () => {
             ]));
             fp.push(null);
 
-            return loader.load(isas.lc3, fp, mem).then(() => {
+            return loader.load(getIsa('lc3'), fp, mem).then(() => {
                 expect(mem.data).toEqual({
                     0x3000: 0x1337,
                     0x3001: 0x6969,
@@ -101,7 +101,7 @@ describe('complx loader', () => {
             ]));
             fp.push(null);
 
-            return loader.load(isas.lc3, fp, mem).then(() => {
+            return loader.load(getIsa('lc3'), fp, mem).then(() => {
                 expect(mem.data).toEqual({
                     0x3000: 0x6969,
                 });
@@ -123,7 +123,7 @@ describe('complx loader', () => {
             fp.push(Buffer.from([0xef]));
             fp.push(null);
 
-            return loader.load(isas.lc3, fp, mem).then(() => {
+            return loader.load(getIsa('lc3'), fp, mem).then(() => {
                 expect(mem.data).toEqual({
                     0x3000: 0x1337,
                     0x3001: 0x6969,
@@ -142,7 +142,7 @@ describe('complx loader', () => {
             ]));
             fp.push(null);
 
-            return expect(loader.load(isas.lc3, fp, mem)).rejects.toThrow('expected 1 more words');
+            return expect(loader.load(getIsa('lc3'), fp, mem)).rejects.toThrow('expected 1 more words');
         });
 
         it('errors on odd number of bytes', () => {
@@ -154,7 +154,7 @@ describe('complx loader', () => {
             ]));
             fp.push(null);
 
-            return expect(loader.load(isas.lc3, fp, mem)).rejects.toThrow('not divisible by 2');
+            return expect(loader.load(getIsa('lc3'), fp, mem)).rejects.toThrow('not divisible by 2');
         });
 
         it('errors on malformed object file', () => {
@@ -163,7 +163,7 @@ describe('complx loader', () => {
             ]));
             fp.push(null);
 
-            return expect(loader.load(isas.lc3, fp, mem)).rejects.toThrow('unexpected end-of-file');
+            return expect(loader.load(getIsa('lc3'), fp, mem)).rejects.toThrow('unexpected end-of-file');
         });
     });
 

@@ -25,8 +25,8 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
     public constructor(isa: Isa, opSpec: PseudoOpSpec) {
         this.isa = isa;
         this.opSpec = opSpec;
-        this.instrLut = this.genLut(this.isa.instructions);
-        this.aliasLut = this.genLut(this.isa.aliases);
+        this.instrLut = this.genLut(this.isa.spec.instructions);
+        this.aliasLut = this.genLut(this.isa.spec.aliases);
         this.opLut = this.genLut(this.opSpec.ops);
     }
 
@@ -315,7 +315,7 @@ class BaseMachineCodeGenerator implements MachineCodeGenerator {
                                         `on line ${instr.line}`);
                     }
 
-                    const actualPc = pc + this.isa.pc.increment;
+                    const actualPc = pc + this.isa.spec.pc.increment;
                     const offset = symbtable[operand.label] - actualPc;
 
                     if (field.sext) {

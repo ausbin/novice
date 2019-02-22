@@ -1,34 +1,33 @@
 import { Assembly, Instruction, IntegerOperand, LabelOperand, PseudoOp,
          RegisterOperand, Section, StringOperand } from './assembly';
 import { MachineCodeSection } from './codegen';
-import { DummyIsa } from './dummy';
+import { dummyIsaSpec } from './dummy';
 import { IO } from './io';
-import { AliasContext, AliasFields, AliasSpec, Fields, getRegAliases,
-         initMachineState, InstructionSpec, Isa, isInstruction, Reg,
-         regPrefixes, SymbTable } from './isa';
-import { Lc2200Isa } from './lc2200';
-import { Lc3Isa } from './lc3';
+import { AliasContext, AliasFields, AliasSpec, Fields, InstructionSpec, Isa,
+         IsaSpec, Reg, SymbTable } from './isa';
+import { lc2200IsaSpec } from './lc2200';
+import { lc3IsaSpec } from './lc3';
 import { MachineStateLogEntry } from './log';
-import { Rama2200Isa } from './rama2200';
+import { rama2200IsaSpec } from './rama2200';
 import { FullMachineState, MachineState, MachineStateUpdate,
          RegIdentifier } from './state';
 
-const isas: {[s: string]: Isa} = {
-    dummy: DummyIsa,
-    lc3: Lc3Isa,
-    lc2200: Lc2200Isa,
-    rama2200: Rama2200Isa,
+const isaSpecs: {[s: string]: IsaSpec} = {
+    dummy: dummyIsaSpec,
+    lc3: lc3IsaSpec,
+    lc2200: lc2200IsaSpec,
+    rama2200: rama2200IsaSpec,
 };
 
 function getIsa(isaName: string): Isa {
-    if (!isas.hasOwnProperty(isaName)) {
+    if (!(isaName in isaSpecs)) {
         throw new Error(`no such isa \`${isaName}'\n`);
     }
 
-    return isas[isaName];
+    return new Isa(isaSpecs[isaName]);
 }
 
-export { getIsa, isas,
+export { getIsa, isaSpecs,
          // assembly
          Assembly, Section, Instruction, RegisterOperand, IntegerOperand,
          LabelOperand, PseudoOp, StringOperand,
@@ -37,9 +36,8 @@ export { getIsa, isas,
          // io
          IO,
          // isa
-         Isa, InstructionSpec, Fields, Reg, regPrefixes, getRegAliases,
-         isInstruction, AliasContext, AliasFields, AliasSpec, SymbTable,
-         initMachineState,
+         Isa, IsaSpec, InstructionSpec, Fields, Reg, AliasContext, AliasFields,
+         AliasSpec, SymbTable,
          // state
          RegIdentifier, FullMachineState, MachineState, MachineStateUpdate,
          // log

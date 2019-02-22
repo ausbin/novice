@@ -1,6 +1,6 @@
-import { Isa } from './isa';
+import { IsaSpec } from './isa';
 
-const DummyIsa: Isa = {
+const dummyIsaSpec: IsaSpec = {
     pc: {
         increment: 0,
         resetVector: 0,
@@ -16,4 +16,4 @@ const DummyIsa: Isa = {
     aliases: [],
 };
 
-export { DummyIsa };
+export { dummyIsaSpec };

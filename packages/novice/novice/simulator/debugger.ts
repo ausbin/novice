@@ -1,5 +1,4 @@
-import { Fields, getRegAliases, InstructionSpec, IO, Isa,
-         SymbTable } from '../isa';
+import { Fields, InstructionSpec, IO, Isa, SymbTable } from '../isa';
 import { maskTo, maxUnsignedVal, sextTo } from '../util';
 import { Simulator } from './simulator';
 import { Symbols } from './symbols';
@@ -101,7 +100,7 @@ class Debugger extends Simulator implements Symbols {
                 case 'imm':
                     let labels: string[] = [];
                     if (field.label) {
-                        const targetPc = pc + this.isa.pc.increment +
+                        const targetPc = pc + this.isa.spec.pc.increment +
                                          fields.imms[field.name];
                         labels = this.labelsForAddr(targetPc);
                     }
@@ -139,9 +138,9 @@ class Debugger extends Simulator implements Symbols {
 
         const result: [number, number, number, string|null, string[]][] = [];
 
-        for (let pc = fromPc; pc <= toPc; pc += this.isa.pc.increment) {
+        for (let pc = fromPc; pc <= toPc; pc += this.isa.spec.pc.increment) {
             const word = this.load(pc);
-            const sext = sextTo(word, this.isa.mem.word);
+            const sext = sextTo(word, this.isa.spec.mem.word);
             const labels = this.labelsForAddr(pc);
             let disassembled = this.disassemble(pc, word);
 
@@ -210,7 +209,7 @@ class Debugger extends Simulator implements Symbols {
     private genRegAliasLut(isa: Isa): RegAliasLut {
         const lut: RegAliasLut = {};
 
-        for (const reg of isa.regs) {
+        for (const reg of isa.spec.regs) {
             if (reg.kind === 'reg-range') {
                 lut[reg.prefix] = new Array(reg.count).fill(null);
 
@@ -256,7 +255,7 @@ class Debugger extends Simulator implements Symbols {
                             addr);
         }
 
-        if (addr > maxUnsignedVal(this.isa.mem.space)) {
+        if (addr > maxUnsignedVal(this.isa.spec.mem.space)) {
             throw new Error(`address 0x${addr.toString(16)} is too large`);
         }
     }

@@ -1,4 +1,4 @@
-import { Isa, regPrefixes } from '../../../isa';
+import { Isa } from '../../../isa';
 import { CommentDFA, IntegerDFA, PseudoOpDFA, RegDFA, SymbolDFA,
          WhitespaceDFA, WordDFA } from '../../dfa';
 import { Production } from '../../lr1';
@@ -60,7 +60,7 @@ const getDFAs = (isa: Isa) => [
     new IntegerDFA<T>({hex: 'int-hex', dec: 'int-dec'}),
     new PseudoOpDFA<T>({pseudoOp: 'pseudoop'}),
     // TODO: make this dependent on ISA having aliases, don't assume so
-    new RegDFA<T>({reg: 'reg'}, regPrefixes(isa), true),
+    new RegDFA<T>({reg: 'reg'}, isa.regPrefixes(), true),
     new SymbolDFA<T>([',', '(', ')', ':']),
     new WhitespaceDFA<T>(),
     new WordDFA<T>({word: 'word'}),

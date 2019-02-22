@@ -5,8 +5,8 @@ const complxOpSpec: PseudoOpSpec = {
         {op: 'fill',
          operands: [{kind: 'int', name: 'num'}],
          asm: (ctx: AsmContext, operands: OpOperands) =>
-            // TODO: complain if too big
-            [operands.ints.num & ~(-1 << ctx.isa.mem.addressability)]},
+            // TODO: use util functions instead of this crap
+            [operands.ints.num & ~(-1 << ctx.isa.spec.mem.addressability)]},
 
         {op: 'fill',
          operands: [{kind: 'label', name: 'label'}],

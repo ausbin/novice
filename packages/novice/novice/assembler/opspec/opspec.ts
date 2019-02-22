@@ -29,7 +29,7 @@ interface PseudoOpSpec {
 
 // Size is one word
 function oneWord(isa: Isa) {
-    return isa.mem.word / isa.mem.addressability;
+    return isa.spec.mem.word / isa.spec.mem.addressability;
 }
 
 export { AsmContext, OpOperands, PseudoOpSpec, OpSpec, oneWord };

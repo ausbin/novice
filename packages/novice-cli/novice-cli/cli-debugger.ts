@@ -208,11 +208,11 @@ class CliDebugger extends Debugger {
     }
 
     private fmtAddr(addr: number): string {
-        return this.fmtHex(addr, this.isa.mem.space);
+        return this.fmtHex(addr, this.isa.spec.mem.space);
     }
 
     private fmtWord(word: number): string {
-        return this.fmtHex(word, this.isa.mem.word);
+        return this.fmtHex(word, this.isa.spec.mem.word);
     }
 
     private async unstepCmd(): Promise<void> {
@@ -237,7 +237,7 @@ class CliDebugger extends Debugger {
     }
 
     private printMemRegion(actualPc: number, fromPc: number, toPc: number): void {
-        const padDecTo = Math.floor(Math.log10(Math.pow(2, this.isa.mem.word - 1) - 1)) + 2;
+        const padDecTo = Math.floor(Math.log10(Math.pow(2, this.isa.spec.mem.word - 1) - 1)) + 2;
         const hasPc = fromPc <= actualPc && actualPc <= toPc;
         const disassembled = this.disassembleRegion(fromPc, toPc);
 
@@ -283,7 +283,7 @@ class CliDebugger extends Debugger {
         // Print registers
         // This looks really awful, but it's just tedious string
         // formatting code
-        for (const reg of this.isa.regs) {
+        for (const reg of this.isa.spec.regs) {
             if (reg.kind === 'reg-range') {
                 const nibbles = Math.ceil(reg.bits / 4);
                 const rowSize = Math.ceil(16 / nibbles);
@@ -303,7 +303,7 @@ class CliDebugger extends Debugger {
                     const regno = this.lookupRegAlias(reg.prefix, i) || i;
                     const regname = padStr(`${reg.prefix}${regno}`, maxRegnameLen, ' ');
                     const regval = forceUnsigned(this.state.regs.range[reg.prefix][i],
-                                                 this.isa.mem.word);
+                                                 this.isa.spec.mem.word);
                     const padded = padStr(regval.toString(base),
                                           (base === 2) ? reg.bits : nibbles, '0');
                     const after = ((i + 1) % rowSize && i < reg.count - 1) ? ' ' : '\n';
@@ -314,7 +314,7 @@ class CliDebugger extends Debugger {
                 const base = (reg.bits <= 4) ? 2 : 16;
                 const prefix = (reg.bits === 1) ? '' : (base === 2) ? '0b' : '0x';
                 const regval = forceUnsigned(this.state.regs.solo[reg.name],
-                                             this.isa.mem.word);
+                                             this.isa.spec.mem.word);
                 const padded = padStr(regval.toString(base),
                                       (base === 2) ? reg.bits : nibbles, '0');
                 this.stdout.write(`${reg.name}: ${prefix}${padded}\n`);
@@ -327,9 +327,9 @@ class CliDebugger extends Debugger {
 
         // Be a little dishonest: to avoid confusing users, get 'stuck'
         // on halts
-        const pc = this.state.halted ? this.state.pc - this.isa.pc.increment : this.state.pc;
+        const pc = this.state.halted ? this.state.pc - this.isa.spec.pc.increment : this.state.pc;
         const fromPc = Math.max(0, pc - 4);
-        const toPc = Math.min(maxUnsignedVal(this.isa.mem.space), pc + 4);
+        const toPc = Math.min(maxUnsignedVal(this.isa.spec.mem.space), pc + 4);
         this.printMemRegion(pc, fromPc, toPc);
     }
 

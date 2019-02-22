@@ -95,7 +95,7 @@ interface AliasSpec {
     asm: (ctx: AliasContext, fields: AliasFields) => (Instruction|PseudoOp)[];
 }
 
-interface Isa {
+interface IsaSpec {
     pc: Pc;
     mem: Mem;
     regs: Reg[];
@@ -103,63 +103,83 @@ interface Isa {
     aliases: AliasSpec[];
 }
 
-function regPrefixes(isa: Isa): string[] {
-    const result = [];
-    for (const reg of isa.regs) {
-        if (reg.kind === 'reg-range') {
-            result.push(reg.prefix);
-        }
-    }
-    return result;
-}
+class Isa {
+    public spec: IsaSpec;
 
-function getRegAliases(isa: Isa, prefix: string): {[s: string]: number} {
-    for (const reg of isa.regs) {
-        if (reg.kind === 'reg-range' && reg.prefix === prefix) {
-            return reg.aliases || {};
-        }
+    public constructor(spec: IsaSpec) {
+        this.spec = spec;
     }
 
-    throw new Error(`no such register prefix ${prefix}`);
-}
-
-function isInstruction(isa: Isa, op: string): boolean {
-    return isa.instructions.some(instr => instr.op === op) ||
-           isa.aliases.some(alias => alias.op === op);
-}
-
-function initMachineState(isa: Isa): FullMachineState {
-    const state: FullMachineState = {
-        pc: isa.pc.resetVector,
-        mem: {},
-        regs: {
-            solo: {},
-            range: {},
-        },
-        halted: false,
-    };
-
-    for (const reg of isa.regs) {
-        switch (reg.kind) {
-            case 'reg':
-                state.regs.solo[reg.name] = 0;
-                break;
-
-            case 'reg-range':
-                state.regs.range[reg.prefix] = new Array<number>(reg.count);
-                for (let i = 0; i < reg.count; i++) {
-                    state.regs.range[reg.prefix][i] = 0;
-                }
-                break;
-
-            default:
-                const _: never = reg;
+    public regPrefixes(): string[] {
+        const result = [];
+        for (const reg of this.spec.regs) {
+            if (reg.kind === 'reg-range') {
+                result.push(reg.prefix);
+            }
         }
+        return result;
     }
 
-    return state;
+    public getRegAliases(prefix: string): {[s: string]: number} {
+        for (const reg of this.spec.regs) {
+            if (reg.kind === 'reg-range' && reg.prefix === prefix) {
+                return reg.aliases || {};
+            }
+        }
+
+        throw new Error(`no such register prefix ${prefix}`);
+    }
+
+    public isInstruction(op: string): boolean {
+        return this.spec.instructions.some(instr => instr.op === op) ||
+               this.spec.aliases.some(alias => alias.op === op);
+    }
+
+    public initMachineState(): FullMachineState {
+        const state: FullMachineState = {
+            pc: this.spec.pc.resetVector,
+            mem: {},
+            regs: {
+                solo: {},
+                range: {},
+            },
+            halted: false,
+        };
+
+        for (const reg of this.spec.regs) {
+            switch (reg.kind) {
+                case 'reg':
+                    state.regs.solo[reg.name] = 0;
+                    break;
+
+                case 'reg-range':
+                    state.regs.range[reg.prefix] = new Array<number>(reg.count);
+                    for (let i = 0; i < reg.count; i++) {
+                        state.regs.range[reg.prefix][i] = 0;
+                    }
+                    break;
+
+                default:
+                    const _: never = reg;
+            }
+        }
+
+        return state;
+    }
+
+    public lookupRegSpec(id: RegIdentifier): Reg {
+        for (const reg of this.spec.regs) {
+            if (typeof id === 'string' && reg.kind === 'reg'
+                    && reg.name === id ||
+                typeof id !== 'string' && reg.kind === 'reg-range'
+                    && id[0] === reg.prefix) {
+                return reg;
+            }
+        }
+
+        throw new Error(`unknown register identifier ${id}`);
+    }
 }
 
-export { Isa, Fields, InstructionSpec, Reg, regPrefixes, getRegAliases,
-         isInstruction, initMachineState, AliasContext, AliasFields, AliasSpec,
-         SymbTable };
+export { Isa, IsaSpec, Fields, InstructionSpec, Reg, AliasContext, AliasFields,
+         AliasSpec, SymbTable };

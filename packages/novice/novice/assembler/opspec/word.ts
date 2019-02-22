@@ -7,7 +7,7 @@ const wordOpSpec: PseudoOpSpec = {
          operands: [{kind: 'int', name: 'num'}],
          asm: (ctx: AsmContext, operands: OpOperands) =>
             // TODO: complain if too big
-            [maskTo(operands.ints.num, ctx.isa.mem.addressability)]},
+            [maskTo(operands.ints.num, ctx.isa.spec.mem.addressability)]},
 
         {op: 'word',
          operands: [{kind: 'label', name: 'label'}],

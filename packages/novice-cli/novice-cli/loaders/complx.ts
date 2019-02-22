@@ -7,7 +7,7 @@ type State = 'addr'|'len'|'words';
 
 class ComplxObjectFileLoader implements Loader {
     public async load(isa: Isa, fp: Readable, mem: Memory): Promise<void> {
-        const wordBytes = Math.ceil(isa.mem.word / 8);
+        const wordBytes = Math.ceil(isa.spec.mem.word / 8);
         const excessBuf = Buffer.alloc(wordBytes);
         let excessLen = 0;
         let pc = 0;
@@ -61,7 +61,7 @@ class ComplxObjectFileLoader implements Loader {
 
                     case 'words':
                         mem.store(pc, word);
-                        pc += Math.ceil(isa.mem.word / isa.mem.addressability);
+                        pc += Math.ceil(isa.spec.mem.word / isa.spec.mem.addressability);
 
                         if (!--wordsLeft) {
                             state = 'addr';

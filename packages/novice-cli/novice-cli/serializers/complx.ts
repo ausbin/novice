@@ -30,7 +30,7 @@ class ComplxObjectFileSerializer implements Serializer {
 
     // Big endian
     private writeWord(isa: Isa, word: number, fp: Writable): void {
-        const numBytes = Math.ceil(isa.mem.word / 8);
+        const numBytes = Math.ceil(isa.spec.mem.word / 8);
         const chunk = new Uint8Array(numBytes);
 
         for (let i = 0; i < numBytes; i++) {

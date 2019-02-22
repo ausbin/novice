@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Isa, FullMachineState, initMachineState } from 'novice';
+import { Isa, FullMachineState } from 'novice';
 
 export interface GuiDebuggerProps {
     workerBundleUrl: string;
@@ -19,7 +19,7 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
         super(props);
 
         this.state = {
-            state: initMachineState(this.props.isa),
+            state: this.props.isa.initMachineState(),
         };
 
         (this.worker = new Worker(this.props.workerBundleUrl)).onerror =

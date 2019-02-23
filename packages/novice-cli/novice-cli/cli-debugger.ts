@@ -173,7 +173,7 @@ class CliDebugger extends Debugger {
 
     private parseAddr(operand: string): number {
         const base = operand.toLowerCase().startsWith('0x') ? 16 :
-                     /\d+/.test(operand) ? 10 : -1;
+                     /^\d+$/.test(operand) ? 10 : -1;
         let addr: number;
         if (base === -1) {
             if (!this.hasSymbol(operand)) {
@@ -183,6 +183,11 @@ class CliDebugger extends Debugger {
         } else {
             addr = parseInt(operand, base);
         }
+
+        if (isNaN(addr)) {
+            throw new Error(`invalid base ${base} integer \`${operand}'`);
+        }
+
         return addr;
     }
 

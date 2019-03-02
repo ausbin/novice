@@ -27,11 +27,11 @@ describe('debugger', () => {
             });
 
             it('runs 128 instructions for each continue', () => {
-                return expect(dbg.cont()).rejects.toThrow('infinite loop').then(() => {
+                return expect(dbg.run()).rejects.toThrow('infinite loop').then(() => {
                     expect(dbg.getPc()).toEqual(0x3080);
                 }).then(() => {
                     // This is a promise, so return it
-                    return expect(dbg.cont()).rejects.toThrow('infinite loop');
+                    return expect(dbg.run()).rejects.toThrow('infinite loop');
                 }).then(() => {
                     // The crucial check: did continue go for another 128
                     // instructions?
@@ -45,7 +45,7 @@ describe('debugger', () => {
                 dbg.store(0x3100, 0xf025); // halt 256 deep, much past the OG
                                            // 128 max
 
-                return dbg.cont().then(() => {
+                return dbg.run().then(() => {
                     expect(dbg.isHalted()).toBe(true);
                     expect(dbg.getPc()).toEqual(0x3101);
                 });
@@ -58,7 +58,7 @@ describe('debugger', () => {
             });
 
             it('stops after 128 executions', () => {
-                return expect(dbg.cont()).rejects.toThrow('infinite loop');
+                return expect(dbg.run()).rejects.toThrow('infinite loop');
             });
         });
 
@@ -106,21 +106,21 @@ describe('debugger', () => {
             it('obeys breakpoints', () => {
                 dbg.addBreakpoint(0x3004);
 
-                return dbg.cont().then(() => {
+                return dbg.run().then(() => {
                     expect(dbg.getPc()).toEqual(0x3004);
                     expect(dbg.isHalted()).toBe(false);
                     expect(io.stdout).toEqual('');
-                    return dbg.cont();
+                    return dbg.run();
                 }).then(() => {
                     expect(dbg.getPc()).toEqual(0x3004);
                     expect(dbg.isHalted()).toBe(false);
                     expect(io.stdout).toEqual('!');
-                    return dbg.cont();
+                    return dbg.run();
                 }).then(() => {
                     expect(dbg.getPc()).toEqual(0x3004);
                     expect(dbg.isHalted()).toBe(false);
                     expect(io.stdout).toEqual('!!');
-                    return dbg.cont();
+                    return dbg.run();
                 }).then(() => {
                     expect(dbg.getPc()).toEqual(0x3008);
                     expect(dbg.isHalted()).toBe(true);
@@ -165,6 +165,28 @@ describe('debugger', () => {
                     [0x3003, 0x0c03,   3075, 'brnz 3', ['loop']],
                     [0x3004, 0xf021,  -4063, 'out', []],
                 ]);
+            });
+        });
+
+        describe('infiniloop', () => {
+            beforeEach(() => {
+                dbg = new Debugger(getIsa('lc3'), io, 1 << 20);
+                dbg.store(0x3000, 0b0000111111111111); // brnzp -1
+            });
+
+            it('interrupts', () => {
+                const promise = dbg.run();
+
+                setTimeout(() => {
+                    dbg.onInterrupt();
+                }, 100);
+
+                return promise.then(() => {
+                    expect(dbg.getPc()).toEqual(0x3000);
+                    expect(dbg.isHalted()).toBe(false);
+                    expect(dbg.getNumExec()).toBeGreaterThan(0);
+                    expect(io.stdout).toEqual('');
+                });
             });
         });
     });

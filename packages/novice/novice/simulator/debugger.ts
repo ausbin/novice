@@ -31,27 +31,52 @@ class Debugger extends Simulator implements Symbols {
     }
 
     // continue
-    public async cont(): Promise<void> {
+    public async run(): Promise<void> {
+        // How many instructions to execute before freeing up the event
+        // loop
+        const BURST_SIZE = 1 << 10;
+
         // Ignore breakpoints the first time through the loop
         // This way, if you've stopped at a breakpoint and press
         // "continue" it actually will
         let first = true;
         // Reset dynamic instruction count for each "continuation"
         this.numExec = 0;
+        // Only want to get interrupted while we're in the loop below
+        this.interrupt = false;
 
-        while ((first || !this.breakpoints.hasOwnProperty(this.state.pc))
-               && !this.state.halted && !this.interrupt) {
-            if (this.maxExec >= 0 && this.numExec >= this.maxExec) {
-                throw new Error(`hit maximum executed instruction count ` +
-                                `${this.maxExec}. this may indicate an ` +
-                                `infinite loop in code. continuing will ` +
-                                `continue execution for another ` +
-                                `${this.maxExec} instructions.`);
+        // Break up execution into units of BURST_SIZE so we don't clog
+        // up the event loop
+        await new Promise<void>((resolve, reject) => {
+            async function runBurst(this: Debugger) {
+                let i = 0;
+
+                while ((first || !this.breakpoints.hasOwnProperty(this.state.pc))
+                       && !this.state.halted && !this.interrupt) {
+                    if (this.maxExec >= 0 && this.numExec >= this.maxExec) {
+                        reject(new Error(`hit maximum executed instruction count ` +
+                                         `${this.maxExec}. this may indicate an ` +
+                                         `infinite loop in code. continuing will ` +
+                                         `continue execution for another ` +
+                                         `${this.maxExec} instructions.`));
+                        return;
+                    }
+
+                    if (i >= BURST_SIZE) {
+                        setTimeout(runBurst.bind(this), 0);
+                        return;
+                    }
+
+                    first = false;
+                    i++;
+                    await this.step();
+                }
+
+                resolve();
             }
 
-            first = false;
-            await this.step();
-        }
+            runBurst.bind(this)();
+        });
 
         this.interrupt = false;
     }
@@ -200,6 +225,11 @@ class Debugger extends Simulator implements Symbols {
         }
 
         return this.invSymbTable[addr];
+    }
+
+    // Interrupt execution (e.g. infinite loop)
+    public onInterrupt(): void {
+        this.interrupt = true;
     }
 
     protected lookupRegAlias(prefix: string, regno: number): string|null {

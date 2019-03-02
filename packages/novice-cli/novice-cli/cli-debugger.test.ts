@@ -80,7 +80,7 @@ describe('cli debugger', () => {
         it('quits', () => {
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 // @ts-ignore
                 expect(mockInterface.question.mock.calls.length).toEqual(1);
                 // @ts-ignore
@@ -93,7 +93,7 @@ describe('cli debugger', () => {
             runCmd('h');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch('novice debugger usage');
                 expect(stdoutActual).toMatch(/h\[elp\]\s+show this message/);
                 expect(stdoutActual).toMatch(/q\[uit\]\s+escape this foul debugger/);
@@ -105,7 +105,7 @@ describe('cli debugger', () => {
             runCmd('');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch(/novice debugger usage[^]+novice debugger usage/);
             });
         });
@@ -117,7 +117,7 @@ describe('cli debugger', () => {
             runCmd('s');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch(/==> 0x3000[^]+==> 0x3000[^]+==> 0x3000/);
             });
         });
@@ -126,7 +126,7 @@ describe('cli debugger', () => {
             runCmd('s 1');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch('command step expects 0 operands but got 1');
             });
         });
@@ -135,7 +135,7 @@ describe('cli debugger', () => {
             runCmd('u');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch('error: already at the beginning of time');
             });
         });
@@ -144,7 +144,7 @@ describe('cli debugger', () => {
             runCmd('bogus');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch('unknown command `bogus\'');
             });
         });
@@ -159,7 +159,7 @@ describe('cli debugger', () => {
             runCmd('b asdf');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch('unknown label `asdf\'');
                 // Don't print state again after an error
                 expect(stdoutActual).not.toMatch(/==>[^]+==>/);
@@ -176,7 +176,7 @@ describe('cli debugger', () => {
             for (let i = 0x3000; i <= 0x3004; i++) runCmd('s');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch(/==> 0x3000[^]+==> 0x3001[^]+==> 0x3002[^]+==> 0x3003[^]+==> 0x3004[^]+==> 0x3004/);
                 expect(stdoutActual).toMatch(/r0: 0x0000[^]+r0: 0x0000[^]+r0: 0x0003[^]+r0: 0x0003[^]+r0: 0x0003[^]+r0: 0x0003/);
                 expect(stdoutActual).toMatch(/r1: 0x0000[^]+r1: 0x0000[^]+r1: 0x0000[^]+r1: 0x0000[^]+r1: 0x0004[^]+r1: 0x0004/);
@@ -195,7 +195,7 @@ describe('cli debugger', () => {
             runCmd('c');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch('breakpoint set at 0x3002');
                 expect(stdoutActual).toMatch(/==> 0x3000[^]+==> 0x3002[^]+==> 0x3004/);
                 expect(stdoutActual).toMatch(/r0: 0x0000[^]+r0: 0x0003[^]+r0: 0x0003/);
@@ -219,7 +219,7 @@ describe('cli debugger', () => {
             runCmd('c');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch('breakpoint set at 0x3002');
                 expect(stdoutActual).toMatch(/==> 0x3000[^]+==> 0x3002[^]+==> 0x3004/);
                 expect(stdoutActual).toMatch(/r0: 0x0000[^]+r0: 0x0003[^]+r0: 0x0003/);
@@ -235,7 +235,7 @@ describe('cli debugger', () => {
             runCmd('u');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch(/==> 0x3000[^]+==> 0x3001[^]+==> 0x3000/);
                 expect(stdoutActual).not.toMatch(/==> 0x3001[^]+==> 0x3001/);
             });
@@ -260,7 +260,7 @@ describe('cli debugger', () => {
             runCmd('c');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch('hello dad\n');
             });
         });
@@ -277,7 +277,7 @@ describe('cli debugger', () => {
             runCmd('c');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch(/^dad↲$/m);
             });
         });
@@ -313,7 +313,7 @@ describe('cli debugger', () => {
             'ilikebigstringsandicannotlie '.split('').forEach(sendInputChar);
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch(/^ilikebigstringsandicannotlie$/m);
             });
         });
@@ -327,7 +327,7 @@ describe('cli debugger', () => {
             sendInputChar('x');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch('please type exactly 1 char');
             });
         });
@@ -351,7 +351,7 @@ describe('cli debugger', () => {
             runCmd('p 0x3000-0x3004');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch(/0x3000[^]+^==> 0x3000:  0xe002  -8190   lea r0, 2  $/m);
                 expect(stdoutActual).toMatch(/0x3001[^]+^    0x3001:  0xf022  -4062   puts       $/m);
                 expect(stdoutActual).toMatch(/0x3002[^]+^    0x3002:  0xf025  -4059   halt       $/m);
@@ -379,7 +379,7 @@ describe('cli debugger', () => {
             runCmd('p 0x3001-0x3004');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch(/0x3001[^]+^0x3001:  0xf022  -4062   puts  $/m);
                 expect(stdoutActual).toMatch(/0x3002[^]+^0x3002:  0xf025  -4059   halt  $/m);
                 expect(stdoutActual).toMatch(/0x3003[^]+^0x3003:  0x0068  104     'h'   $/m);
@@ -406,7 +406,7 @@ describe('cli debugger', () => {
             runCmd('p 12289-0x3002');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch(/0x3001[^]+^0x3001:  0xf022  -4062   puts  $/m);
                 expect(stdoutActual).toMatch(/0x3002[^]+^0x3002:  0xf025  -4059   halt  $/m);
             });
@@ -431,7 +431,7 @@ describe('cli debugger', () => {
             runCmd('p 0x3001');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch(/0x3001[^]+^0x3001:  0xf022  -4062   puts  $/m);
             });
         });
@@ -440,8 +440,32 @@ describe('cli debugger', () => {
             runCmd('p 0x3000-0x3001-0x3002');
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 expect(stdoutActual).toMatch('error: expected range');
+            });
+        });
+
+        it('terminates on interrupts', () => {
+            dbg.store(0x3000, 0b0000111111111111); // brnzp -1
+
+            runCmd('r');
+            runCmd('q');
+
+            // Make sure it called on('SIGINT', ...)
+            // @ts-ignore
+            expect(mockInterface.on.mock.calls.length).toEqual(1);
+            // @ts-ignore
+            const [event, cb]: [string, () => void] = mockInterface.on.mock.calls[0];
+            expect(event).toEqual('SIGINT');
+
+            const promise = dbg.start();
+
+            // Trigger an imaginary SIGINT
+            setTimeout(cb, 100);
+
+            return promise.then(() => {
+                expect(stdoutActual).toMatch(/==> 0x3000[^]+==> 0x3000/);
+                expect(stdoutActual).not.toMatch(/==> 0x3000[^]+==> 0x3000[^]+==> /);
             });
         });
     });
@@ -454,7 +478,7 @@ describe('cli debugger', () => {
         it('displays register aliases properly', () => {
             runCmd('q');
 
-            return dbg.run().then(() => {
+            return dbg.start().then(() => {
                 // @ts-ignore
                 expect(mockInterface.question.mock.calls.length).toEqual(1);
                 // @ts-ignore

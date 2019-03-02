@@ -54,7 +54,8 @@ class CliDebugger extends Debugger {
     private commands: Command[];
 
     public constructor(isa: Isa, stdin: Readable, stdout: Writable) {
-        const DEFAULT_MAX_EXEC = 1 << 13;
+        // No maximum; continue until SIGINT
+        const DEFAULT_MAX_EXEC = -1;
         const io = new PromptIO();
         super(isa, io, DEFAULT_MAX_EXEC);
 
@@ -73,7 +74,7 @@ class CliDebugger extends Debugger {
         this.exit = false;
         this.commands = [
             {op: ['continue', 'run'], operands: 0,
-             showState: true, method: this.cont,
+             showState: true, method: this.run,
              help: 'run code until halt or breakpoint'},
 
             {op: ['break'], operands: 1,
@@ -102,7 +103,7 @@ class CliDebugger extends Debugger {
         ];
     }
 
-    public async run(): Promise<void> {
+    public async start(): Promise<void> {
         let showState = true;
         let last: [Command|null, string[]] = [null, []];
 
@@ -336,11 +337,6 @@ class CliDebugger extends Debugger {
         const fromPc = Math.max(0, pc - 4);
         const toPc = Math.min(maxUnsignedVal(this.isa.spec.mem.space), pc + 4);
         this.printMemRegion(pc, fromPc, toPc);
-    }
-
-    // Interrupt execution (e.g. infinite loop)
-    private onInterrupt(): void {
-        this.interrupt = true;
     }
 
     private async quit(): Promise<void> {

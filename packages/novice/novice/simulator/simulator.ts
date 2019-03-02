@@ -113,6 +113,8 @@ class Simulator implements Memory {
     // TODO: make this immutable somehow
     public getRegs() { return this.state.regs; }
 
+    public getNumExec() { return this.numExec; }
+
     public loadSections(sections: MachineCodeSection[]): void {
         for (const section of sections) {
             for (let i = 0; i < section.words.length; i++) {

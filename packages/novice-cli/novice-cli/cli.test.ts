@@ -536,7 +536,7 @@ describe('cli', () => {
                 mockDbg = {
                     loadSections: jest.fn(),
                     setSymbols: jest.fn(),
-                    run: jest.fn(),
+                    start: jest.fn(),
                     close: jest.fn(),
                 };
             });
@@ -554,7 +554,7 @@ describe('cli', () => {
                 // @ts-ignore
                 mockDbg.setSymbols.mockReset();
                 // @ts-ignore
-                mockDbg.run.mockReset();
+                mockDbg.start.mockReset();
                 // @ts-ignore
                 mockDbg.close.mockReset();
             });
@@ -585,7 +585,7 @@ describe('cli', () => {
                     // @ts-ignore
                     expect(mockDbg.setSymbols.mock.calls).toEqual([[mockSymbTable]]);
                     // @ts-ignore
-                    expect(mockDbg.run.mock.calls).toEqual([[]]);
+                    expect(mockDbg.start.mock.calls).toEqual([[]]);
                     // @ts-ignore
                     expect(mockDbg.close.mock.calls).toEqual([[]]);
                 });
@@ -615,7 +615,7 @@ describe('cli', () => {
                     // @ts-ignore
                     expect(CliDebugger.mock.calls).toEqual([[mockCfg.isa, stdin, stdout]]);
                     // @ts-ignore
-                    expect(mockDbg.run.mock.calls).toEqual([[]]);
+                    expect(mockDbg.start.mock.calls).toEqual([[]]);
                     // @ts-ignore
                     expect(mockDbg.close.mock.calls).toEqual([[]]);
                 });
@@ -657,7 +657,7 @@ describe('cli', () => {
                     // @ts-ignore
                     expect(CliDebugger.mock.calls).toEqual([[mockCfg.isa, stdin, stdout]]);
                     // @ts-ignore
-                    expect(mockDbg.run.mock.calls).toEqual([[]]);
+                    expect(mockDbg.start.mock.calls).toEqual([[]]);
                     // @ts-ignore
                     expect(mockDbg.close.mock.calls).toEqual([[]]);
                 });
@@ -689,9 +689,9 @@ describe('cli', () => {
 
             it('handles simulator error', () => {
                 // @ts-ignore
-                mockDbg.run.mockReset();
+                mockDbg.start.mockReset();
                 // @ts-ignore
-                mockDbg.run.mockImplementation(() => {
+                mockDbg.start.mockImplementation(() => {
                     throw new Error('unexpected end-of-file');
                 });
 
@@ -718,7 +718,7 @@ describe('cli', () => {
                     // @ts-ignore
                     expect(CliDebugger.mock.calls).toEqual([[mockCfg.isa, stdin, stdout]]);
                     // @ts-ignore
-                    expect(mockDbg.run.mock.calls).toEqual([[]]);
+                    expect(mockDbg.start.mock.calls).toEqual([[]]);
                     // @ts-ignore
                     expect(mockDbg.close.mock.calls).toEqual([[]]);
                 });

@@ -234,7 +234,7 @@ async function dbg(loaderName: string|null, configName: string, path: string,
             debug.setSymbols(symbtable);
         }
 
-        await debug.run();
+        await debug.start();
         debug.close();
         return 0;
     } catch (err) {

@@ -1,5 +1,4 @@
-const ctx: Worker = self as any;
+import { DebuggerWorker } from './debugger-worker';
 
-ctx.onmessage = event => {
-    ctx.postMessage(`gaming is ${event.data}`);
-};
+const ctx: Worker = self as any;
+new DebuggerWorker(ctx).register();

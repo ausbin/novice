@@ -1,42 +1,50 @@
+import { FullMachineState, getIsa, Isa } from 'novice';
 import * as React from 'react';
-import { Isa, FullMachineState } from 'novice';
+import { FrontendMessage, WorkerMessage } from '../worker/proto';
 
 export interface GuiDebuggerProps {
     workerBundleUrl: string;
-    isa: Isa;
+    isaName: string;
 }
 
 export interface GuiDebuggerState {
-    state: FullMachineState,
+    state: FullMachineState;
 }
 
 // State is never set so we use the '{}' type.
 export class GuiDebugger extends React.Component<GuiDebuggerProps,
                                                  GuiDebuggerState> {
+    private isa: Isa;
     private worker: Worker;
 
     constructor(props: GuiDebuggerProps) {
         super(props);
 
+        this.isa = getIsa(this.props.isaName);
         this.state = {
-            state: this.props.isa.initMachineState(),
+            state: this.isa.initMachineState(),
         };
 
         (this.worker = new Worker(this.props.workerBundleUrl)).onerror =
             this.onError.bind(this);
         this.worker.onmessage = this.onMessage.bind(this);
-        this.worker.postMessage('incredible');
+        this.postMessage({ kind: 'reset', isa: this.props.isaName });
     }
 
-    onError(err: ErrorEvent) {
+    public onError(err: ErrorEvent) {
         console.log(err);
     }
 
-    onMessage(event: MessageEvent) {
-        console.log(event.data);
+    public onMessage(event: MessageEvent) {
+        const msg: WorkerMessage = event.data;
+        console.log('message from worker', msg);
     }
 
-    render() {
+    public render() {
         return <h1>Hello, Becker!</h1>;
+    }
+
+    private postMessage(msg: FrontendMessage): void {
+        this.worker.postMessage(msg);
     }
 }

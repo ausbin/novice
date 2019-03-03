@@ -260,7 +260,7 @@ class Simulator implements Memory {
     }
 
     // Return a list of corresponding undoing updates
-    private applyUpdates(updates: MachineStateUpdate[]):
+    protected applyUpdates(updates: MachineStateUpdate[]):
             MachineStateUpdate[] {
         const undos: MachineStateUpdate[] = [];
 

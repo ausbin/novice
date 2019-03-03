@@ -15,6 +15,67 @@ describe('simulator', () => {
             sim = new Simulator(getIsa('lc3'), io, 128);
         });
 
+        describe('loadSections()', () => {
+            beforeEach(() => {
+                sim.loadSections([
+                    {
+                        startAddr: 0x3000,
+                        words: [
+                            0b1110000000000010, // lea r0, mystring
+                            0xf022,             // puts
+                            0xf025,             // halt
+                            'h'.charCodeAt(0),  // mystring .stringz "hello world!"
+                            'e'.charCodeAt(0),
+                            'l'.charCodeAt(0),
+                            'l'.charCodeAt(0),
+                            'o'.charCodeAt(0),
+                            ' '.charCodeAt(0),
+                            'w'.charCodeAt(0),
+                            'o'.charCodeAt(0),
+                            'r'.charCodeAt(0),
+                            'l'.charCodeAt(0),
+                            'd'.charCodeAt(0),
+                            '!'.charCodeAt(0),
+                            0x0000,
+                        ],
+                    },
+                    {
+                        startAddr: 0x4000,
+                        words: [
+                            0x0000, // nop
+                            0xf025, // halt
+                        ],
+                    },
+                ]);
+            });
+
+            it('loads sections properly', () => {
+                expect(sim.load(0x2fff)).toEqual(0x0000);
+                expect(sim.load(0x3000)).toEqual(0b1110000000000010);
+                expect(sim.load(0x3001)).toEqual(0xf022);
+                expect(sim.load(0x3002)).toEqual(0xf025);
+                expect(sim.load(0x3003)).toEqual('h'.charCodeAt(0));
+                expect(sim.load(0x3004)).toEqual('e'.charCodeAt(0));
+                expect(sim.load(0x3005)).toEqual('l'.charCodeAt(0));
+                expect(sim.load(0x3006)).toEqual('l'.charCodeAt(0));
+                expect(sim.load(0x3007)).toEqual('o'.charCodeAt(0));
+                expect(sim.load(0x3008)).toEqual(' '.charCodeAt(0));
+                expect(sim.load(0x3009)).toEqual('w'.charCodeAt(0));
+                expect(sim.load(0x300a)).toEqual('o'.charCodeAt(0));
+                expect(sim.load(0x300b)).toEqual('r'.charCodeAt(0));
+                expect(sim.load(0x300c)).toEqual('l'.charCodeAt(0));
+                expect(sim.load(0x300d)).toEqual('d'.charCodeAt(0));
+                expect(sim.load(0x300e)).toEqual('!'.charCodeAt(0));
+                expect(sim.load(0x300f)).toEqual(0x0000);
+                expect(sim.load(0x3010)).toEqual(0x0000);
+
+                expect(sim.load(0x3fff)).toEqual(0x0000);
+                expect(sim.load(0x4000)).toEqual(0x0000);
+                expect(sim.load(0x4001)).toEqual(0xf025);
+                expect(sim.load(0x4002)).toEqual(0x0000);
+            });
+        });
+
         describe('zeroed memory', () => {
             beforeEach(() => {
                 // set maxExec = -1 instead

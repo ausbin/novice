@@ -116,11 +116,18 @@ class Simulator implements Memory {
     public getNumExec() { return this.numExec; }
 
     public loadSections(sections: MachineCodeSection[]): void {
+        const updates: MachineStateUpdate[] = [];
+
         for (const section of sections) {
             for (let i = 0; i < section.words.length; i++) {
-                this.store(section.startAddr + i, section.words[i]);
+                updates.push({kind: 'mem',
+                              addr: section.startAddr + i,
+                              val: section.words[i]});
             }
         }
+
+        // Don't create a log entry because no need to ever undo this
+        this.applyUpdates(updates);
     }
 
     public async step(): Promise<void> {
@@ -132,11 +139,9 @@ class Simulator implements Memory {
         this.numExec++;
 
         const ir = this.load(this.state.pc);
-        this.state.pc += this.isa.spec.pc.increment;
-
         const [instr, fields] = this.decode(ir);
         // Don't pass the incremented PC
-        const state = {pc: this.state.pc - this.isa.spec.pc.increment,
+        const state = {pc: this.state.pc,
                        reg: this.reg.bind(this),
                        load: this.load.bind(this)};
         const ret = instr.sim(state, this.io, fields);
@@ -144,6 +149,9 @@ class Simulator implements Memory {
             (Promise.resolve(ret) === ret)
             ? await (ret as Promise<MachineStateUpdate[]>)
             : ret as MachineStateUpdate[];
+
+        // Increment PC
+        updates.unshift({ kind: 'pc', where: this.state.pc + this.isa.spec.pc.increment });
         this.pushLogEntry(instr, fields, updates);
     }
 
@@ -175,7 +183,6 @@ class Simulator implements Memory {
 
     public unstep(): void {
         this.popLogEntry();
-        this.state.pc -= this.isa.spec.pc.increment;
     }
 
     public popLogEntry(): MachineStateLogEntry {

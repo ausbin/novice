@@ -31,6 +31,15 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
         this.postMessage({ kind: 'reset', isa: this.props.isaName });
     }
 
+    public componentDidUpdate(prevProps: GuiDebuggerProps) {
+        // If ISA changed, reset the worker
+        if (prevProps.isaName !== this.props.isaName) {
+            this.isa = getIsa(this.props.isaName);
+            this.setState({ state: this.isa.initMachineState() });
+            this.postMessage({ kind: 'reset', isa: this.props.isaName });
+        }
+    }
+
     public onError(err: ErrorEvent) {
         console.log(err);
     }

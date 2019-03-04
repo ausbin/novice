@@ -177,10 +177,10 @@ class CliDebugger extends Debugger {
                      /^\d+$/.test(operand) ? 10 : -1;
         let addr: number;
         if (base === -1) {
-            if (!this.hasSymbol(operand)) {
+            if (!this.symbols.hasSymbol(operand)) {
                 throw new Error(`unknown label \`${operand}'`);
             }
-            addr = this.getSymbolAddr(operand);
+            addr = this.symbols.getSymbolAddr(operand);
         } else {
             addr = parseInt(operand, base);
         }
@@ -298,7 +298,7 @@ class CliDebugger extends Debugger {
 
                 let maxRegnameLen = -1;
                 for (let i = 0; i < reg.count; i++) {
-                    const regname = reg.prefix + (this.lookupRegAlias(reg.prefix, i) || i);
+                    const regname = reg.prefix + (this.isa.lookupRegAlias(reg.prefix, i) || i);
                     const len = regname.length;
                     if (len > maxRegnameLen) {
                         maxRegnameLen = len;
@@ -306,7 +306,7 @@ class CliDebugger extends Debugger {
                 }
 
                 for (let i = 0; i < reg.count; i++) {
-                    const regno = this.lookupRegAlias(reg.prefix, i) || i;
+                    const regno = this.isa.lookupRegAlias(reg.prefix, i) || i;
                     const regname = padStr(`${reg.prefix}${regno}`, maxRegnameLen, ' ');
                     const regval = forceUnsigned(this.state.regs.range[reg.prefix][i],
                                                  this.isa.spec.mem.word);

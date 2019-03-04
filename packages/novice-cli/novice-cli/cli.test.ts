@@ -6,8 +6,8 @@ import main from './cli';
 jest.mock('fs');
 import * as fs from 'fs';
 jest.mock('novice');
-import { AssemblerConfig, getConfig, getParser, Simulator, getIsa, SymbTable,
-         MachineCodeSection } from 'novice';
+import { AssemblerConfig, getConfig, getParser, Simulator, getIsa, Symbols,
+         SymbTable, MachineCodeSection } from 'novice';
 jest.mock('./stream-io');
 import { StreamIO } from './stream-io';
 jest.mock('./stream-assembler');
@@ -530,12 +530,18 @@ describe('cli', () => {
 
         describe('dbg subcommand', () => {
             let mockDbg: CliDebugger;
+            let mockSymbols: Symbols;
 
             beforeAll(() => {
                 // @ts-ignore
+                mockSymbols = {
+                    setSymbols: jest.fn();
+                };
+
+                // @ts-ignore
                 mockDbg = {
                     loadSections: jest.fn(),
-                    setSymbols: jest.fn(),
+                    getSymbols: jest.fn(),
                     start: jest.fn(),
                     close: jest.fn(),
                 };
@@ -544,6 +550,8 @@ describe('cli', () => {
             beforeEach(() => {
                 // @ts-ignore
                 CliDebugger.mockImplementation(() => mockDbg);
+                // @ts-ignore
+                mockDbg.getSymbols.mockReturnValue(mockSymbols);
             });
 
             afterEach(() => {
@@ -552,11 +560,13 @@ describe('cli', () => {
                 // @ts-ignore
                 mockDbg.loadSections.mockReset();
                 // @ts-ignore
-                mockDbg.setSymbols.mockReset();
+                mockDbg.getSymbols.mockReset();
                 // @ts-ignore
                 mockDbg.start.mockReset();
                 // @ts-ignore
                 mockDbg.close.mockReset();
+                // @ts-ignore
+                mockSymbols.setSymbols.mockReset();
             });
 
             it('assembles and launches debugger on assembly code', () => {
@@ -583,7 +593,9 @@ describe('cli', () => {
                     // @ts-ignore
                     expect(CliDebugger.mock.calls).toEqual([[mockCfg.isa, stdin, stdout]]);
                     // @ts-ignore
-                    expect(mockDbg.setSymbols.mock.calls).toEqual([[mockSymbTable]]);
+                    expect(mockDbg.getSymbols.mock.calls).toEqual([[]]);
+                    // @ts-ignore
+                    expect(mockSymbols.setSymbols.mock.calls).toEqual([[mockSymbTable]]);
                     // @ts-ignore
                     expect(mockDbg.start.mock.calls).toEqual([[]]);
                     // @ts-ignore
@@ -605,9 +617,11 @@ describe('cli', () => {
                     // @ts-ignore
                     expect(fs.createReadStream.mock.calls).toEqual([['brickell.obj'], ['brickell.lemonade']]);
                     // @ts-ignore
+                    expect(mockDbg.getSymbols.mock.calls).toEqual([[]]);
+                    // @ts-ignore
                     expect(mockLoader.load.mock.calls).toEqual([[mockCfg.isa, mockFp, mockDbg]]);
                     // @ts-ignore
-                    expect(mockLoader.loadSymb.mock.calls).toEqual([[mockFp, mockDbg]]);
+                    expect(mockLoader.loadSymb.mock.calls).toEqual([[mockFp, mockSymbols]]);
                     // @ts-ignore
                     expect(StreamAssembler.mock.calls).toEqual([]);
                     // @ts-ignore

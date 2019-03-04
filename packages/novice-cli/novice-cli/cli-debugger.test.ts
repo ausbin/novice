@@ -210,7 +210,7 @@ describe('cli debugger', () => {
             dbg.store(0x3003, 0x1264); // add r1, r1, 4
             dbg.store(0x3004, 0xf025); // halt
 
-            dbg.setSymbols({
+            dbg.getSymbols().setSymbols({
                 tim_brown: 0x3002,
             });
 

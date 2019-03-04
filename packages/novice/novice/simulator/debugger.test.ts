@@ -75,7 +75,7 @@ describe('debugger', () => {
                 dbg.store(0x3008, 0x0021); // bang .fill '!'
                 dbg.store(0x3009, 0xd000); // .fill 0xd000
 
-                dbg.setSymbols({
+                dbg.getSymbols().setSymbols({
                     loop: 0x3003,
                     // Don't include this so the branch has to have an integer
                     // operand in the disassembly
@@ -129,15 +129,15 @@ describe('debugger', () => {
             });
 
             it('disassembles an instruction with operands', () => {
-                expect(dbg.disassembleAt(0x3005)).toEqual('add r2, r2, -1');
+                expect(dbg.disassemble(0x3005, dbg.load(0x3005))).toEqual('add r2, r2, -1');
             });
 
             it('disassembles an instruction with no operands', () => {
-                expect(dbg.disassembleAt(0x3007)).toEqual('halt');
+                expect(dbg.disassemble(0x3007, dbg.load(0x3007))).toEqual('halt');
             });
 
             it('returns null for non-disassemblable words', () => {
-                expect(dbg.disassembleAt(0x3009)).toBe(null);
+                expect(dbg.disassemble(0x3009, dbg.load(0x3009))).toBe(null);
             });
 
             it('disassembles the whole dang thing', () => {

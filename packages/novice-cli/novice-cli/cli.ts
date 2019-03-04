@@ -222,7 +222,7 @@ async function dbg(loaderName: string|null, configName: string, path: string,
             if (symbFp) {
                 await Promise.all([
                     loadPromise,
-                    loader.loadSymb(symbFp, debug),
+                    loader.loadSymb(symbFp, debug.getSymbols()),
                 ]);
             } else {
                 await loadPromise;
@@ -231,7 +231,7 @@ async function dbg(loaderName: string|null, configName: string, path: string,
             const assembler = new StreamAssembler(cfg);
             const [symbtable, sections] = await assembler.assemble(fp);
             debug.loadSections(sections);
-            debug.setSymbols(symbtable);
+            debug.getSymbols().setSymbols(symbtable);
         }
 
         await debug.start();

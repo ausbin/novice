@@ -1,8 +1,9 @@
-import { maskTo, sextTo } from '../util';
+import { forceUnsigned, maskTo, sextTo } from '../util';
 import { Instruction, PseudoOp } from './assembly';
 import { IO } from './io';
 import { FullMachineState, MachineState, MachineStateUpdate,
          RegIdentifier } from './state';
+import { Symbols, SymbTable } from './symbols';
 
 interface Pc {
     // by how much is the pc incremented during FETCH?
@@ -81,8 +82,6 @@ interface AliasFields  {
     labels: {[s: string]: string};
 }
 
-type SymbTable = {[s: string]: number};
-
 interface AliasContext {
     pc: number;
     line: number;
@@ -104,12 +103,103 @@ interface IsaSpec {
     aliases: AliasSpec[];
 }
 
+class InstrLut {
+    private spec: IsaSpec;
+    private lookupBits: number;
+    // spec, mask, val, #bits
+    private lut: [InstructionSpec, number, number, number][][];
+
+    public constructor(spec: IsaSpec, lookupBits: number) {
+        this.spec = spec;
+        this.lookupBits = Math.min(spec.pc.instrBits, lookupBits);
+        this.lut = this.genLut(lookupBits);
+    }
+
+    public lookup(ir: number): [InstructionSpec, number, number, number][] {
+        const idx = maskTo(ir >> (this.spec.pc.instrBits - this.lookupBits),
+                           this.lookupBits);
+
+        return this.lut[idx];
+    }
+
+    private genLut(lookupBits: number) {
+        const lut: [InstructionSpec, number, number, number][][] = [];
+
+        for (let i = 0; i < Math.pow(2, lookupBits); i++) {
+            lut.push([]);
+        }
+
+        for (const instr of this.spec.instructions) {
+            let mask = 0;
+            let val = 0;
+            let totalBits = 0;
+            let firstNBits = [0];
+
+            // Sort them so fields are in the right order
+            const fields = instr.fields.slice(0).sort(
+                (left, right) => right.bits[0] - left.bits[0]);
+
+            for (const field of fields) {
+                const numBits = field.bits[0] - field.bits[1] + 1;
+                const needBits = this.lookupBits -
+                                 (this.spec.pc.instrBits - field.bits[0] - 1);
+                // Take the most significant X bits from this field
+                const whichBits = Math.min(numBits, needBits);
+
+                if (field.kind === 'const') {
+                    if (whichBits > 0) {
+                        // thinkin bout thos bits
+                        const thosBits = field.val >> (numBits - whichBits);
+                        firstNBits = firstNBits.map(bits => (bits << whichBits) | thosBits);
+                    }
+
+                    const babymask = maskTo(-1, numBits);
+                    mask |= babymask << field.bits[1];
+                    val |= (field.val & babymask) << field.bits[1];
+                    totalBits += numBits;
+                } else if (whichBits > 0) {
+                    const newFirstNBits: number[] = [];
+
+                    // In this case, we need to add all 2^whichBits
+                    // combinations
+                    for (let i = 0; i < Math.pow(2, whichBits); i++) {
+                        for (const bits of firstNBits) {
+                            newFirstNBits.push((bits << whichBits) | i);
+                        }
+                    }
+
+                    firstNBits = newFirstNBits;
+                }
+            }
+
+            const entry: [InstructionSpec, number, number, number] =
+                [instr, mask, val, totalBits];
+            for (const bits of firstNBits) {
+                lut[bits].push(entry);
+            }
+        }
+
+        return lut;
+    }
+}
+
+type RegAliasLut = {[prefix: string]: (string|null)[]};
+
 class Isa {
     public spec: IsaSpec;
+    private lut: InstrLut;
+    private regAliasLut: RegAliasLut;
 
     public constructor(spec: IsaSpec) {
+        // 64 entries is a nice cozy size without being too gigantic
+        const LUT_SIZE = 6;
+
         this.spec = spec;
+        this.lut = new InstrLut(this.spec, LUT_SIZE);
+        this.regAliasLut = this.genRegAliasLut();
     }
+
+    // Misc helper functions
 
     public regPrefixes(): string[] {
         const result = [];
@@ -135,6 +225,63 @@ class Isa {
         return this.spec.instructions.some(instr => instr.op === op) ||
                this.spec.aliases.some(alias => alias.op === op);
     }
+
+    // Decoding
+
+    public decode(ir: number): [InstructionSpec, Fields] {
+        const matches = [];
+        const candidates = this.lut.lookup(ir);
+
+        for (const instrTuple of candidates) {
+            const [instr, mask, val, bits] = instrTuple;
+            if ((ir & mask) === val) {
+                matches.push({bits, instr});
+            }
+        }
+
+        if (!matches.length) {
+            const unsigned = forceUnsigned(ir, this.spec.pc.instrBits);
+            throw new Error(`cannot decode instruction ` +
+                            `0x${unsigned.toString(16)}`);
+        }
+
+        matches.sort((left, right) => right.bits - left.bits);
+
+        const instruction = matches[0].instr;
+        return [instruction, this.genFields(ir, instruction)];
+    }
+
+    // Disassembly
+
+    public lookupRegAlias(prefix: string, regno: number): string|null {
+        return this.regAliasLut[prefix][regno];
+    }
+
+    public disassemble(pc: number, ir: number, symbols: Symbols,
+                       ascii?: boolean): string|null {
+        let spec: InstructionSpec|null;
+        let fields: Fields|null;
+
+        try {
+            [spec, fields] = this.decode(ir);
+        } catch (err) {
+            spec = fields = null;
+        }
+
+        if (!spec || !fields) {
+            // If cannot disassemble and a printable ascii character,
+            // stick that bad boy in there
+            if (ascii && ' '.charCodeAt(0) <= ir && ir <= '~'.charCodeAt(0)) {
+                return `'${String.fromCharCode(ir)}'`;
+            } else {
+                return null;
+            }
+        }
+
+        return this.reassemble(pc, spec, fields, symbols);
+    }
+
+    // State management
 
     public initMachineState(): FullMachineState {
         const state: FullMachineState = {
@@ -269,7 +416,95 @@ class Isa {
 
         throw new Error(`unknown register identifier ${id}`);
     }
+
+    private genRegAliasLut(): RegAliasLut {
+        const lut: RegAliasLut = {};
+
+        for (const reg of this.spec.regs) {
+            if (reg.kind === 'reg-range') {
+                lut[reg.prefix] = new Array(reg.count).fill(null);
+
+                if (reg.aliases) {
+                    for (const alias in reg.aliases) {
+                        const regno = reg.aliases[alias];
+                        const current = lut[reg.prefix][regno];
+                        // Make sure we behave deterministically: If we
+                        // have a collision, choose the
+                        // lexicographically smaller alias
+                        if (!current || current > alias) {
+                            lut[reg.prefix][regno] = alias;
+                        }
+                    }
+                }
+            }
+        }
+
+        return lut;
+    }
+
+    private genFields(ir: number, instr: InstructionSpec): Fields {
+        const fields: Fields = {regs: {}, imms: {}};
+
+        for (const field of instr.fields) {
+            if (field.kind === 'const') {
+                continue;
+            }
+
+            const numBits = field.bits[0] - field.bits[1] + 1;
+            let val = maskTo(ir >> field.bits[1], numBits);
+
+            if (field.kind === 'reg') {
+                fields.regs[field.name] = [field.prefix, val];
+            } else if (field.kind === 'imm') {
+                if (field.sext) {
+                    val = sextTo(val, numBits);
+                }
+                fields.imms[field.name] = val;
+            }
+        }
+
+        return fields;
+    }
+
+    private reassemble(pc: number, spec: InstructionSpec, fields: Fields,
+                       symbols: Symbols): string {
+        const operands: string[] = [];
+
+        for (const field of spec.fields) {
+            switch (field.kind) {
+                case 'const':
+                    // Not provided in assembly code, so skip
+                    break;
+
+                case 'imm':
+                    let labels: string[] = [];
+                    if (field.label) {
+                        const targetPc = pc + this.spec.pc.increment +
+                                         fields.imms[field.name];
+                        labels = symbols.getAddrSymbols(targetPc);
+                    }
+
+                    if (labels.length > 0) {
+                        operands.push(labels[0]);
+                    } else {
+                        operands.push(fields.imms[field.name].toString());
+                    }
+                    break;
+
+                case 'reg':
+                    const regid = fields.regs[field.name];
+                    const str = (typeof regid === 'string') ? regid :
+                                regid[0] + (this.lookupRegAlias(...regid) || regid[1]);
+
+                    operands.push(str);
+            }
+        }
+
+        const ops = operands.join(', ');
+
+        return ops ? `${spec.op} ${ops}` : spec.op;
+    }
 }
 
 export { Isa, IsaSpec, Fields, InstructionSpec, Reg, AliasContext, AliasFields,
-         AliasSpec, SymbTable };
+         AliasSpec };

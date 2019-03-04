@@ -1,5 +1,6 @@
 import { FullMachineState, getIsa, Isa } from 'novice';
 import * as React from 'react';
+import { VariableSizeGrid as Grid } from 'react-window';
 import { FrontendMessage, WorkerMessage } from '../worker/proto';
 
 export interface GuiDebuggerProps {
@@ -65,7 +66,30 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
     }
 
     public render() {
-        return <h1>Hello, Becker!</h1>;
+        const cols = [50, 50, 50, 200];
+        const colVal: ((addr: number) => string)[] = [
+            addr => addr.toString(16),
+            addr => this.isa.stateLoad(this.state.state, addr).toString(16),
+            addr => this.isa.stateLoad(this.state.state, addr).toString(10),
+            addr => 'disassembled',
+        ];
+
+        const cell = (props: { columnIndex: number,
+                               rowIndex: number,
+                               style: React.CSSProperties }) => (
+            <div style={props.style}>
+                {colVal[props.columnIndex](props.rowIndex)}
+            </div>
+        );
+
+        return (<Grid
+            columnCount={cols.length}
+            columnWidth={i => cols[i]}
+            rowCount={Math.pow(2, this.isa.spec.mem.space)}
+            rowHeight={i => 20}
+            width={cols.reduce((acc, cur) => acc + cur) + 32}
+            height={600}
+        >{cell}</Grid>);
     }
 
     private postMessage(msg: FrontendMessage): void {

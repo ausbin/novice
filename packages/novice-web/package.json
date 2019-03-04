@@ -27,11 +27,13 @@
   "dependencies": {
     "novice": "^0.0.0",
     "react": "^16.8.1",
-    "react-dom": "^16.8.1"
+    "react-dom": "^16.8.1",
+    "react-window": "^1.5.2"
   },
   "devDependencies": {
     "@types/react": "^16.8.3",
     "@types/react-dom": "^16.8.1",
+    "@types/react-window": "^1.5.1",
     "awesome-typescript-loader": "^5.2.1",
     "source-map-loader": "^0.2.4",
     "typescript": "^3.3.3",

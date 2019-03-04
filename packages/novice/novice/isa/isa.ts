@@ -1,3 +1,4 @@
+import { maskTo, sextTo } from '../util';
 import { Instruction, PseudoOp } from './assembly';
 import { IO } from './io';
 import { FullMachineState, MachineState, MachineStateUpdate,
@@ -165,6 +166,95 @@ class Isa {
         }
 
         return state;
+    }
+
+    public stateApplyUpdates(state: FullMachineState,
+                             updates: MachineStateUpdate[]):
+            [FullMachineState, MachineStateUpdate[]] {
+        if (updates.length === 0) {
+            return [state, []];
+        }
+
+        const newState = Object.assign({}, state);
+        const undos: MachineStateUpdate[] = [];
+
+        for (const update of updates) {
+            switch (update.kind) {
+                case 'reg':
+                    undos.push({kind: 'reg', reg: update.reg,
+                                val: this.stateReg(newState, update.reg)});
+                    if (newState.regs === state.regs) {
+                        newState.regs = Object.assign({}, state.regs);
+                    }
+                    this.stateRegSet(newState, update.reg, update.val);
+                    break;
+
+                case 'mem':
+                    undos.push({kind: 'mem', addr: update.addr,
+                                val: this.stateLoad(newState, update.addr)});
+                    if (newState.mem === state.mem) {
+                        newState.mem = Object.assign({}, state.mem);
+                    }
+                    this.stateStore(newState, update.addr, update.val);
+                    break;
+
+                case 'pc':
+                    undos.push({kind: 'pc', where: newState.pc});
+                    newState.pc = update.where;
+                    break;
+
+                case 'halt':
+                    undos.push({kind: 'halt', halted: newState.halted});
+                    newState.halted = update.halted;
+                    break;
+
+                default:
+                    const _: never = update;
+            }
+        }
+
+        // Need to undo them in opposite order
+        return [newState, undos.reverse()];
+    }
+
+    public stateLoad(state: FullMachineState, addr: number): number {
+        if (state.mem.hasOwnProperty(addr)) {
+            return state.mem[addr];
+        } else {
+            return 0;
+        }
+    }
+
+    public stateStore(state: FullMachineState, addr: number, val: number): void {
+        state.mem[addr] = maskTo(val, this.spec.mem.word);
+    }
+
+    public stateReg(state: FullMachineState, id: RegIdentifier): number {
+        const reg = this.lookupRegSpec(id);
+        let val;
+
+        if (typeof id === 'string') {
+            val = state.regs.solo[id];
+        } else {
+            val = state.regs.range[id[0]][id[1]];
+        }
+
+        if (reg.sext) {
+            val = sextTo(val, reg.bits);
+        }
+
+        return val;
+    }
+
+    public stateRegSet(state: FullMachineState, id: RegIdentifier, val: number): void {
+        const reg = this.lookupRegSpec(id);
+        val = maskTo(val, reg.bits);
+
+        if (typeof id === 'string') {
+            state.regs.solo[id] = val;
+        } else {
+            state.regs.range[id[0]][id[1]] = val;
+        }
     }
 
     public lookupRegSpec(id: RegIdentifier): Reg {

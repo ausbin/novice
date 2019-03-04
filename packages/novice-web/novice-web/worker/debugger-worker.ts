@@ -13,7 +13,9 @@ class DebuggerWorker {
         // TODO: Add actual IO
         this.io = {
             getc: () => Promise.resolve(0),
-            putc: (c: number) => undefined,
+            putc: (c: number) => {
+                this.postMessage({ kind: 'putc', c });
+            },
         };
     }
 

@@ -46,7 +46,22 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
 
     public onMessage(event: MessageEvent) {
         const msg: WorkerMessage = event.data;
-        console.log('message from worker', msg);
+
+        switch (msg.kind) {
+            case 'updates':
+                const [state, _] = this.isa.stateApplyUpdates(
+                    this.state.state, msg.updates);
+                this.setState({ state });
+                break;
+
+            case 'putc':
+                // TODO: actually display somehow
+                console.log(String.fromCharCode(msg.c));
+                break;
+
+            default:
+                const __: never = msg;
+        }
     }
 
     public render() {

@@ -34,7 +34,13 @@ interface UpdatesMessage {
     updates: MachineStateUpdate[];
 }
 
-type WorkerMessage = UpdatesMessage;
+interface PutcMessage {
+    kind: 'putc';
+    c: number;
+}
+
+type WorkerMessage = UpdatesMessage|PutcMessage;
 
 export { ResetMessage, LoadSectionsMessage, InterruptMessage, StepMessage,
-         RunMessage, UpdatesMessage, FrontendMessage, WorkerMessage };
+         RunMessage, UpdatesMessage, PutcMessage, FrontendMessage,
+         WorkerMessage };

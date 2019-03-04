@@ -197,43 +197,19 @@ class Simulator implements Memory {
     }
 
     public load(addr: number): number {
-        if (this.state.mem.hasOwnProperty(addr)) {
-            return this.state.mem[addr];
-        } else {
-            return 0;
-        }
+        return this.isa.stateLoad(this.state, addr);
     }
 
     public store(addr: number, val: number): void {
-        this.state.mem[addr] = maskTo(val, this.isa.spec.mem.word);
+        this.isa.stateStore(this.state, addr, val);
     }
 
     public reg(id: RegIdentifier): number {
-        const reg = this.isa.lookupRegSpec(id);
-        let val;
-
-        if (typeof id === 'string') {
-            val = this.state.regs.solo[id];
-        } else {
-            val = this.state.regs.range[id[0]][id[1]];
-        }
-
-        if (reg.sext) {
-            val = sextTo(val, reg.bits);
-        }
-
-        return val;
+        return this.isa.stateReg(this.state, id);
     }
 
     public regSet(id: RegIdentifier, val: number) {
-        const reg = this.isa.lookupRegSpec(id);
-        val = maskTo(val, reg.bits);
-
-        if (typeof id === 'string') {
-            this.state.regs.solo[id] = val;
-        } else {
-            this.state.regs.range[id[0]][id[1]] = val;
-        }
+        this.isa.stateRegSet(this.state, id, val);
     }
 
     public decode(ir: number): [InstructionSpec, Fields] {
@@ -262,39 +238,10 @@ class Simulator implements Memory {
     // Return a list of corresponding undoing updates
     protected applyUpdates(updates: MachineStateUpdate[]):
             MachineStateUpdate[] {
-        const undos: MachineStateUpdate[] = [];
-
-        for (const update of updates) {
-            switch (update.kind) {
-                case 'reg':
-                    undos.push({kind: 'reg', reg: update.reg,
-                                val: this.reg(update.reg)});
-                    this.regSet(update.reg, update.val);
-                    break;
-
-                case 'mem':
-                    undos.push({kind: 'mem', addr: update.addr,
-                                val: this.load(update.addr)});
-                    this.store(update.addr, update.val);
-                    break;
-
-                case 'pc':
-                    undos.push({kind: 'pc', where: this.state.pc});
-                    this.state.pc = update.where;
-                    break;
-
-                case 'halt':
-                    undos.push({kind: 'halt', halted: this.state.halted});
-                    this.state.halted = update.halted;
-                    break;
-
-                default:
-                    const _: never = update;
-            }
-        }
-
-        // Need to undo them in opposite order
-        return undos.reverse();
+        const [newState, undos] =
+            this.isa.stateApplyUpdates(this.state, updates);
+        this.state = newState;
+        return undos;
     }
 
     private genFields(ir: number, instr: InstructionSpec): Fields {

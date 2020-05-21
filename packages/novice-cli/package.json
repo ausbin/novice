@@ -31,6 +31,6 @@
     "argparse": "^1.0.10"
   },
   "devDependencies": {
-    "@types/argparse": "^1.0.35"
+    "@types/argparse": "^1.0.38"
   }
 }

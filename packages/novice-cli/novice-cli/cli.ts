@@ -108,7 +108,7 @@ async function asm(configName: string, inPath: string,
 
         const inFp = fs.createReadStream(inPath);
         await new Promise((resolve, reject) => {
-            inFp.on('readable', resolve);
+            inFp.on('open', resolve);
             inFp.on('error', reject);
         });
         const outFp = fs.createWriteStream(outPath);
@@ -151,7 +151,7 @@ async function sim(loaderName: string|null, configName: string,
         const fp = fs.createReadStream(path);
         await Promise.all([fp, stdin].map(
             f => new Promise((resolve, reject) => {
-                f.on('readable', resolve);
+                f.on('open', resolve);
                 f.on('error', reject);
             }),
         ));
@@ -189,7 +189,7 @@ async function dbg(loaderName: string|null, configName: string, path: string,
         fp = fs.createReadStream(path);
 
         await new Promise((resolve, reject) => {
-            fp.on('readable', resolve);
+            fp.on('open', resolve);
             fp.on('error', reject);
         });
 
@@ -199,7 +199,7 @@ async function dbg(loaderName: string|null, configName: string, path: string,
             symbFp = fs.createReadStream(symbPath);
 
             await new Promise((resolve, reject) => {
-                (symbFp as Readable).on('readable', resolve);
+                (symbFp as Readable).on('open', resolve);
                 (symbFp as Readable).on('error', err => {
                     stderr.write(`warning: could not open symbol file ` +
                                  `\`${symbPath}'. reason: \`${err.message}'. ` +

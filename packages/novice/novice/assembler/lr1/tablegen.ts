@@ -3,7 +3,7 @@ import { Production } from './production';
 
 type S = '' | 'eof';
 
-class ParseItem<NT, T> implements Hashable {
+class ParseItem<NT extends string, T extends string> implements Hashable {
     public production: Production<NT, T>;
     public stacktop: number;
     public lookahead: S|T;
@@ -20,7 +20,7 @@ class ParseItem<NT, T> implements Hashable {
     }
 }
 
-class ParseTransition<NT, T> implements Hashable {
+class ParseTransition<NT extends string, T extends string> implements Hashable {
     public token: NT|T;
     public newState: number;
 
@@ -34,7 +34,7 @@ class ParseTransition<NT, T> implements Hashable {
     }
 }
 
-class ParseState<NT, T> implements Hashable {
+class ParseState<NT extends string, T extends string> implements Hashable {
     public num: number;
     public items: ObjSet<ParseItem<NT, T>>;
     public transitions: ObjSet<ParseTransition<NT, T>>;
@@ -54,19 +54,19 @@ class ParseState<NT, T> implements Hashable {
     }
 }
 
-interface ParseAction<NT, T> {
+interface ParseAction<NT extends string, T extends string> {
     action: 'shift'|'reduce'|'accept';
     newState?: number;
     production?: Production<NT, T>;
 }
 
-interface ParseTable<NT, T> {
+interface ParseTable<NT extends string, T extends string> {
     positions: {[token: string]: number};
     actionTable: (ParseAction<NT, T>|null)[][];
     gotoTable: (number|null)[][];
 }
 
-class TableGenerator<NT, T> {
+class TableGenerator<NT extends string, T extends string> {
     public first: Map<NT|S|T, Set<S|T>>;
     public states: ParseState<NT, T>[];
     private goal: NT;
@@ -96,14 +96,12 @@ class TableGenerator<NT, T> {
         Ts.push('eof');
         Ts.sort();
         Ts.forEach((val, index) => {
-            result.positions[val.toString()] = index;
+            result.positions[val] = index;
         });
 
         const NTs = Array.from(this.NTs).sort();
         NTs.forEach((val, index) => {
-            // .toString() is a hack to make the type checker shut up,
-            // couldn't find another way
-            result.positions[val.toString()] = index;
+            result.positions[val] = index;
         });
 
         this.states.forEach(state => {
@@ -121,11 +119,11 @@ class TableGenerator<NT, T> {
                 if (item.stacktop === item.production.rhs.length) {
                     if (item.production.lhs === this.goal &&
                             item.lookahead === 'eof') {
-                        const index = result.positions[item.lookahead.toString()];
+                        const index = result.positions[item.lookahead];
                         this.insertIntoRow(actionRow, index,
                             {action: 'accept', production: item.production});
                     } else {
-                        const index = result.positions[item.lookahead.toString()];
+                        const index = result.positions[item.lookahead];
                         this.insertIntoRow(actionRow, index,
                             {action: 'reduce', production: item.production});
                     }
@@ -136,7 +134,7 @@ class TableGenerator<NT, T> {
                 const isNT = this.isNT(transition.token);
 
                 if (isNT) {
-                    const index = result.positions[transition.token.toString()];
+                    const index = result.positions[transition.token];
 
                     if (gotoRow[index] !== null) {
                         throw new Error('conflict in goto table!');
@@ -144,7 +142,7 @@ class TableGenerator<NT, T> {
 
                     gotoRow[index] = transition.newState;
                 } else {
-                    const index = result.positions[transition.token.toString()];
+                    const index = result.positions[transition.token];
                     this.insertIntoRow(actionRow, index,
                         {action: 'shift', newState: transition.newState});
                 }

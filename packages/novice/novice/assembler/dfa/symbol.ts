@@ -1,7 +1,7 @@
 import { DFA } from './dfa';
 
-export default class SymbolDFA<T> extends DFA<T> {
-    private Ts: {[s: string]: T};
+export default class SymbolDFA<T extends string> extends DFA<T> {
+    private Ts: Set<string>;
     private alive!: boolean;
     private acceptingLength!: number;
     private kind!: T;
@@ -9,11 +9,7 @@ export default class SymbolDFA<T> extends DFA<T> {
     public constructor(symbols: T[]) {
         super();
 
-        this.Ts = {};
-        // Hack to get around the type checker
-        for (const symbol of symbols) {
-            this.Ts[symbol.toString()] = symbol;
-        }
+        this.Ts = new Set<string>(symbols);
 
         this.reset();
     }
@@ -23,9 +19,9 @@ export default class SymbolDFA<T> extends DFA<T> {
             return;
         }
 
-        if (c in this.Ts) {
+        if (this.Ts.has(c)) {
             this.acceptingLength = 1;
-            this.kind = this.Ts[c];
+            this.kind = c as T;
         }
 
         this.alive = false;

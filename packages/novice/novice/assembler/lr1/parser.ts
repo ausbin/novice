@@ -4,7 +4,7 @@ import { ParseTable } from './tablegen';
 
 type State = number;
 
-interface ParseTree<NT, T> {
+interface ParseTree<NT extends string, T extends string> {
     token: NT|T;
     val?: string;
     line?: number;
@@ -12,7 +12,7 @@ interface ParseTree<NT, T> {
     children: ParseTree<NT, T>[];
 }
 
-class Parser<NT, T> {
+class Parser<NT extends string, T extends string> {
     private table: ParseTable<NT, T>;
 
     public constructor(table: ParseTable<NT, T>) {
@@ -29,7 +29,7 @@ class Parser<NT, T> {
         while (true) {
             let state = stack[stack.length - 1] as State;
             const kind: T|'eof' = token ? token.kind : 'eof';
-            const index = this.table.positions[kind.toString()];
+            const index = this.table.positions[kind];
             const entry = this.table.actionTable[state][index];
 
             if (entry === null) {
@@ -69,7 +69,7 @@ class Parser<NT, T> {
                         state = stack[stack.length - 1] as State;
                         stack.push(parseTree);
 
-                        const gotoIndex = this.table.positions[production.lhs.toString()];
+                        const gotoIndex = this.table.positions[production.lhs];
                         stack.push(this.table.gotoTable[state][gotoIndex] as State);
                     }
                     break;

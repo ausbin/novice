@@ -13,7 +13,7 @@ interface Parser {
 }
 
 // Performs pass 1 using an LR(1) parser
-abstract class AbstractParser<Ctx, NT, T> implements Parser {
+abstract class AbstractParser<Ctx, NT extends string, T extends string> implements Parser {
     protected isa: Isa;
     private scanner: Scanner<T>;
     private parser: LR1Parser<NT, T>;

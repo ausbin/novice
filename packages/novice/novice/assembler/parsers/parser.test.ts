@@ -32,7 +32,7 @@ describe('abstract parser', () => {
             protected initCtx(): Context { return {}; }
             protected parseLine(ctx: Context, parseTree: ParseTree<NT, T>, line: Line<T>): void {}
             // @ts-ignore
-            protected finish(ctx: Context): Assembly { return null; }
+            protected finishParse(ctx: Context): Assembly { return null; }
         }
 
         beforeEach(() => {

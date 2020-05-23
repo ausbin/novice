@@ -80,7 +80,7 @@ describe('cli', () => {
             mockInFp = {
                 // @ts-ignore
                 on(event: string, handler: () => void) {
-                    if (event === 'readable') {
+                    if (event === 'open') {
                         handler();
                     }
                 }
@@ -332,7 +332,7 @@ describe('cli', () => {
                 iam: 'fp',
                 // @ts-ignore
                 on(ev, cb) {
-                    if (ev === 'readable') cb();
+                    if (ev === 'open') cb();
                 }
             };
         });
@@ -381,7 +381,7 @@ describe('cli', () => {
                     iam: 'stdin',
                     // @ts-ignore
                     on(ev, cb) {
-                        if (ev === 'readable') cb();
+                        if (ev === 'open') cb();
                     }
                 };
                 // @ts-ignore

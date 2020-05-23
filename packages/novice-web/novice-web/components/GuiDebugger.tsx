@@ -1,4 +1,4 @@
-import { FullMachineState, getIsa, Isa } from 'novice';
+import { FullMachineState, getIsa, Isa, fmtHex, Symbols, BaseSymbols } from 'novice';
 import * as React from 'react';
 import { VariableSizeGrid as Grid } from 'react-window';
 import { FrontendMessage, WorkerMessage } from '../worker/proto';
@@ -12,16 +12,17 @@ export interface GuiDebuggerState {
     state: FullMachineState;
 }
 
-// State is never set so we use the '{}' type.
 export class GuiDebugger extends React.Component<GuiDebuggerProps,
                                                  GuiDebuggerState> {
     private isa: Isa;
+    private symbols: Symbols;
     private worker: Worker;
 
     constructor(props: GuiDebuggerProps) {
         super(props);
 
         this.isa = getIsa(this.props.isaName);
+        this.symbols = new BaseSymbols();
         this.state = {
             state: this.isa.initMachineState(),
         };
@@ -66,12 +67,13 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
     }
 
     public render() {
-        const cols = [50, 50, 50, 200];
+        const cols = [80, 80, 80, 200];
         const colVal: ((addr: number) => string)[] = [
-            addr => addr.toString(16),
-            addr => this.isa.stateLoad(this.state.state, addr).toString(16),
+            addr => this.fmtAddr(addr),
+            addr => this.fmtWord(this.isa.stateLoad(this.state.state, addr)),
             addr => this.isa.stateLoad(this.state.state, addr).toString(10),
-            addr => 'disassembled',
+            addr => this.isa.disassemble(addr, this.isa.stateLoad(this.state.state, addr),
+                                         this.symbols, true) || '',
         ];
 
         const cell = (props: { columnIndex: number,
@@ -94,5 +96,13 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
 
     private postMessage(msg: FrontendMessage): void {
         this.worker.postMessage(msg);
+    }
+
+    private fmtAddr(addr: number): string {
+        return fmtHex(addr, this.isa.spec.mem.space);
+    }
+
+    private fmtWord(word: number): string {
+        return fmtHex(word, this.isa.spec.mem.word);
     }
 }

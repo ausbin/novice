@@ -29,4 +29,9 @@ function padStr(str: string, to: number, withChar: string, right?: boolean) {
     return str;
 }
 
-export { forceUnsigned, maskTo, maxUnsignedVal, sextTo, padStr };
+function fmtHex(val: number, bits: number): string {
+    return '0x' + padStr(forceUnsigned(val, bits).toString(16),
+                         Math.ceil(bits / 4), '0');
+}
+
+export { forceUnsigned, maskTo, maxUnsignedVal, sextTo, padStr, fmtHex };

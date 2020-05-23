@@ -1,4 +1,4 @@
-import { Debugger, forceUnsigned, IO, Isa, maxUnsignedVal, padStr } from 'novice';
+import { Debugger, forceUnsigned, IO, Isa, maxUnsignedVal, padStr, fmtHex } from 'novice';
 import * as readline from 'readline';
 import { Readable, Writable } from 'stream';
 
@@ -208,17 +208,12 @@ class CliDebugger extends Debugger {
         return [lo, hi];
     }
 
-    private fmtHex(val: number, bits: number): string {
-        return '0x' + padStr(forceUnsigned(val, bits).toString(16),
-                             Math.ceil(bits / 4), '0');
-    }
-
     private fmtAddr(addr: number): string {
-        return this.fmtHex(addr, this.isa.spec.mem.space);
+        return fmtHex(addr, this.isa.spec.mem.space);
     }
 
     private fmtWord(word: number): string {
-        return this.fmtHex(word, this.isa.spec.mem.word);
+        return fmtHex(word, this.isa.spec.mem.word);
     }
 
     private async unstepCmd(): Promise<void> {

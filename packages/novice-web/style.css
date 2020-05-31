@@ -1,0 +1,32 @@
+html, body {
+    background-color: white;
+}
+
+.gui-wrapper {
+    width: 960px;
+    margin: 0 auto;
+}
+
+.memory-view {
+    display: inline-block;
+    font-family: monospace;
+}
+
+.assemble-form {
+    display: inline-block;
+    margin: 0 0 0 32px;
+}
+
+.assemble-form textarea {
+    height: 550px;
+    width: 400px;
+    display: block;
+}
+
+.assemble-form .buttons {
+    display: block;
+}
+
+.assemble-form .buttons button {
+    display: inline-block;
+}

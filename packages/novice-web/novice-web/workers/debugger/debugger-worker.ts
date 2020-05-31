@@ -1,32 +1,27 @@
 import { Debugger, getIsa, IO, MachineStateUpdate } from 'novice';
-import { FrontendMessage, WorkerMessage } from './proto';
+import { DebuggerFrontendMessage, DebuggerWorkerMessage } from './proto';
 import { SnitchDebugger } from './snitch-debugger';
+import { BaseWorker } from '../base-worker';
 
-class DebuggerWorker {
-    private ctx: Worker;
+class DebuggerWorker extends BaseWorker<DebuggerFrontendMessage,
+                                        DebuggerWorkerMessage> {
     private dbg: Debugger|null;
     private io: IO;
 
     public constructor(ctx: Worker) {
-        this.ctx = ctx;
+        super(ctx);
+
         this.dbg = null;
         // TODO: Add actual IO
         this.io = {
             getc: () => Promise.resolve(0),
             putc: (c: number) => {
-                this.postMessage({ kind: 'putc', c });
+                this.sendWorkerMessage({ kind: 'putc', c });
             },
         };
     }
 
-    // Register events
-    public register(): void {
-        this.ctx.onmessage = this.onMessage.bind(this);
-    }
-
-    public onMessage(event: MessageEvent): void {
-        const msg: FrontendMessage = event.data;
-
+    protected onFrontendMessage(msg: DebuggerFrontendMessage): void {
         switch (msg.kind) {
             case 'reset':
                 this.dbg = new SnitchDebugger(getIsa(msg.isa), this.io, -1,
@@ -57,6 +52,14 @@ class DebuggerWorker {
                 this.dbg.step();
                 break;
 
+            case 'unstep':
+                if (!this.dbg) {
+                    throw new Error('must reset before unstepping');
+                }
+
+                this.dbg.unstep();
+                break;
+
             case 'run':
                 if (!this.dbg) {
                     throw new Error('must reset before running');
@@ -71,11 +74,7 @@ class DebuggerWorker {
     }
 
     private onUpdates(updates: MachineStateUpdate[]): void {
-        this.postMessage({kind: 'updates', updates});
-    }
-
-    private postMessage(msg: WorkerMessage): void {
-        this.ctx.postMessage(msg);
+        this.sendWorkerMessage({kind: 'updates', updates});
     }
 }
 

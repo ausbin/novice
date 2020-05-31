@@ -1,7 +1,8 @@
 module.exports = {
     entry: {
         main: "./novice-web/index.tsx",
-        worker: "./novice-web/worker/worker.ts",
+        debuggerWorker: "./novice-web/workers/debugger/worker-entry.ts",
+        assemblerWorker: "./novice-web/workers/assembler/worker-entry.ts",
     },
     output: {
         filename: "[name].bundle.js",

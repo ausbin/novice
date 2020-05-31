@@ -20,12 +20,16 @@ interface StepMessage {
     kind: 'step';
 }
 
+interface UnstepMessage {
+    kind: 'unstep';
+}
+
 interface RunMessage {
     kind: 'run';
 }
 
-type FrontendMessage = ResetMessage|LoadSectionsMessage|InterruptMessage|
-                       StepMessage|RunMessage;
+type DebuggerFrontendMessage = ResetMessage|LoadSectionsMessage|InterruptMessage|
+                               StepMessage|UnstepMessage|RunMessage;
 
 // Messages originating from worker
 
@@ -39,8 +43,6 @@ interface PutcMessage {
     c: number;
 }
 
-type WorkerMessage = UpdatesMessage|PutcMessage;
+type DebuggerWorkerMessage = UpdatesMessage|PutcMessage;
 
-export { ResetMessage, LoadSectionsMessage, InterruptMessage, StepMessage,
-         RunMessage, UpdatesMessage, PutcMessage, FrontendMessage,
-         WorkerMessage };
+export { DebuggerFrontendMessage, DebuggerWorkerMessage };

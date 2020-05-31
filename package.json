@@ -4,7 +4,7 @@
   "scripts": {
     "build": "lerna run build",
     "test": "jest",
-    "test:cover": "jest --coverage --collectCoverageFrom=**/*.ts --collectCoverageFrom=!**/*.d.ts --collectCoverageFrom=!**/index.ts",
+    "test:cover": "jest --coverage --collectCoverageFrom=**/*.ts --collectCoverageFrom=**/*.tsx --collectCoverageFrom=!**/*.d.ts --collectCoverageFrom=!**/index.ts --collectCoverageFrom=!**/index.tsx",
     "lint": "lerna exec -- tslint --fix -p . -t verbose"
   },
   "jest": {

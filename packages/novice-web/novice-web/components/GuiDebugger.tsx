@@ -59,6 +59,10 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
     }
 
     public render() {
+        // Be a little dishonest: to avoid confusing users, get 'stuck' on halts
+        const pc = this.state.state.halted ? this.state.state.pc - this.isa.spec.pc.increment
+                                           : this.state.state.pc;
+
         const registers = this.isa.spec.regs.map(reg => {
             let values;
 
@@ -80,7 +84,7 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
         const rowHeight = 20;
         const cols = [20, 80, 80, 80, 200];
         const colVal: ((addr: number) => string)[] = [
-            addr => (this.state.state.pc === addr) ? '►' : '',
+            addr => (pc === addr) ? '►' : '',
             addr => this.fmtAddr(addr),
             addr => this.fmtWord(this.isa.stateLoad(this.state.state, addr)),
             addr => this.isa.stateLoad(this.state.state, addr).toString(10),

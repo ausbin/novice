@@ -29,6 +29,10 @@ class Simulator implements Memory {
 
     public getNumExec() { return this.numExec; }
 
+    public getLogLength(): number {
+        return this.log.length;
+    }
+
     public loadSections(sections: MachineCodeSection[]): void {
         const updates: MachineStateUpdate[] = [];
 

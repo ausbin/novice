@@ -57,6 +57,20 @@ class DebuggerWorker extends BaseWorker<DebuggerFrontendMessage,
                     throw new Error('must reset before unstepping');
                 }
 
+                // Maintain the lie that the debugger "freezes" on a halt by
+                // double-unstepping on halts. Without this, after executing a
+                // halt, it seems like nothing happened.
+                //
+                // We do this here instead of the frontend in case the
+                // frontend batches up n unstep requests while sitting
+                // on a halt before getting any machine state updates
+                // from the debugger worker. In such a case, if we did
+                // this check in the frontend, we would send 2n unstep
+                // requests instead of correctly sending n + 1.
+                if (this.dbg.isHalted() && this.dbg.getLogLength() > 1) {
+                    this.dbg.unstep();
+                }
+
                 this.dbg.unstep();
                 break;
 

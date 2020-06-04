@@ -7,9 +7,25 @@ html, body {
     margin: 0 auto;
 }
 
-.memory-view {
+.state-view {
     display: inline-block;
     font-family: monospace;
+    width: 500px;
+}
+
+.state-view .register-view {
+    display: block;
+    margin: 0 0 16px 0;
+}
+
+.state-view .register-view .reg-family {
+    display: block;
+    margin: 0 0 4px 0;
+}
+
+.state-view .register-view .reg {
+    display: inline-block;
+    margin: 0 8px 0 0;
 }
 
 .assemble-form {

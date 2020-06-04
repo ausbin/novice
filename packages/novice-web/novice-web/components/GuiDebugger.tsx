@@ -1,4 +1,5 @@
-import { FullMachineState, getIsa, Isa, fmtHex, Symbols, BaseSymbols } from 'novice';
+import { FullMachineState, getIsa, Isa, fmtBinOrHex, fmtHex, range, Symbols,
+         BaseSymbols } from 'novice';
 import * as React from 'react';
 import { VariableSizeGrid as Grid } from 'react-window';
 import { AssemblerFrontendMessage, AssemblerWorkerMessage } from '../workers/assembler';
@@ -58,7 +59,7 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
     }
 
     private onError(err: ErrorEvent) {
-        console.log(err);
+        console.error(err);
     }
 
     private onDebuggerMessage(msg: DebuggerWorkerMessage) {
@@ -97,10 +98,26 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
     }
 
     public render() {
+        const registers = this.isa.spec.regs.map(reg => {
+            let values;
+
+            if (reg.kind === 'reg-range') {
+                values = range(reg.count).map(i => (<div className='reg'>{
+                    reg.prefix + i + ': ' + fmtBinOrHex(this.state.state.regs.range[reg.prefix][i], reg.bits)
+                }</div>));
+            } else if (reg.kind === 'reg') {
+                values = <div className='reg'>{reg.name + ': '  + fmtBinOrHex(this.state.state.regs.solo[reg.name], reg.bits)}</div>;
+            } else {
+                const _: never = reg;
+            }
+
+            return (<div className='reg-family'>{values}</div>);
+        });
+
         const rowHeight = 20;
         const cols = [20, 80, 80, 80, 200];
         const colVal: ((addr: number) => string)[] = [
-            addr => (this.state.state.pc == addr)? '►' : '',
+            addr => (this.state.state.pc === addr)? '►' : '',
             addr => this.fmtAddr(addr),
             addr => this.fmtWord(this.isa.stateLoad(this.state.state, addr)),
             addr => this.isa.stateLoad(this.state.state, addr).toString(10),
@@ -118,7 +135,10 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
 
         return (
             <div className='gui-wrapper'>
-                <div className='memory-view'>
+                <div className='state-view'>
+                    <div className='register-view'>
+                        {registers}
+                    </div>
                     <Grid columnCount={cols.length}
                           columnWidth={i => cols[i]}
                           rowCount={Math.pow(2, this.isa.spec.mem.space)}

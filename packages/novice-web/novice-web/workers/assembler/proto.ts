@@ -1,4 +1,4 @@
-import { SymbTable, MachineCodeSection } from 'novice';
+import { MachineCodeSection, SymbTable } from 'novice';
 
 // Messages originating from frontend
 

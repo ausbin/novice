@@ -7,8 +7,8 @@ import { AliasContext, AliasFields, AliasSpec, Assembly, BaseSymbols, Fields,
          RegIdentifier, RegisterOperand, Section, StringOperand,
          Symbols, SymbTable } from './isa';
 import { Debugger, Memory, Simulator } from './simulator';
-import { forceUnsigned, maskTo, maxUnsignedVal, padStr, range, sextTo,
-         fmtBin, fmtBinOrHex, fmtHex } from './util';
+import { fmtBin, fmtBinOrHex, fmtHex, forceUnsigned, maskTo, maxUnsignedVal,
+         padStr, range, sextTo } from './util';
 
 export { //// assembler
          Assembler, AssemblerConfig, getParser, getGenerator, getOpSpec,

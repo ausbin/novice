@@ -1,6 +1,6 @@
-import { getConfig, Assembler, SymbTable, MachineCodeSection } from 'novice';
-import { AssemblerFrontendMessage, AssemblerWorkerMessage } from './proto';
+import { Assembler, getConfig, MachineCodeSection, SymbTable } from 'novice';
 import { BaseWorker } from '../base-worker';
+import { AssemblerFrontendMessage, AssemblerWorkerMessage } from './proto';
 
 class AssemblerWorker extends BaseWorker<AssemblerFrontendMessage,
                                          AssemblerWorkerMessage> {

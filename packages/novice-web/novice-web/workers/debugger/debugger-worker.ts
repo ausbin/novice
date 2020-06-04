@@ -1,7 +1,7 @@
 import { Debugger, getIsa, IO, MachineStateUpdate } from 'novice';
+import { BaseWorker } from '../base-worker';
 import { DebuggerFrontendMessage, DebuggerWorkerMessage } from './proto';
 import { SnitchDebugger } from './snitch-debugger';
-import { BaseWorker } from '../base-worker';
 
 class DebuggerWorker extends BaseWorker<DebuggerFrontendMessage,
                                         DebuggerWorkerMessage> {

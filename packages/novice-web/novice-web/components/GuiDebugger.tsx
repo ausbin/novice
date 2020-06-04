@@ -1,5 +1,5 @@
-import { FullMachineState, getIsa, Isa, fmtBinOrHex, fmtHex, range, Symbols,
-         BaseSymbols } from 'novice';
+import { BaseSymbols, fmtBinOrHex, fmtHex, FullMachineState, getIsa, Isa, range,
+         Symbols } from 'novice';
 import * as React from 'react';
 import { VariableSizeGrid as Grid } from 'react-window';
 import { AssemblerFrontendMessage, AssemblerWorkerMessage } from '../workers/assembler';
@@ -58,6 +58,67 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
         }
     }
 
+    public render() {
+        const registers = this.isa.spec.regs.map(reg => {
+            let values;
+
+            if (reg.kind === 'reg-range') {
+                values = range(reg.count).map(i => (<div className='reg'>{
+                    reg.prefix + i + ': ' + fmtBinOrHex(this.state.state.regs.range[reg.prefix][i], reg.bits)
+                }</div>));
+            } else if (reg.kind === 'reg') {
+                values = (<div className='reg'>
+                    {reg.name + ': '  + fmtBinOrHex(this.state.state.regs.solo[reg.name], reg.bits)}
+                </div>);
+            } else {
+                const _: never = reg;
+            }
+
+            return (<div className='reg-family'>{values}</div>);
+        });
+
+        const rowHeight = 20;
+        const cols = [20, 80, 80, 80, 200];
+        const colVal: ((addr: number) => string)[] = [
+            addr => (this.state.state.pc === addr) ? '►' : '',
+            addr => this.fmtAddr(addr),
+            addr => this.fmtWord(this.isa.stateLoad(this.state.state, addr)),
+            addr => this.isa.stateLoad(this.state.state, addr).toString(10),
+            addr => this.isa.disassemble(addr, this.isa.stateLoad(this.state.state, addr),
+                                         this.symbols, true) || '',
+        ];
+
+        const cell = (props: { columnIndex: number,
+                               rowIndex: number,
+                               style: React.CSSProperties }) => (
+            <div style={props.style}>
+                {colVal[props.columnIndex](props.rowIndex)}
+            </div>
+        );
+
+        return (
+            <div className='gui-wrapper'>
+                <div className='state-view'>
+                    <div className='register-view'>
+                        {registers}
+                    </div>
+                    <Grid columnCount={cols.length}
+                          columnWidth={i => cols[i]}
+                          rowCount={Math.pow(2, this.isa.spec.mem.space)}
+                          rowHeight={i => rowHeight}
+                          width={cols.reduce((acc, cur) => acc + cur) + 32}
+                          height={600}
+                          initialScrollTop={this.state.state.pc * rowHeight}>{cell}</Grid>
+                </div>
+                <AssembleForm initialAssemblyCode={this.props.initialAssemblyCode}
+                              handleAssembleRequest={this.handleAssembleRequest}
+                              handleStepRequest={this.handleStepRequest}
+                              handleUnstepRequest={this.handleUnstepRequest}
+                              handleContinueRequest={this.handleContinueRequest} />
+            </div>
+        );
+    }
+
     private onError(err: ErrorEvent) {
         console.error(err);
     }
@@ -95,65 +156,6 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
             default:
                 const __: never = msg;
         }
-    }
-
-    public render() {
-        const registers = this.isa.spec.regs.map(reg => {
-            let values;
-
-            if (reg.kind === 'reg-range') {
-                values = range(reg.count).map(i => (<div className='reg'>{
-                    reg.prefix + i + ': ' + fmtBinOrHex(this.state.state.regs.range[reg.prefix][i], reg.bits)
-                }</div>));
-            } else if (reg.kind === 'reg') {
-                values = <div className='reg'>{reg.name + ': '  + fmtBinOrHex(this.state.state.regs.solo[reg.name], reg.bits)}</div>;
-            } else {
-                const _: never = reg;
-            }
-
-            return (<div className='reg-family'>{values}</div>);
-        });
-
-        const rowHeight = 20;
-        const cols = [20, 80, 80, 80, 200];
-        const colVal: ((addr: number) => string)[] = [
-            addr => (this.state.state.pc === addr)? '►' : '',
-            addr => this.fmtAddr(addr),
-            addr => this.fmtWord(this.isa.stateLoad(this.state.state, addr)),
-            addr => this.isa.stateLoad(this.state.state, addr).toString(10),
-            addr => this.isa.disassemble(addr, this.isa.stateLoad(this.state.state, addr),
-                                         this.symbols, true) || '',
-        ];
-
-        const cell = (props: { columnIndex: number,
-                               rowIndex: number,
-                               style: React.CSSProperties }) => (
-            <div style={props.style}>
-                {colVal[props.columnIndex](props.rowIndex)}
-            </div>
-        );
-
-        return (
-            <div className='gui-wrapper'>
-                <div className='state-view'>
-                    <div className='register-view'>
-                        {registers}
-                    </div>
-                    <Grid columnCount={cols.length}
-                          columnWidth={i => cols[i]}
-                          rowCount={Math.pow(2, this.isa.spec.mem.space)}
-                          rowHeight={i => rowHeight}
-                          width={cols.reduce((acc, cur) => acc + cur) + 32}
-                          height={600}
-                          initialScrollTop={this.state.state.pc * rowHeight}>{cell}</Grid>
-                </div>
-                <AssembleForm initialAssemblyCode={this.props.initialAssemblyCode}
-                              handleAssembleRequest={this.handleAssembleRequest}
-                              handleStepRequest={this.handleStepRequest}
-                              handleUnstepRequest={this.handleUnstepRequest}
-                              handleContinueRequest={this.handleContinueRequest} />
-            </div>
-        );
     }
 
     private loadWorkerBundle<WorkerMessageType>(workerBundleUrl: string,

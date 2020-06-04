@@ -1,4 +1,4 @@
-import { Debugger, forceUnsigned, IO, Isa, maxUnsignedVal, padStr, fmtHex } from 'novice';
+import { Debugger, fmtHex, forceUnsigned, IO, Isa, maxUnsignedVal, padStr } from 'novice';
 import * as readline from 'readline';
 import { Readable, Writable } from 'stream';
 

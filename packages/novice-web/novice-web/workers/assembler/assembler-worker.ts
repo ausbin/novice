@@ -9,10 +9,10 @@ class AssemblerWorker extends BaseWorker<AssemblerFrontendMessage,
         super(ctx);
     }
 
-    protected onFrontendMessage(msg: AssemblerFrontendMessage): void {
+    protected async onFrontendMessage(msg: AssemblerFrontendMessage): Promise<void> {
         switch (msg.kind) {
             case 'assemble':
-                this.assemble(msg.configName, msg.assemblyCode);
+                await this.assemble(msg.configName, msg.assemblyCode);
                 break;
 
             // TODO: add never default again

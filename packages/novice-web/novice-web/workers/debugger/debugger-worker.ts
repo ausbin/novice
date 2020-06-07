@@ -21,7 +21,7 @@ class DebuggerWorker extends BaseWorker<DebuggerFrontendMessage,
         };
     }
 
-    protected onFrontendMessage(msg: DebuggerFrontendMessage): void {
+    protected async onFrontendMessage(msg: DebuggerFrontendMessage): Promise<void> {
         switch (msg.kind) {
             case 'reset':
                 this.dbg = new SnitchDebugger(getIsa(msg.isa), this.io, -1,
@@ -49,7 +49,7 @@ class DebuggerWorker extends BaseWorker<DebuggerFrontendMessage,
                     throw new Error('must reset before stepping');
                 }
 
-                this.dbg.step();
+                await this.dbg.step();
                 break;
 
             case 'unstep':
@@ -79,7 +79,7 @@ class DebuggerWorker extends BaseWorker<DebuggerFrontendMessage,
                     throw new Error('must reset before running');
                 }
 
-                this.dbg.run();
+                await this.dbg.run();
                 break;
 
             default:

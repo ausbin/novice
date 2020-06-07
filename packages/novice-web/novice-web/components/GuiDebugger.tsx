@@ -17,18 +17,23 @@ export interface GuiDebuggerState {
     state: FullMachineState;
 }
 
+const TOTAL_MEMORY_VIEW_HEIGHT = 600;
+const MEMORY_VIEW_ROW_HEIGHT = 20;
+
 export class GuiDebugger extends React.Component<GuiDebuggerProps,
                                                  GuiDebuggerState> {
     private isa: Isa;
     private symbols: Symbols;
     private debuggerWorker: Worker;
     private assemblerWorker: Worker;
+    private memoryView: React.RefObject<Grid>;
 
     constructor(props: GuiDebuggerProps) {
         super(props);
 
         this.isa = getIsa(this.props.isaName);
         this.symbols = new BaseSymbols();
+        this.memoryView = React.createRef();
         this.state = {
             state: this.isa.initMachineState(),
         };
@@ -49,12 +54,17 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
         this.postDebuggerMessage({ kind: 'reset', isa: this.props.isaName });
     }
 
-    public componentDidUpdate(prevProps: GuiDebuggerProps) {
+    public componentDidUpdate(prevProps: GuiDebuggerProps, prevState: GuiDebuggerState) {
         // If ISA changed, reset the worker
         if (prevProps.isaName !== this.props.isaName) {
             this.isa = getIsa(this.props.isaName);
             this.setState({ state: this.isa.initMachineState() });
             this.postDebuggerMessage({ kind: 'reset', isa: this.props.isaName });
+        } else {
+            // Otherwise, update the GUI for state changes
+            if (prevState.state.pc !== this.state.state.pc) {
+                this.memoryView.current!.scrollTo({scrollLeft: 0, scrollTop: this.calcMemoryViewScrollTop()});
+            }
         }
     }
 
@@ -84,7 +94,6 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
             return (<div className='reg-family' key={'family-' + name}>{values}</div>);
         });
 
-        const rowHeight = 20;
         const cols = [20, 80, 80, 80, 200];
         const colVal: ((addr: number) => string)[] = [
             addr => (pc === addr) ? '►' : '',
@@ -109,13 +118,14 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
                     <div className='register-view'>
                         {registers}
                     </div>
-                    <Grid columnCount={cols.length}
+                    <Grid ref={this.memoryView}
+                          columnCount={cols.length}
                           columnWidth={i => cols[i]}
                           rowCount={Math.pow(2, this.isa.spec.mem.space)}
-                          rowHeight={i => rowHeight}
+                          rowHeight={i => MEMORY_VIEW_ROW_HEIGHT}
                           width={cols.reduce((acc, cur) => acc + cur) + 32}
-                          height={600}
-                          initialScrollTop={this.state.state.pc * rowHeight}>{cell}</Grid>
+                          height={TOTAL_MEMORY_VIEW_HEIGHT}
+                          initialScrollTop={this.calcMemoryViewScrollTop()}>{cell}</Grid>
                 </div>
                 <AssembleForm initialAssemblyCode={this.props.initialAssemblyCode}
                               handleAssembleRequest={this.handleAssembleRequest}
@@ -124,6 +134,13 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
                               handleContinueRequest={this.handleContinueRequest} />
             </div>
         );
+    }
+
+    private calcMemoryViewScrollTop(): number {
+        const rowsInView = Math.floor(TOTAL_MEMORY_VIEW_HEIGHT / MEMORY_VIEW_ROW_HEIGHT);
+        // Add one (at the end there) because I think it looks better
+        const topRowIndex = Math.max(0, this.state.state.pc - Math.floor(rowsInView / 2) + 1);
+        return topRowIndex * MEMORY_VIEW_ROW_HEIGHT;
     }
 
     private onError(err: ErrorEvent) {

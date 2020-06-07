@@ -64,21 +64,24 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
                                            : this.state.state.pc;
 
         const registers = this.isa.spec.regs.map(reg => {
+            let name = '';
             let values;
 
             if (reg.kind === 'reg-range') {
-                values = range(reg.count).map(i => (<div className='reg'>{
+                name = 'range-' + reg.prefix;
+                values = range(reg.count).map(i => (<div className='reg' key={name + i}>{
                     reg.prefix + i + ': ' + fmtBinOrHex(this.state.state.regs.range[reg.prefix][i], reg.bits)
                 }</div>));
             } else if (reg.kind === 'reg') {
-                values = (<div className='reg'>
+                name = 'solo-' + reg.name;
+                values = (<div className='reg' key={name}>
                     {reg.name + ': '  + fmtBinOrHex(this.state.state.regs.solo[reg.name], reg.bits)}
                 </div>);
             } else {
                 const _: never = reg;
             }
 
-            return (<div className='reg-family'>{values}</div>);
+            return (<div className='reg-family' key={'family-' + name}>{values}</div>);
         });
 
         const rowHeight = 20;

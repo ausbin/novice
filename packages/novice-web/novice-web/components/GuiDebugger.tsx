@@ -1,10 +1,9 @@
-import { BaseSymbols, fmtBinOrHex, fmtHex, FullMachineState, getIsa, Isa, range,
-         Symbols } from 'novice';
+import { BaseSymbols, fmtBinOrHex, FullMachineState, getIsa, Isa, range, Symbols } from 'novice';
 import * as React from 'react';
-import { VariableSizeGrid as Grid } from 'react-window';
 import { AssemblerFrontendMessage, AssemblerWorkerMessage } from '../workers/assembler';
 import { DebuggerFrontendMessage, DebuggerWorkerMessage } from '../workers/debugger';
 import { AssembleForm } from './AssembleForm';
+import { MemoryView } from './MemoryView';
 
 export interface GuiDebuggerProps {
     debuggerWorkerBundleUrl: string;
@@ -17,23 +16,18 @@ export interface GuiDebuggerState {
     state: FullMachineState;
 }
 
-const TOTAL_MEMORY_VIEW_HEIGHT = 600;
-const MEMORY_VIEW_ROW_HEIGHT = 20;
-
 export class GuiDebugger extends React.Component<GuiDebuggerProps,
                                                  GuiDebuggerState> {
     private isa: Isa;
     private symbols: Symbols;
     private debuggerWorker: Worker;
     private assemblerWorker: Worker;
-    private memoryView: React.RefObject<Grid>;
 
     constructor(props: GuiDebuggerProps) {
         super(props);
 
         this.isa = getIsa(this.props.isaName);
         this.symbols = new BaseSymbols();
-        this.memoryView = React.createRef();
         this.state = {
             state: this.isa.initMachineState(),
         };
@@ -54,17 +48,12 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
         this.postDebuggerMessage({ kind: 'reset', isa: this.props.isaName });
     }
 
-    public componentDidUpdate(prevProps: GuiDebuggerProps, prevState: GuiDebuggerState) {
+    public componentDidUpdate(prevProps: GuiDebuggerProps) {
         // If ISA changed, reset the worker
         if (prevProps.isaName !== this.props.isaName) {
             this.isa = getIsa(this.props.isaName);
             this.setState({ state: this.isa.initMachineState() });
             this.postDebuggerMessage({ kind: 'reset', isa: this.props.isaName });
-        } else {
-            // Otherwise, update the GUI for state changes
-            if (prevState.state.pc !== this.state.state.pc) {
-                this.memoryView.current!.scrollTo({scrollLeft: 0, scrollTop: this.calcMemoryViewScrollTop()});
-            }
         }
     }
 
@@ -94,38 +83,23 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
             return (<div className='reg-family' key={'family-' + name}>{values}</div>);
         });
 
-        const cols = [20, 80, 80, 80, 200];
-        const colVal: ((addr: number) => string)[] = [
-            addr => (pc === addr) ? '►' : '',
-            addr => this.fmtAddr(addr),
-            addr => this.fmtWord(this.isa.stateLoad(this.state.state, addr)),
-            addr => this.isa.stateLoad(this.state.state, addr).toString(10),
-            addr => this.isa.disassemble(addr, this.isa.stateLoad(this.state.state, addr),
-                                         this.symbols, true) || '',
-        ];
-
-        const cell = (props: { columnIndex: number,
-                               rowIndex: number,
-                               style: React.CSSProperties }) => (
-            <div style={props.style}>
-                {colVal[props.columnIndex](props.rowIndex)}
-            </div>
-        );
-
         return (
             <div className='gui-wrapper'>
                 <div className='state-view'>
                     <div className='register-view'>
                         {registers}
                     </div>
-                    <Grid ref={this.memoryView}
-                          columnCount={cols.length}
-                          columnWidth={i => cols[i]}
-                          rowCount={Math.pow(2, this.isa.spec.mem.space)}
-                          rowHeight={i => MEMORY_VIEW_ROW_HEIGHT}
-                          width={cols.reduce((acc, cur) => acc + cur) + 32}
-                          height={TOTAL_MEMORY_VIEW_HEIGHT}
-                          initialScrollTop={this.calcMemoryViewScrollTop()}>{cell}</Grid>
+                    <MemoryView colWidths={[20, 80, 80, 80, 200]}
+                                rowHeight={20}
+                                rows={30}
+                                pc={this.state.state.pc}
+                                memSpace={this.isa.spec.mem.space}
+                                memWord={this.isa.spec.mem.word}
+                                load={addr => this.isa.stateLoad(this.state.state, addr)}
+                                disassemble={addr => this.isa.disassemble(
+                                                         addr, this.isa.stateLoad(this.state.state,
+                                                                                  addr),
+                                                         this.symbols, true)} />
                 </div>
                 <AssembleForm initialAssemblyCode={this.props.initialAssemblyCode}
                               handleAssembleRequest={this.handleAssembleRequest}
@@ -134,13 +108,6 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
                               handleContinueRequest={this.handleContinueRequest} />
             </div>
         );
-    }
-
-    private calcMemoryViewScrollTop(): number {
-        const rowsInView = Math.floor(TOTAL_MEMORY_VIEW_HEIGHT / MEMORY_VIEW_ROW_HEIGHT);
-        // Add one (at the end there) because I think it looks better
-        const topRowIndex = Math.max(0, this.state.state.pc - Math.floor(rowsInView / 2) + 1);
-        return topRowIndex * MEMORY_VIEW_ROW_HEIGHT;
     }
 
     private onError(err: ErrorEvent) {
@@ -218,13 +185,5 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
 
     private handleContinueRequest(): void {
         this.postDebuggerMessage({ kind: 'run' });
-    }
-
-    private fmtAddr(addr: number): string {
-        return fmtHex(addr, this.isa.spec.mem.space);
-    }
-
-    private fmtWord(word: number): string {
-        return fmtHex(word, this.isa.spec.mem.word);
     }
 }

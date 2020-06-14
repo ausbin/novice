@@ -143,6 +143,8 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
         switch (msg.kind) {
             case 'assembly-finished':
                 const sections = msg.sections;
+                this.setState({ state: this.isa.initMachineState() });
+                this.postDebuggerMessage({ kind: 'reset', isa: this.props.isaName });
                 this.postDebuggerMessage({ kind: 'load-sections', sections });
                 break;
 

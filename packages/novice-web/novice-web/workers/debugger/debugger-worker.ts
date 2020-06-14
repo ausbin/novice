@@ -5,12 +5,14 @@ import { SnitchDebugger } from './snitch-debugger';
 
 class DebuggerWorker extends BaseWorker<DebuggerFrontendMessage,
                                         DebuggerWorkerMessage> {
+    private isaName: string|null;
     private dbg: Debugger|null;
     private io: IO;
 
     public constructor(ctx: Worker) {
         super(ctx);
 
+        this.isaName = null;
         this.dbg = null;
         // TODO: Add actual IO
         this.io = {
@@ -24,8 +26,13 @@ class DebuggerWorker extends BaseWorker<DebuggerFrontendMessage,
     protected async onFrontendMessage(msg: DebuggerFrontendMessage): Promise<void> {
         switch (msg.kind) {
             case 'reset':
-                this.dbg = new SnitchDebugger(getIsa(msg.isa), this.io, -1,
-                                              this.onUpdates.bind(this));
+                const newIsa = msg.isa;
+                if (!this.dbg || this.isaName !== newIsa) {
+                    this.dbg = new SnitchDebugger(getIsa(newIsa), this.io, -1,
+                                                  this.onUpdates.bind(this));
+                } else {
+                    this.dbg.reset();
+                }
                 break;
 
             case 'load-sections':

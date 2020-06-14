@@ -9,7 +9,7 @@ const ASSEMBLER_WORKER_BUNDLE_URL = 'assemblerWorker.bundle.js';
 
 ReactDOM.render(
     <GuiDebugger isaName='lc3'
-                 initialAssemblyCode={'.orig x3000\n; write LC-3 assembly code here\n\nhalt\n.end\n'}
+                 initialAssemblyCode={'.orig x3000\n; write LC-3 assembly code here\n; and press "Assemble"\n\nhalt\n.end\n'}
                  sourceCodeLink={SOURCE_CODE_LINK}
                  debuggerWorkerBundleUrl={DEBUGGER_WORKER_BUNDLE_URL}
                  assemblerWorkerBundleUrl={ASSEMBLER_WORKER_BUNDLE_URL} />,

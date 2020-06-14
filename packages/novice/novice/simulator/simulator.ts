@@ -33,6 +33,12 @@ class Simulator implements Memory {
         return this.log.length;
     }
 
+    public reset(): void {
+        this.state = this.isa.initMachineState();
+        this.log = [];
+        this.numExec = 0;
+    }
+
     public loadSections(sections: MachineCodeSection[]): void {
         const updates: MachineStateUpdate[] = [];
 

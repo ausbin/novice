@@ -28,7 +28,7 @@ export class AssembleForm extends React.Component<AssembleFormProps, AssembleFor
     public render() {
         return (
             <div className='assemble-form'>
-                <textarea value={this.state.assemblyCode} onChange={this.handleAssemblyCodeChange} />
+                <textarea spellCheck='false' value={this.state.assemblyCode} onChange={this.handleAssemblyCodeChange} />
                 <div className='buttons'>
                     <button onClick={this.handleAssembleButtonClick}>Assemble</button>
                     <button onClick={this.props.handleStepRequest}>Step</button>

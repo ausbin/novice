@@ -13,5 +13,18 @@ htmlgen() {
     } | sed -f - "$html"
 }
 
-htmlgen prod >index.html
-htmlgen dev >index-dev.html
+[[ $# -ne 1 || ! -f env.$1 ]] && {
+    env_choices=$(printf '|%s' env.*)
+    env_choices=${env_choices:1}
+    env_choices=${env_choices//env./}
+
+    printf 'usage: %s <%s>\n' "$0" "$env_choices" >&2
+    exit 1
+}
+
+html_dest=dist/index.html
+
+htmlgen "$1" >$html_dest
+printf 'wrote html to %s\n' "$html_dest" >&2
+
+cp -v style.css dist/

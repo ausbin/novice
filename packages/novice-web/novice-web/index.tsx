@@ -4,8 +4,8 @@ import * as ReactDOM from 'react-dom';
 import { GuiDebugger } from './components/GuiDebugger';
 
 const SOURCE_CODE_LINK = 'https://github.com/ausbin/novice';
-const DEBUGGER_WORKER_BUNDLE_URL = 'dist/debuggerWorker.bundle.js';
-const ASSEMBLER_WORKER_BUNDLE_URL = 'dist/assemblerWorker.bundle.js';
+const DEBUGGER_WORKER_BUNDLE_URL = 'debuggerWorker.bundle.js';
+const ASSEMBLER_WORKER_BUNDLE_URL = 'assemblerWorker.bundle.js';
 
 ReactDOM.render(
     <GuiDebugger isaName='lc3'

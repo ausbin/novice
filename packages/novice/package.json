@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "description": "machine code simulator",
   "scripts": {
-    "build": "tsc -d"
+    "build": "tsc -d",
+    "prodBuild": "npm run build"
   },
   "main": "lib/index.js",
   "files": [

@@ -18,7 +18,9 @@
     "url": "git+https://github.com/zucchini/novice.git"
   },
   "scripts": {
-    "build": "webpack --mode=development && ./gen-html.sh",
+    "build": "webpack --mode=development && ./gen-html.sh devo",
+    "prodBuild": "webpack --mode=production && ./gen-html.sh prod",
+    "clean": "rm -rvf dist/",
     "test": "echo \"Error: run tests from root\" && exit 1"
   },
   "bugs": {

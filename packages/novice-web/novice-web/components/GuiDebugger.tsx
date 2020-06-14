@@ -8,6 +8,7 @@ import { MemoryView } from './MemoryView';
 export interface GuiDebuggerProps {
     debuggerWorkerBundleUrl: string;
     assemblerWorkerBundleUrl: string;
+    sourceCodeLink: string;
     isaName: string;
     initialAssemblyCode: string;
 }
@@ -84,28 +85,34 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
         });
 
         return (
-            <div className='gui-wrapper'>
-                <div className='state-view'>
-                    <div className='register-view'>
-                        {registers}
+            <div className='gui-root'>
+                <div className='logo'>novice</div>
+                <div className='gui-wrapper'>
+                    <div className='state-view'>
+                        <div className='register-view'>
+                            {registers}
+                        </div>
+                        <MemoryView colWidths={[20, 80, 80, 80, 200]}
+                                    rowHeight={20}
+                                    rows={30}
+                                    pc={this.state.state.pc}
+                                    memSpace={this.isa.spec.mem.space}
+                                    memWord={this.isa.spec.mem.word}
+                                    load={addr => this.isa.stateLoad(this.state.state, addr)}
+                                    disassemble={addr => this.isa.disassemble(
+                                                             addr, this.isa.stateLoad(this.state.state,
+                                                                                      addr),
+                                                             this.symbols, true)} />
                     </div>
-                    <MemoryView colWidths={[20, 80, 80, 80, 200]}
-                                rowHeight={20}
-                                rows={30}
-                                pc={this.state.state.pc}
-                                memSpace={this.isa.spec.mem.space}
-                                memWord={this.isa.spec.mem.word}
-                                load={addr => this.isa.stateLoad(this.state.state, addr)}
-                                disassemble={addr => this.isa.disassemble(
-                                                         addr, this.isa.stateLoad(this.state.state,
-                                                                                  addr),
-                                                         this.symbols, true)} />
+                    <AssembleForm initialAssemblyCode={this.props.initialAssemblyCode}
+                                  handleAssembleRequest={this.handleAssembleRequest}
+                                  handleStepRequest={this.handleStepRequest}
+                                  handleUnstepRequest={this.handleUnstepRequest}
+                                  handleContinueRequest={this.handleContinueRequest} />
                 </div>
-                <AssembleForm initialAssemblyCode={this.props.initialAssemblyCode}
-                              handleAssembleRequest={this.handleAssembleRequest}
-                              handleStepRequest={this.handleStepRequest}
-                              handleUnstepRequest={this.handleUnstepRequest}
-                              handleContinueRequest={this.handleContinueRequest} />
+                <div className='footer'>
+                    <a href={this.props.sourceCodeLink} target='_blank'>source code</a>
+                </div>
             </div>
         );
     }

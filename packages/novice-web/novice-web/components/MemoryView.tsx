@@ -39,16 +39,26 @@ export class MemoryView extends React.Component<MemoryViewProps, {}> {
             addr => this.props.disassemble(addr) || '',
         ];
 
+        const colClassNames = [
+            ['memory-view-pc-cell'],
+            [],
+            [],
+            [],
+            [],
+        ];
+
         const cell = (props: { columnIndex: number,
                                rowIndex: number,
                                style: React.CSSProperties }) => (
-            <div style={props.style}>
+            <div className={['memory-view-cell', ...colClassNames[props.columnIndex]].join(' ')}
+                 style={props.style}>
                 {colVal[props.columnIndex](props.rowIndex)}
             </div>
         );
 
         return (
             <VariableSizeGrid ref={this.grid}
+                              className='memory-view'
                               columnCount={this.props.colWidths.length}
                               columnWidth={i => this.props.colWidths[i]}
                               rowCount={Math.pow(2, this.props.memSpace)}

@@ -95,7 +95,7 @@ export class GuiDebugger extends React.Component<GuiDebuggerProps,
                         <MemoryView colWidths={[20, 80, 80, 80, 200]}
                                     rowHeight={20}
                                     rows={30}
-                                    pc={this.state.state.pc}
+                                    pc={pc}
                                     memSpace={this.isa.spec.mem.space}
                                     memWord={this.isa.spec.mem.word}
                                     load={addr => this.isa.stateLoad(this.state.state, addr)}
